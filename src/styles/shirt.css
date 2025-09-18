@@ -1,4 +1,31 @@
-/* src/styles/shirt.css */
+/* Size button typography color */
+.size-btn-active .ant-typography {
+  color: #fff !important;
+}
+
+.size-btn-normal .ant-typography {
+  color: inherit;
+}
+/* Main content card padding */
+.main-content-card .ant-card-body {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .main-content-card .ant-card-body {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content-card .ant-card-body {
+    padding: 12px;
+  }
+}
+/* 
+ * Path: src/styles/shirt.css
+ * Description: Modern Blue Gradient Theme - iPadOS Style
+ */
 
 * {
   box-sizing: border-box;
@@ -6,10 +33,12 @@
 
 body {
   margin: 0;
-  font-family: 'Sarabun', 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: "Sarabun", "Noto Sans Thai", -apple-system, BlinkMacSystemFont,
+    "SF Pro Display", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  background: #f2f2f7;
 }
 
 .app-container {
@@ -20,35 +49,362 @@ body {
 .login-container {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    #007aff 0%,
+    /* iOS Blue */ #5856d6 25%,
+    /* iOS Purple */ #5ac8fa 50%,
+    /* iOS Light Blue */ #32d74b 75%,
+    /* iOS Green */ #007aff 100% /* iOS Blue */
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Animated gradient background */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glass morphism effect for iPad OS style */
+.login-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+      circle at 20% 30%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 60% 10%,
+      rgba(0, 122, 255, 0.1) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+}
+
+/* Card styling with glassmorphism */
+.ant-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+}
+
+/* Primary button styling - iOS Blue */
 .ant-btn-primary {
-  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  background: linear-gradient(135deg, #007aff, #0051d5);
   border: none;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.3),
+    0 4px 8px rgba(0, 122, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 14px !important;
+  height: 52px !important;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .ant-btn-primary:hover,
 .ant-btn-primary:focus {
-  background: linear-gradient(135deg, #1B5E20, #2E7D32);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+  background: linear-gradient(135deg, #0051d5, #003b9f);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 122, 255, 0.4),
+    0 8px 16px rgba(0, 122, 255, 0.3);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Input field styling */
+.ant-input {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0, 122, 255, 0.2) !important;
+  border-radius: 12px !important;
+  height: 48px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .ant-input:focus,
 .ant-input-focused {
-  border-color: #2E7D32;
-  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+  border-color: #007aff !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15),
+    0 4px 12px rgba(0, 122, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
 }
 
+.ant-input:hover {
+  border-color: #007aff !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Form label styling */
+.ant-form-item-label > label {
+  color: #1d1d1f !important;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Alert component styling */
+.ant-alert {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0, 122, 255, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+.ant-alert-info {
+  border-color: rgba(0, 122, 255, 0.3) !important;
+}
+
+.ant-alert-info .ant-alert-icon {
+  color: #007aff !important;
+}
+
+/* Switch component styling */
+.ant-switch {
+  background: rgba(0, 122, 255, 0.2) !important;
+}
+
+.ant-switch-checked {
+  background: #007aff !important;
+}
+
+/* Typography styling */
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3 {
+  color: #1d1d1f !important;
+  font-weight: 700;
+}
+
+.ant-typography {
+  color: #48484a !important;
+}
+
+/* Input prefix icons */
+.ant-input-prefix {
+  color: #007aff !important;
+}
+
+/* Member Portal specific styles */
+.member-portal-container {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #007aff 0%,
+    /* iOS Blue */ #5856d6 25%,
+    /* iOS Purple */ #5ac8fa 50%,
+    /* iOS Light Blue */ #32d74b 75%,
+    /* iOS Green */ #007aff 100% /* iOS Blue */
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.member-portal-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+      circle at 20% 30%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 60% 10%,
+      rgba(0, 122, 255, 0.1) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+}
+
+/* Size selection buttons */
+.size-option-button {
+  min-width: 80px;
+  min-height: 80px;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(0, 122, 255, 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+  margin: 4px !important;
+}
+
+.size-option-button:hover {
+  transform: translateY(-4px) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: #007aff !important;
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.25) !important;
+}
+
+.size-option-button.selected {
+  background: linear-gradient(135deg, #007aff, #0051d5) !important;
+  border-color: #007aff !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4) !important;
+}
+
+.size-measurements {
+  font-size: 12px;
+  color: #8e8e93;
+  margin-top: 4px;
+}
+
+.size-option-button.selected .size-measurements {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Status tags */
+.status-tag {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Floating particles effect (optional) */
+.login-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(
+      circle at 25% 25%,
+      rgba(255, 255, 255, 0.8) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(255, 255, 255, 0.6) 1px,
+      transparent 1px
+    );
+  background-size: 60px 60px, 40px 40px;
+  animation: float 20s linear infinite;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  66% {
+    transform: translateY(5px) translateX(-5px);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
   .login-container {
-    padding: 10px;
+    padding: 16px;
+  }
+
+  .ant-card {
+    margin: 0;
+    border-radius: 20px !important;
+  }
+
+  .ant-btn-primary {
+    height: 50px !important;
+    border-radius: 12px !important;
+  }
+
+  .ant-input {
+    height: 46px !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ant-card {
+    background: rgba(28, 28, 30, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .ant-form-item-label > label {
+    color: #f2f2f7 !important;
+  }
+
+  .ant-typography h1,
+  .ant-typography h2,
+  .ant-typography h3 {
+    color: #f2f2f7 !important;
+  }
+
+  .ant-typography {
+    color: #8e8e93 !important;
+  }
+
+  .ant-input {
+    background: rgba(44, 44, 46, 0.8) !important;
+    color: #f2f2f7 !important;
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+  }
+
+  .ant-alert {
+    background: rgba(44, 44, 46, 0.8) !important;
+    color: #f2f2f7 !important;
   }
 }
