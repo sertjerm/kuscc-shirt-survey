@@ -23,8 +23,9 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
-import demoImg from "../assets/images/demo.png";
+// import demoImg from "../assets/images/demo.png";
 import shirtSize from "../assets/images/shirt-size.jpg";
+const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket5.png";
 
 const { Title, Paragraph, Text } = Typography;
 
