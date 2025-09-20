@@ -36,8 +36,9 @@ const MemberPortal = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [height, setHeight] = useState(170); // ส่วนสูง (cm)
-  const [weight, setWeight] = useState(65); // น้ำหนัก (kg)
+  const [height, setHeight] = useState(140); // เริ่มต้นที่ค่า min
+  const [weight, setWeight] = useState(40); // เริ่มต้นที่ค่า min
+  const [hasUserInput, setHasUserInput] = useState(false); // ตรวจสอบว่าผู้ใช้ปรับค่าแล้วหรือยัง
   const [recommendedSize, setRecommendedSize] = useState(null);
 
   // Simulated user data - replace with real API call
@@ -83,37 +84,8 @@ const MemberPortal = () => {
       return;
     }
 
-    // ตรวจสอบว่าขนาดที่เลือกตรงกับที่แนะนำหรือไม่
-    if (selectedSize !== recommendedSize) {
-      Modal.confirm({
-        title: "ขนาดไม่ตรงกับที่แนะนำ",
-        content: (
-          <div>
-            <p>
-              คุณเลือกขนาด <strong style={{ color: "#FF6B35" }}>{selectedSize}</strong> แต่ระบบแนะนำขนาด{" "}
-              <strong style={{ color: "#32D74B" }}>{recommendedSize}</strong>
-            </p>
-            <p style={{ color: "#666", fontSize: "14px" }}>
-              จากข้อมูลส่วนสูง {height} ซม. และน้ำหนัก {weight} กก.
-            </p>
-            <p style={{ color: "#666", fontSize: "14px" }}>
-              คุณต้องการดำเนินการต่อหรือไม่?
-            </p>
-          </div>
-        ),
-        okText: "ใช่ ดำเนินการต่อ",
-        cancelText: "ยกเลิก เลือกใหม่",
-        okType: "primary",
-        onOk: () => {
-          setShowConfirmModal(true);
-        },
-        onCancel: () => {
-          // ไม่ต้องทำอะไร ผู้ใช้จะเลือกขนาดใหม่เอง
-        },
-      });
-    } else {
-      setShowConfirmModal(true);
-    }
+    // ไปที่ modal ยืนยันเลย ไม่ต้องซ้อน modal
+    setShowConfirmModal(true);
   };
 
   const confirmSizeSelection = async () => {
@@ -304,21 +276,30 @@ const MemberPortal = () => {
 
   // คำนวณขนาดแนะนำเมื่อส่วนสูงหรือน้ำหนักเปลี่ยน
   useEffect(() => {
-    const recommended = calculateRecommendedSize(height, weight);
-    setRecommendedSize(recommended);
-    
-    // Auto-select ขนาดแนะนำ ถ้ายังไม่เคยเลือกขนาดใดมาก่อน
-    if (!selectedSize || selectedSize === recommendedSize) {
-      setSelectedSize(recommended);
+    // คำนวณเฉพาะเมื่อผู้ใช้ปรับค่าแล้ว
+    if (hasUserInput) {
+      const recommended = calculateRecommendedSize(height, weight);
+      setRecommendedSize(recommended);
+      
+      // Auto-select ขนาดแนะนำ ถ้ายังไม่เคยเลือกขนาดใดมาก่อน
+      if (!selectedSize || selectedSize === recommendedSize) {
+        setSelectedSize(recommended);
+      }
+    } else {
+      // ถ้าผู้ใช้ยังไม่ปรับค่า ให้ clear ขนาดแนะนำ
+      setRecommendedSize(null);
+      setSelectedSize(null);
     }
-  }, [height, weight]);
+  }, [height, weight, hasUserInput]);
 
   const handleHeightChange = (value) => {
     setHeight(value);
+    setHasUserInput(true);
   };
 
   const handleWeightChange = (value) => {
     setWeight(value);
+    setHasUserInput(true);
   };
 
   const handleSelectRecommended = () => {
@@ -528,7 +509,7 @@ const MemberPortal = () => {
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: "16px" }}>
                 <Text strong style={{ color: "#1d1d1f", marginBottom: "8px", display: "block" }}>
-                  ส่วนสูง: {height} ซม.
+                  ส่วนสูง: {hasUserInput ? `${height} ซม.` : "กรุณาเลือก"}
                 </Text>
                 <Slider
                   min={140}
@@ -557,7 +538,7 @@ const MemberPortal = () => {
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: "16px" }}>
                 <Text strong style={{ color: "#1d1d1f", marginBottom: "8px", display: "block" }}>
-                  น้ำหนัก: {weight} กก.
+                  น้ำหนัก: {hasUserInput ? `${weight} กก.` : "กรุณาเลือก"}
                 </Text>
                 <Slider
                   min={40}
@@ -584,7 +565,7 @@ const MemberPortal = () => {
             </Col>
           </Row>
 
-          {recommendedSize && (
+          {recommendedSize && hasUserInput && (
             <div
               style={{
                 textAlign: "center",
@@ -621,6 +602,25 @@ const MemberPortal = () => {
               >
                 เลือกขนาดนี้
               </Button>
+            </div>
+          )}
+
+          {/* แสดงข้อความแนะนำเมื่อยังไม่มีข้อมูล */}
+          {!hasUserInput && (
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: "16px",
+                padding: "16px",
+                background: "rgba(0, 122, 255, 0.05)",
+                borderRadius: "12px",
+                border: "1px solid rgba(0, 122, 255, 0.1)",
+              }}
+            >
+              <Text style={{ color: "#007AFF", fontSize: "15px" }}>
+                <InfoCircleOutlined style={{ marginRight: "8px" }} />
+                กรุณาปรับส่วนสูงและน้ำหนักเพื่อรับคำแนะนำขนาดเสื้อ
+              </Text>
             </div>
           )}
         </div>
@@ -869,6 +869,7 @@ const MemberPortal = () => {
         }}
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
+          {/* ข้อความหลัก */}
           <Text style={{ fontSize: "16px" }}>
             คุณต้องการยืนยันการเลือกขนาด{" "}
             <Text strong style={{ color: "#007AFF" }}>
@@ -876,6 +877,8 @@ const MemberPortal = () => {
             </Text>{" "}
             หรือไม่?
           </Text>
+          
+          {/* รายละเอียดขนาด */}
           {selectedSizeInfo && (
             <div style={{ marginTop: "12px" }}>
               <Text style={{ color: "#48484a" }}>
@@ -884,6 +887,42 @@ const MemberPortal = () => {
               </Text>
             </div>
           )}
+
+          {/* ข้อความเตือนถ้าไม่ตรงกับแนะนำ */}
+          {selectedSize !== recommendedSize && (
+            <div style={{
+              marginTop: "16px",
+              padding: "12px",
+              background: "rgba(255, 149, 0, 0.08)",
+              border: "1px solid rgba(255, 149, 0, 0.2)",
+              borderRadius: "8px",
+            }}>
+              <div style={{ marginBottom: "8px" }}>
+                <Text style={{ color: "#FF9500", fontSize: "14px" }}>
+                  ⚠️ <strong>ขนาดไม่ตรงกับที่แนะนำ</strong>
+                </Text>
+              </div>
+              <Text style={{ color: "#FF9500", fontSize: "13px" }}>
+                ระบบแนะนำขนาด <strong>{recommendedSize}</strong> จากข้อมูลส่วนสูง {height} ซม. และน้ำหนัก {weight} กก.
+              </Text>
+            </div>
+          )}
+
+          {/* ข้อความยืนยันถ้าตรงกับแนะนำ */}
+          {selectedSize === recommendedSize && (
+            <div style={{
+              marginTop: "16px",
+              padding: "12px",
+              background: "rgba(50, 215, 75, 0.08)",
+              border: "1px solid rgba(50, 215, 75, 0.2)",
+              borderRadius: "8px",
+            }}>
+              <Text style={{ color: "#32D74B", fontSize: "14px" }}>
+                ✅ <strong>ขนาดตรงกับที่แนะนำ</strong>
+              </Text>
+            </div>
+          )}
+
           <div style={{ marginTop: "16px" }}>
             <Text style={{ color: "#8e8e93", fontSize: "14px" }}>
               หลังจากยืนยันแล้ว คุณยังสามารถเปลี่ยนขนาดได้ในภายหลัง
