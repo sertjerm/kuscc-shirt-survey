@@ -1,18 +1,19 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  base: "/ShirtSurvey/",
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
   },
   build: {
-    outDir: 'dist',
-    sourcemap: false
+    outDir: "dist",
+    sourcemap: false,
   },
   preview: {
     port: 5000,
-    host: true
-  }
-})
+    host: true,
+  },
+});

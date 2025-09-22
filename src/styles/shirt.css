@@ -1,3 +1,45 @@
+/* Responsive user info (header) for MemberPortal */
+@media (max-width: 600px) {
+  .member-header-responsive {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .member-header-responsive .ant-avatar {
+    margin: 0 auto 8px auto !important;
+    display: block !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  .member-header-responsive .ant-typography,
+  .member-header-responsive .ant-typography h4 {
+    font-size: 15px !important;
+    text-align: center !important;
+    margin-bottom: 2px !important;
+  }
+  .member-header-responsive .ant-typography,
+  .member-header-responsive .ant-typography span {
+    word-break: break-word !important;
+  }
+  .member-header-responsive .ant-btn {
+    margin: 8px auto 0 auto !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 14px !important;
+    padding: 8px 0 !important;
+  }
+  .member-header-responsive .ant-tag {
+    margin: 8px auto 0 auto !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 13px !important;
+    padding: 8px 0 !important;
+  }
+}
 /* Size button typography color */
 .size-btn-active .ant-typography {
   color: #fff !important;

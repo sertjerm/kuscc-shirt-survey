@@ -28,7 +28,7 @@ import {
 
 // import demoImg from "../assets/images/demo.png";
 import shirtSize from "../assets/images/shirt-size.jpg";
-const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket5.png";
+const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket6.png";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -43,9 +43,9 @@ const MemberPortal = () => {
 
   // Simulated user data - replace with real API call
   const [memberData, setMemberData] = useState({
-    memberCode: "123456",
-    name: "ทดสอบ ระบบเสื้อ",
-    round: "รอบที่ 1/2024",
+    memberCode: "012938",
+    name: "0812681022",
+    round: "952",
     status: "ยังไม่ยืนยันขนาด", // 'ยังไม่ยืนยันขนาด', 'ยืนยันขนาดแล้ว', 'รับเสื้อแล้ว'
     selectedSize: null,
   });
@@ -125,40 +125,47 @@ const MemberPortal = () => {
       content: (
         <div style={{ padding: "20px 0" }}>
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <img 
+            <img
               src={shirtSize}
               alt="วิธีวัดขนาดเสื้อ"
-              style={{ 
-                width: "100%", 
-                maxWidth: "400px", 
+              style={{
+                width: "100%",
+                maxWidth: "400px",
                 borderRadius: "8px",
-                border: "1px solid #dee2e6"
+                border: "1px solid #dee2e6",
               }}
             />
           </div>
-          
+
           <div style={{ marginBottom: "16px" }}>
-            <Text strong style={{ color: "#007AFF" }}>1. วัดรอบอก (Chest):</Text>
+            <Text strong style={{ color: "#007AFF" }}>
+              1. วัดรอบอก (Chest):
+            </Text>
             <br />
             <Text>วัดรอบส่วนที่กว้างที่สุดของอก โดยให้เทปวัดผ่านใต้รักแร้</Text>
           </div>
-          
+
           <div style={{ marginBottom: "16px" }}>
-            <Text strong style={{ color: "#007AFF" }}>2. วัดความยาวเสื้อ (Length):</Text>
+            <Text strong style={{ color: "#007AFF" }}>
+              2. วัดความยาวเสื้อ (Length):
+            </Text>
             <br />
             <Text>วัดจากจุดสูงสุดของไหล่ลงมาถึงปลายเสื้อ</Text>
           </div>
-          
-          <div style={{ 
-            background: "rgba(255, 149, 0, 0.08)", 
-            border: "1px solid rgba(255, 149, 0, 0.2)",
-            borderRadius: "8px", 
-            padding: "12px", 
-            marginTop: "16px" 
-          }}>
+
+          <div
+            style={{
+              background: "rgba(255, 149, 0, 0.08)",
+              border: "1px solid rgba(255, 149, 0, 0.2)",
+              borderRadius: "8px",
+              padding: "12px",
+              marginTop: "16px",
+            }}
+          >
             <Text style={{ color: "#FF9500", fontSize: "14px" }}>
               <InfoCircleOutlined style={{ marginRight: "8px" }} />
-              <strong>คำแนะนำ:</strong> ให้วัดเสื้อตัวที่พอดีกับตัวคุณเป็นตัวอย่าง หรือวัดรอบตัวโดยตรง
+              <strong>คำแนะนำ:</strong>{" "}
+              ให้วัดเสื้อตัวที่พอดีกับตัวคุณเป็นตัวอย่าง หรือวัดรอบตัวโดยตรง
             </Text>
           </div>
         </div>
@@ -168,9 +175,9 @@ const MemberPortal = () => {
         style: {
           background: "linear-gradient(135deg, #007AFF, #5856D6)",
           border: "none",
-          borderRadius: "8px"
-        }
-      }
+          borderRadius: "8px",
+        },
+      },
     });
   };
 
@@ -188,16 +195,76 @@ const MemberPortal = () => {
   };
 
   const sizeOptions = [
-    { size: "XS", chest: "32", length: "24", heightRange: [150, 165], weightRange: [40, 55] },
-    { size: "S", chest: "34", length: "26", heightRange: [160, 170], weightRange: [50, 65] },
-    { size: "M", chest: "36", length: "28", heightRange: [165, 175], weightRange: [60, 75] },
-    { size: "L", chest: "38", length: "30", heightRange: [170, 180], weightRange: [70, 85] },
-    { size: "XL", chest: "40", length: "32", heightRange: [175, 185], weightRange: [80, 95] },
-    { size: "2XL", chest: "42", length: "34", heightRange: [180, 190], weightRange: [90, 110] },
-    { size: "3XL", chest: "44", length: "36", heightRange: [180, 195], weightRange: [105, 125] },
-    { size: "4XL", chest: "46", length: "38", heightRange: [185, 200], weightRange: [120, 140] },
-    { size: "5XL", chest: "48", length: "40", heightRange: [185, 200], weightRange: [135, 160] },
-    { size: "6XL", chest: "50", length: "42", heightRange: [185, 200], weightRange: [155, 180] },
+    {
+      size: "XS",
+      chest: "32",
+      length: "24",
+      heightRange: [150, 165],
+      weightRange: [40, 55],
+    },
+    {
+      size: "S",
+      chest: "34",
+      length: "26",
+      heightRange: [160, 170],
+      weightRange: [50, 65],
+    },
+    {
+      size: "M",
+      chest: "36",
+      length: "28",
+      heightRange: [165, 175],
+      weightRange: [60, 75],
+    },
+    {
+      size: "L",
+      chest: "38",
+      length: "30",
+      heightRange: [170, 180],
+      weightRange: [70, 85],
+    },
+    {
+      size: "XL",
+      chest: "40",
+      length: "32",
+      heightRange: [175, 185],
+      weightRange: [80, 95],
+    },
+    {
+      size: "2XL",
+      chest: "42",
+      length: "34",
+      heightRange: [180, 190],
+      weightRange: [90, 110],
+    },
+    {
+      size: "3XL",
+      chest: "44",
+      length: "36",
+      heightRange: [180, 195],
+      weightRange: [105, 125],
+    },
+    {
+      size: "4XL",
+      chest: "46",
+      length: "38",
+      heightRange: [185, 200],
+      weightRange: [120, 140],
+    },
+    {
+      size: "5XL",
+      chest: "48",
+      length: "40",
+      heightRange: [185, 200],
+      weightRange: [135, 160],
+    },
+    {
+      size: "6XL",
+      chest: "50",
+      length: "42",
+      heightRange: [185, 200],
+      weightRange: [155, 180],
+    },
   ];
 
   const selectedSizeInfo = sizeOptions.find(
@@ -206,18 +273,18 @@ const MemberPortal = () => {
 
   // ฟังก์ชันคำนวณขนาดแนะนำ (ปรับปรุงแล้ว)
   const calculateRecommendedSize = (height, weight) => {
-    const BMI = weight / ((height / 100) ** 2);
-    
+    const BMI = weight / (height / 100) ** 2;
+
     // คำนวณคะแนนความเหมาะสมสำหรับแต่ละขนาด
     let bestSize = "M";
     let bestScore = -1;
-    
+
     for (let option of sizeOptions) {
       const [minHeight, maxHeight] = option.heightRange;
       const [minWeight, maxWeight] = option.weightRange;
-      
+
       let score = 0;
-      
+
       // คะแนนจากส่วนสูง (0-50 คะแนน)
       if (height >= minHeight && height <= maxHeight) {
         const heightCenter = (minHeight + maxHeight) / 2;
@@ -230,7 +297,7 @@ const MemberPortal = () => {
         const distance = Math.abs(height - heightCenter);
         score += Math.max(0, 25 - distance * 2);
       }
-      
+
       // คะแนนจากน้ำหนัก (0-50 คะแนน)
       if (weight >= minWeight && weight <= maxWeight) {
         const weightCenter = (minWeight + maxWeight) / 2;
@@ -243,20 +310,24 @@ const MemberPortal = () => {
         const distance = Math.abs(weight - weightCenter);
         score += Math.max(0, 25 - distance * 0.5);
       }
-      
+
       // โบนัสถ้าทั้งส่วนสูงและน้ำหนักอยู่ในช่วง
-      if (height >= minHeight && height <= maxHeight && 
-          weight >= minWeight && weight <= maxWeight) {
+      if (
+        height >= minHeight &&
+        height <= maxHeight &&
+        weight >= minWeight &&
+        weight <= maxWeight
+      ) {
         score += 30;
       }
-      
+
       // ถ้าคะแนนสูงสุด
       if (score > bestScore) {
         bestScore = score;
         bestSize = option.size;
       }
     }
-    
+
     // ถ้าไม่มีขนาดไหนที่เหมาะสม ใช้ BMI เป็นตัวสำรอง
     if (bestScore < 20) {
       if (BMI < 18.5) return "XS";
@@ -270,7 +341,7 @@ const MemberPortal = () => {
       else if (BMI < 42) return "5XL";
       else return "6XL";
     }
-    
+
     return bestSize;
   };
 
@@ -280,7 +351,7 @@ const MemberPortal = () => {
     if (hasUserInput) {
       const recommended = calculateRecommendedSize(height, weight);
       setRecommendedSize(recommended);
-      
+
       // Auto-select ขนาดแนะนำ ถ้ายังไม่เคยเลือกขนาดใดมาก่อน
       if (!selectedSize || selectedSize === recommendedSize) {
         setSelectedSize(recommended);
@@ -326,50 +397,81 @@ const MemberPortal = () => {
           backdropFilter: "blur(20px)",
           border: "1px solid rgba(255, 255, 255, 0.2)",
           boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+          position: "relative",
         }}
       >
+        {/* Logout icon button at top right */}
+        <Button
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          type="text"
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            color: "#48484a",
+            background: "rgba(0,0,0,0.04)",
+            borderRadius: "50%",
+            width: 40,
+            height: 40,
+            minWidth: 40,
+            minHeight: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2,
+            fontSize: 20,
+          }}
+          aria-label="logout"
+        />
         <div
+          className="member-header-responsive"
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            paddingRight: 48,
           }}
         >
-          <Space size="middle">
-            <Avatar
-              size={48}
-              icon={<UserOutlined />}
-              style={{
-                background: "linear-gradient(135deg, #32D74B, #30B84E)",
-                border: "2px solid rgba(255, 255, 255, 0.3)",
-              }}
-            />
-            <div>
-              <Title level={4} style={{ margin: 0, color: "#1d1d1f" }}>
-                {memberData.name}
-              </Title>
-              <Text style={{ color: "#48484a" }}>
-                รหัสสมาชิก: {memberData.memberCode} | {memberData.round}
-              </Text>
-            </div>
-          </Space>
-
-          <Button
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
+          <Avatar
+            size={48}
+            src={`https://apps2.coop.ku.ac.th/asset/member_photo/${memberData.memberCode}.png`}
             style={{
-              color: "#48484a",
-              border: "none",
-              background: "rgba(0, 0, 0, 0.05)",
-              borderRadius: "12px",
+              background: "linear-gradient(135deg, #32D74B, #30B84E)",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
+              minWidth: 48,
+              minHeight: 48,
             }}
-          >
-            ออกจากระบบ
-          </Button>
+            alt="member avatar"
+          />
+          <div style={{ minWidth: 0 }}>
+            <Title
+              level={4}
+              style={{
+                margin: 0,
+                color: "#1d1d1f",
+                fontSize: 18,
+                wordBreak: "break-word",
+              }}
+            >
+              {memberData.name}
+            </Title>
+            <Text
+              style={{
+                color: "#48484a",
+                fontSize: 14,
+                wordBreak: "break-word",
+              }}
+            >
+              รหัสสมาชิก: {memberData.memberCode} | {memberData.round}
+            </Text>
+          </div>
         </div>
 
         {/* Status */}
-        <div style={{ marginTop: "16px", textAlign: "center" }}>
+        <div style={{ marginTop: "12px", textAlign: "center" }}>
           <Tag
             color={getStatusColor(memberData.status)}
             style={{
@@ -377,6 +479,9 @@ const MemberPortal = () => {
               borderRadius: "20px",
               fontSize: "14px",
               border: "none",
+              display: "inline-block",
+              minWidth: 120,
+              marginTop: 4,
             }}
           >
             สถานะ: {memberData.status}
@@ -424,7 +529,7 @@ const MemberPortal = () => {
               marginBottom: "16px",
               borderColor: "#007AFF",
               color: "#007AFF",
-              fontWeight: "500"
+              fontWeight: "500",
             }}
           >
             วิธีวัดขนาดเสื้อ
@@ -440,10 +545,12 @@ const MemberPortal = () => {
             background: "linear-gradient(135deg, #f8f9fa, #e9ecef)",
             borderRadius: "16px",
             border: "2px solid rgba(0, 122, 255, 0.1)",
-            overflow: "hidden"
+            overflow: "hidden",
           }}
         >
-          <div style={{ position: "relative", display: "block", padding: "16px" }}>
+          <div
+            style={{ position: "relative", display: "block", padding: "16px" }}
+          >
             <img
               src={demoImg}
               alt="ตัวอย่างเสื้อแจ็คเก็ต"
@@ -453,21 +560,23 @@ const MemberPortal = () => {
                 marginBottom: "16px",
                 borderRadius: "12px",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
-                border: "4px solid white"
+                border: "4px solid white",
               }}
             />
-            <div style={{
-              position: "absolute",
-              top: "24px",
-              right: "24px",
-              background: "linear-gradient(135deg, #32D74B, #30B84E)",
-              color: "white",
-              padding: "6px 12px",
-              borderRadius: "16px",
-              fontSize: "13px",
-              fontWeight: "700",
-              boxShadow: "0 4px 12px rgba(50, 215, 75, 0.3)"
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "24px",
+                right: "24px",
+                background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: "700",
+                boxShadow: "0 4px 12px rgba(50, 215, 75, 0.3)",
+              }}
+            >
               NEW
             </div>
           </div>
@@ -500,7 +609,10 @@ const MemberPortal = () => {
                 marginRight: "8px",
               }}
             />
-            <Title level={4} style={{ display: "inline", color: "#32D74B", margin: 0 }}>
+            <Title
+              level={4}
+              style={{ display: "inline", color: "#32D74B", margin: 0 }}
+            >
               คำนวณขนาดแนะนำ
             </Title>
           </div>
@@ -508,7 +620,14 @@ const MemberPortal = () => {
           <Row gutter={24}>
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: "16px" }}>
-                <Text strong style={{ color: "#1d1d1f", marginBottom: "8px", display: "block" }}>
+                <Text
+                  strong
+                  style={{
+                    color: "#1d1d1f",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}
+                >
                   ส่วนสูง: {hasUserInput ? `${height} ซม.` : "กรุณาเลือก"}
                 </Text>
                 <Slider
@@ -525,7 +644,9 @@ const MemberPortal = () => {
                   style={{
                     marginBottom: "4px",
                   }}
-                  trackStyle={{ background: "linear-gradient(135deg, #32D74B, #30B84E)" }}
+                  trackStyle={{
+                    background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                  }}
                   handleStyle={{
                     borderColor: "#32D74B",
                     backgroundColor: "#32D74B",
@@ -534,10 +655,17 @@ const MemberPortal = () => {
                 />
               </div>
             </Col>
-            
+
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: "16px" }}>
-                <Text strong style={{ color: "#1d1d1f", marginBottom: "8px", display: "block" }}>
+                <Text
+                  strong
+                  style={{
+                    color: "#1d1d1f",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}
+                >
                   น้ำหนัก: {hasUserInput ? `${weight} กก.` : "กรุณาเลือก"}
                 </Text>
                 <Slider
@@ -554,7 +682,9 @@ const MemberPortal = () => {
                   style={{
                     marginBottom: "4px",
                   }}
-                  trackStyle={{ background: "linear-gradient(135deg, #32D74B, #30B84E)" }}
+                  trackStyle={{
+                    background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                  }}
                   handleStyle={{
                     borderColor: "#32D74B",
                     backgroundColor: "#32D74B",
@@ -580,10 +710,19 @@ const MemberPortal = () => {
                 <strong>ขนาดที่แนะนำ: {recommendedSize}</strong>
               </Text>
               <br />
-              {sizeOptions.find(opt => opt.size === recommendedSize) && (
+              {sizeOptions.find((opt) => opt.size === recommendedSize) && (
                 <Text style={{ color: "#48484a", fontSize: "14px" }}>
-                  รอบอก: {sizeOptions.find(opt => opt.size === recommendedSize).chest}" | 
-                  ความยาว: {sizeOptions.find(opt => opt.size === recommendedSize).length}"
+                  รอบอก:{" "}
+                  {
+                    sizeOptions.find((opt) => opt.size === recommendedSize)
+                      .chest
+                  }
+                  " | ความยาว:{" "}
+                  {
+                    sizeOptions.find((opt) => opt.size === recommendedSize)
+                      .length
+                  }
+                  "
                 </Text>
               )}
               <br />
@@ -597,7 +736,8 @@ const MemberPortal = () => {
                   marginTop: "8px",
                   padding: "0",
                   height: "auto",
-                  display: selectedSize === recommendedSize ? "none" : "inline-block",
+                  display:
+                    selectedSize === recommendedSize ? "none" : "inline-block",
                 }}
               >
                 เลือกขนาดนี้
@@ -703,13 +843,15 @@ const MemberPortal = () => {
                     border:
                       selectedSize === option.size
                         ? "2px solid #007AFF"
-                        : recommendedSize === option.size && selectedSize !== option.size
+                        : recommendedSize === option.size &&
+                          selectedSize !== option.size
                         ? "2px solid #FF9500"
                         : "2px solid #f0f0f0",
                     boxShadow:
                       selectedSize === option.size
                         ? "0 8px 16px rgba(0, 122, 255, 0.3)"
-                        : recommendedSize === option.size && selectedSize !== option.size
+                        : recommendedSize === option.size &&
+                          selectedSize !== option.size
                         ? "0 4px 12px rgba(255, 149, 0, 0.2)"
                         : "0 2px 8px rgba(0, 0, 0, 0.1)",
                     transition: "all 0.3s ease",
@@ -723,7 +865,8 @@ const MemberPortal = () => {
                         position: "absolute",
                         top: "-8px",
                         right: "-8px",
-                        background: selectedSize === option.size ? "#32D74B" : "#FF9500",
+                        background:
+                          selectedSize === option.size ? "#32D74B" : "#FF9500",
                         color: "white",
                         borderRadius: "50%",
                         width: "24px",
@@ -733,9 +876,10 @@ const MemberPortal = () => {
                         justifyContent: "center",
                         fontSize: "12px",
                         fontWeight: "bold",
-                        boxShadow: selectedSize === option.size 
-                          ? "0 2px 8px rgba(50, 215, 75, 0.3)"
-                          : "0 2px 8px rgba(255, 149, 0, 0.3)",
+                        boxShadow:
+                          selectedSize === option.size
+                            ? "0 2px 8px rgba(50, 215, 75, 0.3)"
+                            : "0 2px 8px rgba(255, 149, 0, 0.3)",
                       }}
                     >
                       ★
@@ -745,7 +889,10 @@ const MemberPortal = () => {
                     strong
                     style={{
                       fontSize: "16px",
-                      color: selectedSize === option.size ? "white !important" : "#1d1d1f",
+                      color:
+                        selectedSize === option.size
+                          ? "white !important"
+                          : "#1d1d1f",
                       marginBottom: "4px",
                       // บังคับ override ด้วย inline style
                       ...(selectedSize === option.size && {
@@ -760,9 +907,10 @@ const MemberPortal = () => {
                   <Text
                     style={{
                       fontSize: "12px",
-                      color: selectedSize === option.size
-                        ? "rgba(255,255,255,0.9)"
-                        : "#8e8e93",
+                      color:
+                        selectedSize === option.size
+                          ? "rgba(255,255,255,0.9)"
+                          : "#8e8e93",
                       // บังคับ override ด้วย inline style
                       ...(selectedSize === option.size && {
                         color: "rgba(255,255,255,0.9)",
@@ -823,7 +971,8 @@ const MemberPortal = () => {
             style={{ color: "#FF9500", marginRight: "8px" }}
           />
           <Text style={{ color: "#FF9500", fontSize: "14px" }}>
-            คุณสามารถเปลี่ยนแปลงขนาดได้ตลอดเวลา หรือเปลี่ยนขนาดตอนมารับเสื้อที่หน้างาน
+            คุณสามารถเปลี่ยนแปลงขนาดได้ตลอดเวลา
+            หรือเปลี่ยนขนาดตอนมารับเสื้อที่หน้างาน
           </Text>
         </div>
 
@@ -839,7 +988,8 @@ const MemberPortal = () => {
           }}
         >
           <Text style={{ color: "#007AFF", fontSize: "13px" }}>
-            <strong>เคล็ดลับ:</strong> หากไม่แน่ใจในขนาด แนะนำให้เลือกขนาดที่ใหญ่กว่าเล็กน้อย เพื่อความสบายในการสวมใส่
+            <strong>เคล็ดลับ:</strong> หากไม่แน่ใจในขนาด
+            แนะนำให้เลือกขนาดที่ใหญ่กว่าเล็กน้อย เพื่อความสบายในการสวมใส่
           </Text>
         </div>
       </Card>
@@ -877,7 +1027,7 @@ const MemberPortal = () => {
             </Text>{" "}
             หรือไม่?
           </Text>
-          
+
           {/* รายละเอียดขนาด */}
           {selectedSizeInfo && (
             <div style={{ marginTop: "12px" }}>
@@ -890,33 +1040,38 @@ const MemberPortal = () => {
 
           {/* ข้อความเตือนถ้าไม่ตรงกับแนะนำ */}
           {selectedSize !== recommendedSize && (
-            <div style={{
-              marginTop: "16px",
-              padding: "12px",
-              background: "rgba(255, 149, 0, 0.08)",
-              border: "1px solid rgba(255, 149, 0, 0.2)",
-              borderRadius: "8px",
-            }}>
+            <div
+              style={{
+                marginTop: "16px",
+                padding: "12px",
+                background: "rgba(255, 149, 0, 0.08)",
+                border: "1px solid rgba(255, 149, 0, 0.2)",
+                borderRadius: "8px",
+              }}
+            >
               <div style={{ marginBottom: "8px" }}>
                 <Text style={{ color: "#FF9500", fontSize: "14px" }}>
                   ⚠️ <strong>ขนาดไม่ตรงกับที่แนะนำ</strong>
                 </Text>
               </div>
               <Text style={{ color: "#FF9500", fontSize: "13px" }}>
-                ระบบแนะนำขนาด <strong>{recommendedSize}</strong> จากข้อมูลส่วนสูง {height} ซม. และน้ำหนัก {weight} กก.
+                ระบบแนะนำขนาด <strong>{recommendedSize}</strong>{" "}
+                จากข้อมูลส่วนสูง {height} ซม. และน้ำหนัก {weight} กก.
               </Text>
             </div>
           )}
 
           {/* ข้อความยืนยันถ้าตรงกับแนะนำ */}
           {selectedSize === recommendedSize && (
-            <div style={{
-              marginTop: "16px",
-              padding: "12px",
-              background: "rgba(50, 215, 75, 0.08)",
-              border: "1px solid rgba(50, 215, 75, 0.2)",
-              borderRadius: "8px",
-            }}>
+            <div
+              style={{
+                marginTop: "16px",
+                padding: "12px",
+                background: "rgba(50, 215, 75, 0.08)",
+                border: "1px solid rgba(50, 215, 75, 0.2)",
+                borderRadius: "8px",
+              }}
+            >
               <Text style={{ color: "#32D74B", fontSize: "14px" }}>
                 ✅ <strong>ขนาดตรงกับที่แนะนำ</strong>
               </Text>
