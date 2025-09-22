@@ -32,7 +32,7 @@ export const STATUS_TEXT = {
 };
 
 export const API_ENDPOINTS = {
-  BASE_URL: 'https://apps4.coop.ku.ac.th/KusccShirtService/Service1.svc',
+  BASE_URL: 'https://apps4.coop.ku.ac.th/KusccToolService/Service1.svc',
   SEARCH_MEMBER: '/SearchMember',
   UPDATE_SIZE: '/UpdateMemberSize',
   RECORD_DISTRIBUTION: '/RecordDistribution'

@@ -1,6 +1,6 @@
 /*
  * Path: src/components/Login/LoginForm.jsx
- * Description: Login Form Component with Modern Blue iPadOS Theme
+ * Description: Login Form Component with Real API Integration
  */
 
 import React, { useState } from "react";
@@ -25,7 +25,7 @@ import {
 import Swal from "sweetalert2";
 
 import { useAppContext } from "../../App";
-import { searchMember } from "../../services/shirtApi";
+import { loginMember } from "../../services/shirtApi";
 
 const { Title, Paragraph } = Typography;
 
@@ -46,17 +46,18 @@ const LoginForm = () => {
       });
     } else {
       form.setFieldsValue({
-        memberCode: "123456",
-        phone: "0812345678",
-        idCard: "123",
+        memberCode: "",
+        phone: "",
+        idCard: "",
       });
     }
   }, [form, isAdminMode]);
 
   const handleLogin = async (values) => {
     setLoading(true);
-
+    
     try {
+      // โหมด Admin - ยังใช้การตรวจสอบแบบเดิม
       if (isAdminMode) {
         if (
           values.memberCode === "999999" &&
@@ -67,7 +68,6 @@ const LoginForm = () => {
             { memberCode: "999999", name: "ผู้ดูแลระบบ", role: "admin" },
             "admin"
           );
-
           await Swal.fire({
             icon: "success",
             title: "เข้าสู่ระบบสำเร็จ",
@@ -75,7 +75,6 @@ const LoginForm = () => {
             timer: 1500,
             showConfirmButton: false,
           });
-
           navigate("/admin");
           return;
         } else {
@@ -83,26 +82,41 @@ const LoginForm = () => {
         }
       }
 
-      const memberData = await searchMember(values);
+      // โหมดสมาชิก - ใช้ API จริง
+      console.log('เรียกใช้ API เข้าสู่ระบบ...');
+      const memberData = await loginMember({
+        memberCode: values.memberCode,
+        phone: values.phone,
+        idCard: values.idCard,
+      });
+
+      console.log('ได้รับข้อมูลสมาชิก:', memberData);
 
       if (memberData) {
         login(memberData, "member");
-
+        
         await Swal.fire({
           icon: "success",
           title: "เข้าสู่ระบบสำเร็จ",
-          text: `ยินดีต้อนรับ ${memberData.name}`,
-          timer: 1500,
+          text: `ยินดีต้อนรับ ${memberData.displayName || memberData.name}`,
+          timer: 2000,
           showConfirmButton: false,
         });
-
+        
         navigate("/member");
+      } else {
+        throw new Error("ไม่พบข้อมูลสมาชิกหรือข้อมูลไม่ถูกต้อง");
       }
+      
     } catch (error) {
+      console.error('Login Error:', error);
+      
       await Swal.fire({
         icon: "error",
         title: "ไม่สามารถเข้าสู่ระบบได้",
         text: error.message,
+        confirmButtonText: "ลองใหม่",
+        confirmButtonColor: "#007AFF",
       });
     } finally {
       setLoading(false);
@@ -234,7 +248,7 @@ const LoginForm = () => {
         </Form>
 
         <Alert
-          message="ทดสอบ: 123456/0812345678/123 (สมาชิก), 999999/0000000000/999 (แอดมิน)"
+          message="ทดสอบ:  999999/0000000000/999 (แอดมิน)"
           type="info"
           style={{
             marginTop: 16,
