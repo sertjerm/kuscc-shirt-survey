@@ -4,7 +4,7 @@
  */
 
 import React, { useState, createContext, useContext } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 // ...existing code...
 import { ConfigProvider } from "antd";
 import thTH from "antd/locale/th_TH";
@@ -226,7 +226,7 @@ function App() {
       }}
     >
       <AppProvider>
-        <BrowserRouter basename={import.meta.env.VITE_BASE_PATH}>
+        <HashRouter>
           <div className="app-container">
             <Routes>
               <Route path="/login" element={<LoginForm />} />
@@ -250,7 +250,7 @@ function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </div>
-        </BrowserRouter>
+        </HashRouter>
       </AppProvider>
     </ConfigProvider>
   );
