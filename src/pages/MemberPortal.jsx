@@ -28,6 +28,7 @@ const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket6.png";
 
 // ✅ ใช้ค่าคงที่จาก src/utils/shirt-size.js
 import { shirtSizes } from "../utils/shirt-size";
+import { saveMemberSize } from "../services/shirtApi";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -155,8 +156,15 @@ const MemberPortal = () => {
     setIsLoading(true);
     setShowConfirmModal(false);
     try {
-      // TODO: call API บันทึกขนาดจริง
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const res = await saveMemberSize({
+        memberCode: memberData.memberCode,
+        sizeCode: selectedSize,
+        remarks: memberData.remarks || "",
+        surveyMethod: "ONLINE",
+      });
+      if (res.responseCode !== 200) {
+        throw new Error(res.responseMessage || "บันทึกขนาดไม่สำเร็จ");
+      }
       setMemberData((prev) => ({
         ...prev,
         selectedSize,
@@ -166,10 +174,11 @@ const MemberPortal = () => {
         title: "ยืนยันขนาดสำเร็จ",
         content: `คุณได้เลือกขนาด ${selectedSize} เรียบร้อยแล้ว`,
       });
-    } catch (error) {
+    } catch (err) {
+      console.error("save size failed:", err?.response?.data || err);
       Modal.error({
         title: "เกิดข้อผิดพลาด",
-        content: "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+        content: err.message || "ไม่สามารถบันทึกข้อมูลได้",
       });
     } finally {
       setIsLoading(false);
