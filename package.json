@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --mode development",
+    "build:prod": "vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
@@ -30,7 +31,13 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "vite": "^5.0.8"
   },
-  "keywords": ["kuscc", "shirt", "distribution", "cooperative", "kasetsart"],
+  "keywords": [
+    "kuscc",
+    "shirt",
+    "distribution",
+    "cooperative",
+    "kasetsart"
+  ],
   "author": "KUSCC Development Team",
   "license": "MIT"
 }
