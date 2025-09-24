@@ -2,29 +2,34 @@
 @media (max-width: 600px) {
   .member-header-responsive {
     flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
+    align-items: center !important;
+    gap: 16px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 24px 60px 16px 60px !important;
   }
 
   .member-header-responsive .ant-avatar {
-    margin: 0 auto 8px auto !important;
+    margin: 0 auto 12px auto !important;
     display: block !important;
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
+    width: 96px !important;
+    height: 96px !important;
+    min-width: 96px !important;
+    min-height: 96px !important;
   }
 
   .member-header-responsive .ant-typography,
-  .member-header-responsive .ant-typography h4 {
-    font-size: 15px !important;
+  .member-header-responsive .ant-typography h3 {
+    font-size: 20px !important;
     text-align: center !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 4px !important;
   }
 
   .member-header-responsive .ant-typography,
   .member-header-responsive .ant-typography span {
     word-break: break-word !important;
+    text-align: center !important;
+    font-size: 15px !important;
   }
 
   .member-header-responsive .ant-btn {
@@ -74,8 +79,8 @@
 
 /* 
  * Path: src/styles/shirt.css
- * Description: Modern Blue Gradient Theme - iPadOS Style
- * Updated: Unified Background for all pages
+ * Description: Modern Blue Gradient Theme - iPadOS Style (Static Version)
+ * Updated: Static Blue Gradient Background - No Animation
  */
 
 * {
@@ -97,27 +102,20 @@ body {
   width: 100%;
 }
 
-/* ✨ UNIFIED BACKGROUND CONTAINER - ใช้สำหรับทุกหน้า */
+/* ✨ UNIFIED BACKGROUND CONTAINER - Static Blue Gradient */
 .unified-page-container,
 .login-container,
 .member-portal-container,
 .admin-portal-container {
   position: relative;
   min-height: 100vh;
+  /* Static blue gradient - no animation */
   background: linear-gradient(135deg,
-      #007aff 0%,
-      /* iOS Blue */
-      #5856d6 25%,
-      /* iOS Purple */
-      #5ac8fa 50%,
-      /* iOS Light Blue */
-      #32d74b 75%,
-      /* iOS Green */
-      #007aff 100%
-      /* iOS Blue */
+      #007aff 0%,      /* iOS Blue */
+      #5ac8fa 35%,     /* iOS Light Blue */
+      #40a9ff 70%,     /* Medium Blue */
+      #1890ff 100%     /* Bright Blue */
     );
-  background-size: 400% 400%;
-  /* animation: gradientShift 15s ease infinite; */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,21 +128,6 @@ body {
 /* Login specific adjustments */
 .login-container {
   justify-content: center; /* Center content vertically for login */
-}
-
-/* Animated gradient background */
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
 }
 
 /* Glass morphism overlay effect for all pages */
@@ -330,7 +313,7 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Floating particles effect (optional) */
+/* Static floating particles effect (optional) */
 .unified-page-container::after,
 .login-container::after,
 .member-portal-container::after,
@@ -348,27 +331,8 @@ body {
       rgba(255, 255, 255, 0.6) 1px,
       transparent 1px);
   background-size: 60px 60px, 40px 40px;
-  animation: float 20s linear infinite;
   pointer-events: none;
   opacity: 0.3;
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0px) translateX(0px);
-  }
-
-  33% {
-    transform: translateY(-10px) translateX(5px);
-  }
-
-  66% {
-    transform: translateY(5px) translateX(-5px);
-  }
-
-  100% {
-    transform: translateY(0px) translateX(0px);
-  }
 }
 
 /* Responsive design */
@@ -446,8 +410,9 @@ body {
 /* .ant-col.ant-form-item-label.css-dev-only-do-not-override-1a1to2i {
   padding: 0 !important;
 } */
+
 .ant-input.ant-input-lg.css-1a1to2i {
-  padding: 0 16px ;;
+  padding: 0 16px;
 }
 
 .ant-form-large .ant-form-item .ant-form-item-control-input {

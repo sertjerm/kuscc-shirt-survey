@@ -1,5 +1,6 @@
 // src/pages/MemberPortal.jsx
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import {
   Card,
@@ -59,8 +60,10 @@ const MemberPortal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // --- Context user ---
-  const { user } = useAppContext();
+  // --- Navigation & Context ---
+  const navigate = useNavigate();
+  const { user, logout } = useAppContext();
+  
   const [memberData, setMemberData] = useState(
     user || {
       memberCode: "",
@@ -99,8 +102,16 @@ const MemberPortal = () => {
       cancelText: "ยกเลิก",
       okType: "danger",
       onOk: () => {
-        // TODO: logout logic
-        console.log("Logging out...");
+        try {
+          // ใช้ logout function จาก context
+          logout();
+          // Redirect ไปหน้า login
+          navigate('/login');
+        } catch (error) {
+          console.error('Logout error:', error);
+          // Fallback redirect
+          window.location.href = '/login';
+        }
       },
     });
   };
@@ -236,17 +247,17 @@ const MemberPortal = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 2,
+            zIndex: 10,
             fontSize: 18,
             transition: "all 0.3s ease",
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = "rgba(255, 59, 48, 0.1)";
-            e.target.style.color = "#FF3B30";
+            e.currentTarget.style.background = "rgba(255, 59, 48, 0.1)";
+            e.currentTarget.style.color = "#FF3B30";
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = "rgba(0,0,0,0.04)";
-            e.target.style.color = "#48484a";
+            e.currentTarget.style.background = "rgba(0,0,0,0.04)";
+            e.currentTarget.style.color = "#48484a";
           }}
           aria-label="logout"
         />
@@ -255,12 +266,12 @@ const MemberPortal = () => {
           className="member-header-responsive"
           style={{
             display: "flex",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
             flexWrap: "wrap",
             gap: 20,
-            paddingRight: 60,
-            padding: "24px 60px 16px 24px",
+            padding: "24px 60px 16px 60px",
+            textAlign: "center",
           }}
         >
           <Avatar
@@ -300,16 +311,6 @@ const MemberPortal = () => {
             >
               รหัสสมาชิก: {memberData.memberCode}
             </Text>
-            {/* <Text
-              style={{
-                color: "#8e8e93",
-                fontSize: 15,
-                wordBreak: "break-word",
-                display: "block",
-              }}
-            >
-              {memberData.round}
-            </Text> */}
           </div>
         </div>
 
@@ -424,15 +425,6 @@ const MemberPortal = () => {
               NEW
             </div>
           </div>
-          {/* <div style={{ padding: "0 16px 16px 16px" }}>
-            <Text strong style={{ color: "#1d1d1f", fontSize: 18 }}>
-              เสื้อแจ็คเก็ตสหกรณ์
-            </Text>
-            <br />
-            <Text style={{ color: "#6c757d", fontSize: 15 }}>
-              คุณภาพพรีเมียม • ใส่สบาย • ทนทาน
-            </Text>
-          </div> */}
         </div>
 
         {/* Selected Size Display */}
@@ -448,7 +440,6 @@ const MemberPortal = () => {
               border: "1px solid rgba(0, 122, 255, 0.2)",
             }}
           >
-          
             <div>
               <Text strong style={{ fontSize: 18, color: "#007AFF" }}>
                 ขนาดที่เลือก: {selectedSize}
@@ -467,12 +458,6 @@ const MemberPortal = () => {
 
         {/* Size Selection */}
         <div style={{ marginBottom: 32 }}>
-          {/* <Title
-            level={4}
-            style={{ textAlign: "center", marginBottom: 24, color: "#1d1d1f" }}
-          >
-            เลือกขนาดเสื้อ
-          </Title> */}
           <Row gutter={[12, 12]}>
             {SIZE_OPTIONS.map((option) => (
               <Col xs={12} sm={8} md={6} key={option.size}>
