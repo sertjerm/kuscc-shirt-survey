@@ -1,1025 +1,727 @@
-import React, { useState, useEffect, useRef } from "react";
+// src/pages/AdminPortal.jsx
+import React, { useState, useEffect } from "react";
+import { useAppContext } from "../App";
+import {
+  Card,
+  Button,
+  Typography,
+  Avatar,
+  Tag,
+  Modal,
+  Row,
+  Col,
+  Input,
+  Table,
+  Tabs,
+  Space,
+  Statistic,
+  Alert,
+  Form,
+  Select,
+  message,
+  Divider,
+} from "antd";
+import {
+  LogoutOutlined,
+  SearchOutlined,
+  UserOutlined,
+  ShoppingOutlined,
+  BarChartOutlined,
+  EditOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  InfoCircleOutlined,
+  ClockCircleOutlined,
+  ShirtSize,
+} from "@ant-design/icons";
 
-// Mock useAppContext หากไม่มี
-const useAppContext = () => ({
-  user: { name: "Admin User" },
-  logout: () => {
-    console.log("Logging out...");
-    // Implement logout logic here
-  },
-});
+// Import shirt sizes data
+import { shirtSizes } from "../utils/shirt-size";
+
+const { Title, Paragraph, Text } = Typography;
+const { TabPane } = Tabs;
+const { Option } = Select;
+const { Search } = Input;
 
 const AdminPortal = () => {
   const { user, logout } = useAppContext();
-  const [allMembers, setAllMembers] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [inventoryData, setInventoryData] = useState({});
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
-  const [selectedSize, setSelectedSize] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [receiverType, setReceiverType] = useState("self");
-  const [receiverName, setReceiverName] = useState("");
-  const [alertMessage, setAlertMessage] = useState({
-    text: "",
-    type: "",
-    visible: false,
-  });
-  const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showDistributionModal, setShowDistributionModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("search");
+  const [form] = Form.useForm();
 
-  // ขนาดเสื้อที่มี
-  const shirtSizes = [
-    "XS",
-    "S",
-    "M",
-    "L",
-    "XL",
-    "2XL",
-    "3XL",
-    "4XL",
-    "5XL",
-    "6XL",
-  ];
+  // Mock data - ในการใช้งานจริงจะดึงจาก API
+  const [mockInventory] = useState([
+    { size: "XS", produced: 50, reserved: 35, distributed: 20, remaining: 30 },
+    { size: "S", produced: 100, reserved: 85, distributed: 60, remaining: 40 },
+    { size: "M", produced: 150, reserved: 120, distributed: 95, remaining: 55 },
+    { size: "L", produced: 120, reserved: 100, distributed: 75, remaining: 45 },
+    { size: "XL", produced: 80, reserved: 65, distributed: 45, remaining: 35 },
+    { size: "2XL", produced: 60, reserved: 45, distributed: 30, remaining: 30 },
+    { size: "3XL", produced: 40, reserved: 30, distributed: 18, remaining: 22 },
+    { size: "4XL", produced: 30, reserved: 20, distributed: 12, remaining: 18 },
+    { size: "5XL", produced: 20, reserved: 15, distributed: 8, remaining: 12 },
+    { size: "6XL", produced: 15, reserved: 10, distributed: 5, remaining: 10 },
+  ]);
 
-  // โหลดข้อมูลเมื่อเริ่มต้น
-  useEffect(() => {
-    loadMemberData();
-    setupSignaturePad();
-  }, []);
-
-  const showAlert = (text, type = "info") => {
-    setAlertMessage({ text, type, visible: true });
-    setTimeout(() => {
-      setAlertMessage((prev) => ({ ...prev, visible: false }));
-    }, 3000);
-  };
-
-  const loadMemberData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        "https://apps4.coop.ku.ac.th/KusccToolService/Service1.svc/GetShirtMemberList?size_code=ALL"
-      );
-      const result = await response.json();
-
-      if (result.responseCode === 200) {
-        setAllMembers(result.data);
-        updateInventoryData(result.data);
-      } else {
-        showAlert("ไม่สามารถโหลดข้อมูลได้: " + result.responseMessage, "error");
-        loadSampleData();
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-      showAlert("เกิดข้อผิดพลาดในการโหลดข้อมูล", "error");
-      loadSampleData();
-    }
-    setLoading(false);
-  };
-
-  const loadSampleData = () => {
-    const sampleData = [
-      {
-        DISPLAYNAME: "คุณเกียรติณรงค์",
-        FULLNAME: "นายเกียรติณรงค์ ถนอมทรัพย์",
-        MEMB_CODE: "009999",
-        SIZE_CODE: "L",
-        SURVEY_METHOD: "MANUAL",
-        RECEIVED: 0,
+  const handleLogout = () => {
+    Modal.confirm({
+      title: "ออกจากระบบ",
+      content: "คุณต้องการออกจากระบบหรือไม่?",
+      okText: "ออกจากระบบ",
+      cancelText: "ยกเลิก",
+      okType: "danger",
+      onOk: () => {
+        logout();
+        message.success("ออกจากระบบเรียบร้อยแล้ว");
       },
-      {
-        DISPLAYNAME: "คุณพัชรี",
-        FULLNAME: "นางพัชรี เสริฐเจิม",
-        MEMB_CODE: "010099",
-        SIZE_CODE: "XS",
-        SURVEY_METHOD: "ONLINE",
-        RECEIVED: 0,
-      },
-      {
-        DISPLAYNAME: "คุณสมัย",
-        FULLNAME: "นายสมัย เสริฐเจิม",
-        MEMB_CODE: "012938",
-        SIZE_CODE: "XL",
-        SURVEY_METHOD: "ONLINE",
-        RECEIVED: 0,
-      },
-    ];
-    setAllMembers(sampleData);
-    updateInventoryData(sampleData);
-  };
-
-  const updateInventoryData = (members) => {
-    const inventory = {};
-
-    shirtSizes.forEach((size) => {
-      const sizeMembers = members.filter((member) => member.SIZE_CODE === size);
-      const received = sizeMembers.filter(
-        (member) => member.RECEIVED > 0
-      ).length;
-
-      inventory[size] = {
-        produced: 500, // จำนวนที่ผลิต (ตัวอย่าง)
-        reserved: sizeMembers.length,
-        distributed: received,
-        remaining: 500 - sizeMembers.length,
-      };
     });
-
-    setInventoryData(inventory);
   };
 
-  const searchMember = () => {
-    if (searchValue.length !== 6) {
-      showAlert("กรุณากรอกเลขสมาชิก 6 หลัก", "error");
+  const handleSearch = async (memberCode) => {
+    if (!memberCode || memberCode.length !== 6) {
+      message.warning("กรุณากรอกเลขสมาชิก 6 หลัก");
       return;
     }
 
-    const results = allMembers.filter((member) =>
-      member.MEMB_CODE.includes(searchValue)
-    );
-
-    if (results.length === 0) {
-      showAlert("ไม่พบข้อมูลสมาชิก", "warning");
-      setSearchResults([]);
-    } else {
-      setSearchResults(results);
-    }
-  };
-
-  const getStatusInfo = (member) => {
-    if (member.RECEIVED > 0) {
-      return {
-        status: "received",
-        text: "รับเสื้อแล้ว",
-        color: "#52c41a",
-      };
-    } else if (member.SIZE_CODE) {
-      return {
-        status: "confirmed",
-        text: "ยืนยันขนาดแล้ว",
-        color: "#1890ff",
-      };
-    } else {
-      return {
-        status: "pending",
-        text: "ยังไม่ยืนยันขนาด",
-        color: "#faad14",
-      };
-    }
-  };
-
-  const handleSelectMember = (member) => {
-    setSelectedMember(member);
-    setSelectedSize(member.SIZE_CODE || "");
-    setReceiverType("self");
-    setReceiverName("");
-    setReceiptModalVisible(true);
-  };
-
-  const setupSignaturePad = () => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    // ปรับขนาด canvas
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 200;
-
-    const startDrawing = (e) => {
-      setIsDrawing(true);
-      draw(e);
-    };
-
-    const draw = (e) => {
-      if (!isDrawing) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-      const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#333";
-
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    };
-
-    const stopDrawing = () => {
-      if (isDrawing) {
-        ctx.beginPath();
-        setIsDrawing(false);
-      }
-    };
-
-    canvas.addEventListener("mousedown", startDrawing);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", stopDrawing);
-    canvas.addEventListener("mouseout", stopDrawing);
-
-    // Touch events
-    canvas.addEventListener("touchstart", startDrawing);
-    canvas.addEventListener("touchmove", draw);
-    canvas.addEventListener("touchend", stopDrawing);
-  };
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const isSignatureEmpty = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    return !imageData.data.some((channel) => channel !== 0);
-  };
-
-  const confirmReceipt = async () => {
+    setLoading(true);
     try {
-      if (!selectedSize) {
-        showAlert("กรุณาเลือกขนาดเสื้อ", "error");
-        return;
-      }
-
-      if (isSignatureEmpty()) {
-        showAlert("กรุณาเซ็นชื่อเพื่อยืนยันการรับเสื้อ", "error");
-        return;
-      }
-
-      if (receiverType === "proxy" && !receiverName.trim()) {
-        showAlert("กรุณากรอกชื่อผู้รับแทน", "error");
-        return;
-      }
-
-      const receiptData = {
-        memberCode: selectedMember.MEMB_CODE,
-        size: selectedSize,
-        receiverType: receiverType,
-        receiverName:
-          receiverType === "proxy" ? receiverName : selectedMember.DISPLAYNAME,
-        signature: canvasRef.current.toDataURL(),
-        timestamp: new Date().toISOString(),
+      // Mock search result - ในการใช้งานจริงจะเรียก API
+      const mockMember = {
+        memberCode: memberCode,
+        name: `สมาชิก ${memberCode}`,
+        round: "รอบที่ 15",
+        status: memberCode === "123456" ? "ยืนยันขนาดแล้ว" : "ยังไม่ยืนยันขนาด",
+        selectedSize: memberCode === "123456" ? "M" : null,
+        phone: "0812345678",
+        unit: "คณะวิศวกรรมศาสตร์",
       };
 
-      // อัปเดตข้อมูลสมาชิก
-      const updatedMembers = allMembers.map((member) => {
-        if (member.MEMB_CODE === selectedMember.MEMB_CODE) {
-          return {
-            ...member,
-            SIZE_CODE: selectedSize,
-            RECEIVED: (member.RECEIVED || 0) + 1,
-            RECEIPT_DATA: receiptData,
-          };
-        }
-        return member;
-      });
-
-      setAllMembers(updatedMembers);
-      updateInventoryData(updatedMembers);
-
-      // อัปเดตผลการค้นหา
-      if (searchResults.length > 0) {
-        const updatedResults = searchResults.map((member) => {
-          if (member.MEMB_CODE === selectedMember.MEMB_CODE) {
-            return updatedMembers.find((m) => m.MEMB_CODE === member.MEMB_CODE);
-          }
-          return member;
-        });
-        setSearchResults(updatedResults);
-      }
-
-      showAlert("บันทึกการรับเสื้อเรียบร้อยแล้ว", "success");
-      setReceiptModalVisible(false);
-
-      // ถามว่าต้องการพิมพ์ใบเสร็จหรือไม่
-      if (window.confirm("ต้องการพิมพ์ใบเสร็จการรับเสื้อหรือไม่?")) {
-        printReceipt(receiptData);
-      }
+      setSearchResults([mockMember]);
     } catch (error) {
-      console.error("Error confirming receipt:", error);
-      showAlert("เกิดข้อผิดพลาดในการบันทึก", "error");
+      message.error("เกิดข้อผิดพลาดในการค้นหา");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const printReceipt = (receiptData) => {
-    const printWindow = window.open("", "_blank");
-    const receiptHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>ใบเสร็จการรับเสื้อ</title>
-        <style>
-          body { font-family: 'Sarabun', sans-serif; padding: 20px; }
-          .receipt { max-width: 400px; margin: 0 auto; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
-          .content { padding: 20px 0; }
-          .signature { margin-top: 30px; }
-          .signature img { max-width: 200px; border: 1px solid #ccc; }
-        </style>
-      </head>
-      <body>
-        <div class="receipt">
-          <div class="header">
-            <h2>ใบเสร็จการรับเสื้อแจ็คเก็ต</h2>
-            <p>สหกรณ์ออมทรัพย์มหาวิทยาลัยเกษตรศาสตร์</p>
-          </div>
-          <div class="content">
-            <p><strong>รหัสสมาชิก:</strong> ${selectedMember.MEMB_CODE}</p>
-            <p><strong>ชื่อสมาชิก:</strong> ${selectedMember.DISPLAYNAME}</p>
-            <p><strong>ขนาดเสื้อ:</strong> ${selectedSize}</p>
-            <p><strong>ผู้รับ:</strong> ${receiptData.receiverName}</p>
-            <p><strong>วันที่รับ:</strong> ${new Date().toLocaleDateString(
-              "th-TH"
-            )}</p>
-            <p><strong>เวลา:</strong> ${new Date().toLocaleTimeString(
-              "th-TH"
-            )}</p>
-          </div>
-          <div class="signature">
-            <p><strong>ลายเซ็นผู้รับ:</strong></p>
-            <img src="${receiptData.signature}" alt="ลายเซ็น">
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(receiptHTML);
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+  const handleMemberSelect = (member) => {
+    setSelectedMember(member);
+    setShowDistributionModal(true);
+    form.setFieldsValue({
+      memberCode: member.memberCode,
+      name: member.name,
+      selectedSize: member.selectedSize || undefined,
+      recipientType: "self",
+      recipientName: "",
+    });
   };
 
-  const exportReport = () => {
-    const report = {
-      timestamp: new Date().toISOString(),
-      summary: inventoryData,
-      memberData: allMembers.map((member) => ({
-        code: member.MEMB_CODE,
-        name: member.DISPLAYNAME,
-        size: member.SIZE_CODE,
-        status: getStatusInfo(member).text,
-        received: member.RECEIVED || 0,
-      })),
-    };
-
-    const dataStr =
-      "data:text/json;charset=utf-8," +
-      encodeURIComponent(JSON.stringify(report, null, 2));
-    const downloadLink = document.createElement("a");
-    downloadLink.setAttribute("href", dataStr);
-    downloadLink.setAttribute(
-      "download",
-      `shirt_report_${new Date().toISOString().split("T")[0]}.json`
-    );
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    downloadLink.remove();
-    showAlert("ส่งออกรายงานเรียบร้อยแล้ว", "success");
-  };
-
-  const handleLogout = async () => {
-    if (window.confirm("คุณต้องการออกจากระบบหรือไม่?")) {
-      logout();
+  const handleDistribute = async (values) => {
+    setLoading(true);
+    try {
+      // Mock distribution - ในการใช้งานจริงจะเรียก API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      message.success(`จ่ายเสื้อขนาด ${values.selectedSize} ให้ ${selectedMember.name} เรียบร้อยแล้ว`);
+      setShowDistributionModal(false);
+      setSelectedMember(null);
+      form.resetFields();
+      
+      // อัปเดตสถานะในผลการค้นหา
+      setSearchResults(prev => 
+        prev.map(member => 
+          member.memberCode === selectedMember.memberCode 
+            ? { ...member, status: "รับเสื้อแล้ว", selectedSize: values.selectedSize }
+            : member
+        )
+      );
+    } catch (error) {
+      message.error("เกิดข้อผิดพลาดในการจ่ายเสื้อ");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const styles = {
-    layout: {
-      minHeight: "100vh",
-      backgroundColor: "#f0f2f5",
-    },
-    header: {
-      background: "linear-gradient(135deg, #2E7D32, #4CAF50)",
-      padding: "0 24px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      height: "64px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    },
-    headerLeft: {
-      display: "flex",
-      alignItems: "center",
-      gap: "16px",
-    },
-    logo: {
-      width: "40px",
-      height: "40px",
-      borderRadius: "50%",
-      background: "rgba(255,255,255,0.2)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "20px",
-      color: "white",
-    },
-    headerTitle: {
-      color: "white",
-      margin: 0,
-      fontSize: "24px",
-      fontWeight: "300",
-    },
-    headerSubtitle: {
-      color: "rgba(255,255,255,0.8)",
-      fontSize: "14px",
-      margin: 0,
-    },
-    headerButtons: {
-      display: "flex",
-      gap: "8px",
-    },
-    button: {
-      padding: "8px 16px",
-      border: "1px solid rgba(255,255,255,0.3)",
-      background: "transparent",
-      color: "white",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: "14px",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    content: {
-      padding: "24px",
-      maxWidth: "1400px",
-      margin: "0 auto",
-      width: "100%",
-    },
-    card: {
-      backgroundColor: "white",
-      borderRadius: "8px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-      padding: "24px",
-      marginBottom: "24px",
-    },
-    cardTitle: {
-      fontSize: "20px",
-      fontWeight: "600",
-      marginBottom: "16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    searchBox: {
-      display: "flex",
-      gap: "12px",
-      alignItems: "center",
-      marginBottom: "16px",
-    },
-    input: {
-      flex: 1,
-      padding: "12px",
-      border: "1px solid #d9d9d9",
-      borderRadius: "6px",
-      fontSize: "14px",
-    },
-    primaryButton: {
-      padding: "12px 24px",
-      backgroundColor: "#1890ff",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: "14px",
-      fontWeight: "500",
-    },
-    table: {
-      width: "100%",
-      borderCollapse: "collapse",
-      marginTop: "16px",
-    },
-    th: {
-      backgroundColor: "#fafafa",
-      padding: "12px",
-      textAlign: "left",
-      borderBottom: "1px solid #f0f0f0",
-      fontWeight: "600",
-    },
-    td: {
-      padding: "12px",
-      borderBottom: "1px solid #f0f0f0",
-    },
-    statusBadge: {
-      padding: "4px 12px",
-      borderRadius: "12px",
-      fontSize: "12px",
-      fontWeight: "500",
-    },
-    inventoryGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-      gap: "16px",
-      marginBottom: "24px",
-    },
-    inventoryCard: {
-      backgroundColor: "white",
-      borderRadius: "8px",
-      padding: "20px",
-      textAlign: "center",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-      border: "1px solid #f0f0f0",
-    },
-    sizeTitle: {
-      fontSize: "24px",
-      fontWeight: "bold",
-      color: "#1890ff",
-      marginBottom: "16px",
-    },
-    sizeStats: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "8px",
-      fontSize: "14px",
-    },
-    statItem: {
-      padding: "8px",
-      borderRadius: "4px",
-      textAlign: "center",
-    },
-    modal: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-    },
-    modalContent: {
-      backgroundColor: "white",
-      borderRadius: "8px",
-      padding: "24px",
-      width: "90%",
-      maxWidth: "600px",
-      maxHeight: "80vh",
-      overflowY: "auto",
-    },
-    modalHeader: {
-      fontSize: "20px",
-      fontWeight: "600",
-      marginBottom: "20px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    closeButton: {
-      background: "none",
-      border: "none",
-      fontSize: "24px",
-      cursor: "pointer",
-      color: "#999",
-    },
-    formGroup: {
-      marginBottom: "20px",
-    },
-    label: {
-      display: "block",
-      marginBottom: "8px",
-      fontWeight: "600",
-      color: "#333",
-    },
-    sizeSelector: {
-      display: "grid",
-      gridTemplateColumns: "repeat(5, 1fr)",
-      gap: "8px",
-      marginTop: "8px",
-    },
-    sizeButton: {
-      padding: "12px",
-      border: "1px solid #d9d9d9",
-      backgroundColor: "white",
-      borderRadius: "6px",
-      cursor: "pointer",
-      textAlign: "center",
-      fontWeight: "600",
-    },
-    sizeButtonSelected: {
-      borderColor: "#1890ff",
-      backgroundColor: "#1890ff",
-      color: "white",
-    },
-    select: {
-      width: "100%",
-      padding: "12px",
-      border: "1px solid #d9d9d9",
-      borderRadius: "6px",
-      fontSize: "14px",
-    },
-    canvas: {
-      border: "1px solid #d9d9d9",
-      borderRadius: "6px",
-      width: "100%",
-      height: "200px",
-      cursor: "crosshair",
-    },
-    modalButtons: {
-      display: "flex",
-      justifyContent: "flex-end",
-      gap: "8px",
-      marginTop: "20px",
-    },
-    secondaryButton: {
-      padding: "8px 16px",
-      backgroundColor: "#f5f5f5",
-      color: "#333",
-      border: "1px solid #d9d9d9",
-      borderRadius: "6px",
-      cursor: "pointer",
-    },
-    alert: {
-      padding: "12px 16px",
-      borderRadius: "6px",
-      marginBottom: "16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    alertSuccess: {
-      backgroundColor: "#f6ffed",
-      border: "1px solid #b7eb8f",
-      color: "#52c41a",
-    },
-    alertError: {
-      backgroundColor: "#fff2f0",
-      border: "1px solid #ffccc7",
-      color: "#ff4d4f",
-    },
-    alertWarning: {
-      backgroundColor: "#fffbe6",
-      border: "1px solid #ffe58f",
-      color: "#faad14",
-    },
-    alertInfo: {
-      backgroundColor: "#e6f7ff",
-      border: "1px solid #91d5ff",
-      color: "#1890ff",
-    },
-    spinner: {
-      border: "4px solid #f3f3f3",
-      borderTop: "4px solid #1890ff",
-      borderRadius: "50%",
-      width: "40px",
-      height: "40px",
-      animation: "spin 1s linear infinite",
-      margin: "20px auto",
-    },
-    loadingContainer: {
-      textAlign: "center",
-      padding: "40px",
-    },
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "ยังไม่ยืนยันขนาด":
+        return "#FF9500";
+      case "ยืนยันขนาดแล้ว":
+        return "#007AFF";
+      case "รับเสื้อแล้ว":
+        return "#32D74B";
+      default:
+        return "#8E8E93";
+    }
   };
 
-  return (
-    <div style={styles.layout}>
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "ยังไม่ยืนยันขนาด":
+        return <ClockCircleOutlined />;
+      case "ยืนยันขนาดแล้ว":
+        return <CheckCircleOutlined />;
+      case "รับเสื้อแล้ว":
+        return <CheckCircleOutlined />;
+      default:
+        return <ExclamationCircleOutlined />;
+    }
+  };
 
-      {/* Header */}
-      <header style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.logo}>🏢</div>
-          <div>
-            <h1 style={styles.headerTitle}>สำรวจไซต์เสื้อแจคเก็ต สอ.มก.</h1>
-            <p style={styles.headerSubtitle}>
-              เจ้าหน้าที่: {user?.name || "Admin"}
-            </p>
-          </div>
-        </div>
-        <div style={styles.headerButtons}>
-          <button style={styles.button} onClick={loadMemberData}>
-            🔄 รีเฟรช
-          </button>
-          <button style={styles.button} onClick={exportReport}>
-            📊 ส่งออกรายงาน
-          </button>
-          <button style={styles.button} onClick={handleLogout}>
-            🚪 ออกจากระบบ
-          </button>
-        </div>
-      </header>
+  // คำนวณสถิติรวม
+  const totalStats = mockInventory.reduce(
+    (acc, item) => ({
+      produced: acc.produced + item.produced,
+      reserved: acc.reserved + item.reserved,
+      distributed: acc.distributed + item.distributed,
+      remaining: acc.remaining + item.remaining,
+    }),
+    { produced: 0, reserved: 0, distributed: 0, remaining: 0 }
+  );
 
-      {/* Content */}
-      <main style={styles.content}>
-        {/* Alert */}
-        {alertMessage.visible && (
-          <div
-            style={{
-              ...styles.alert,
-              ...(alertMessage.type === "success"
-                ? styles.alertSuccess
-                : alertMessage.type === "error"
-                ? styles.alertError
-                : alertMessage.type === "warning"
-                ? styles.alertWarning
-                : styles.alertInfo),
-            }}
-          >
-            {alertMessage.text}
-          </div>
-        )}
-
-        {loading && (
-          <div style={styles.loadingContainer}>
-            <div style={styles.spinner}></div>
-            <p>กำลังโหลดข้อมูล...</p>
-          </div>
-        )}
-
-        {/* ส่วนค้นหาสมาชิก */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>🔍 ค้นหาสมาชิก</h2>
-          <div style={styles.searchBox}>
-            <input
-              type="text"
-              style={styles.input}
-              placeholder="กรอกเลขสมาชิก 6 หลัก..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && searchMember()}
-              maxLength={6}
-            />
-            <button style={styles.primaryButton} onClick={searchMember}>
-              ค้นหา
-            </button>
-          </div>
-
-          {searchResults.length > 0 && (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>รหัสสมาชิก</th>
-                  <th style={styles.th}>ชื่อสมาชิก</th>
-                  <th style={styles.th}>ขนาดเสื้อ</th>
-                  <th style={styles.th}>สถานะ</th>
-                  <th style={styles.th}>รับแล้ว</th>
-                  <th style={styles.th}>การดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchResults.map((member) => {
-                  const statusInfo = getStatusInfo(member);
-                  return (
-                    <tr key={member.MEMB_CODE}>
-                      <td style={styles.td}>{member.MEMB_CODE}</td>
-                      <td style={styles.td}>{member.DISPLAYNAME}</td>
-                      <td style={styles.td}>{member.SIZE_CODE || "-"}</td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            backgroundColor: statusInfo.color + "20",
-                            color: statusInfo.color,
-                            border: `1px solid ${statusInfo.color}`,
-                          }}
-                        >
-                          {statusInfo.text}
-                        </span>
-                      </td>
-                      <td style={styles.td}>{member.RECEIVED || 0}</td>
-                      <td style={styles.td}>
-                        <button
-                          style={styles.primaryButton}
-                          onClick={() => handleSelectMember(member)}
-                        >
-                          บันทึกการรับ
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* ส่วนสรุปสต็อก */}
-        <div style={styles.inventoryGrid}>
-          {Object.entries(inventoryData).map(([size, data]) => {
-            const isLowStock = data.remaining <= 50;
-            return (
-              <div
-                key={size}
-                style={{
-                  ...styles.inventoryCard,
-                  borderColor: isLowStock ? "#ff4d4f" : "#f0f0f0",
-                  backgroundColor: isLowStock ? "#fff2f0" : "white",
-                }}
-              >
-                <div
-                  style={{
-                    ...styles.sizeTitle,
-                    color: isLowStock ? "#ff4d4f" : "#1890ff",
-                  }}
-                >
-                  {size}
-                </div>
-                <div style={styles.sizeStats}>
-                  <div
-                    style={{
-                      ...styles.statItem,
-                      backgroundColor: "#e6f7ff",
-                      color: "#1890ff",
-                    }}
-                  >
-                    <strong>{data.reserved}</strong>
-                    <br />
-                    จอง
-                  </div>
-                  <div
-                    style={{
-                      ...styles.statItem,
-                      backgroundColor: isLowStock ? "#fff2f0" : "#f6ffed",
-                      color: isLowStock ? "#ff4d4f" : "#52c41a",
-                    }}
-                  >
-                    <strong>{data.remaining}</strong>
-                    <br />
-                    คงเหลือ
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ตารางสรุปสต็อก */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>📊 สรุปสต็อกทั้งหมด</h2>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>ขนาด</th>
-                <th style={styles.th}>ผลิต</th>
-                <th style={styles.th}>จอง</th>
-                <th style={styles.th}>รับแล้ว</th>
-                <th style={styles.th}>คงเหลือ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(inventoryData).map(([size, data]) => {
-                const isLowStock = data.remaining <= 50;
-                return (
-                  <tr key={size}>
-                    <td style={styles.td}>
-                      <strong>{size}</strong>
-                    </td>
-                    <td style={styles.td}>{data.produced}</td>
-                    <td style={styles.td}>{data.reserved}</td>
-                    <td style={styles.td}>{data.distributed}</td>
-                    <td
-                      style={{
-                        ...styles.td,
-                        color: isLowStock ? "#ff4d4f" : "#333",
-                        fontWeight: isLowStock ? "bold" : "normal",
-                      }}
-                    >
-                      {data.remaining}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </main>
-
-      {/* Modal สำหรับบันทึกการรับเสื้อ */}
-      {receiptModalVisible && (
-        <div
-          style={styles.modal}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setReceiptModalVisible(false);
-            }
+  // คอลัมน์ตารางสต็อก
+  const inventoryColumns = [
+    {
+      title: "ขนาด",
+      dataIndex: "size",
+      key: "size",
+      align: "center",
+      render: (size) => (
+        <Tag color="#007AFF" style={{ fontSize: "14px", fontWeight: "600" }}>
+          {size}
+        </Tag>
+      ),
+    },
+    {
+      title: "ผลิต",
+      dataIndex: "produced",
+      key: "produced",
+      align: "center",
+    },
+    {
+      title: "จอง",
+      dataIndex: "reserved",
+      key: "reserved",
+      align: "center",
+    },
+    {
+      title: "จ่ายแล้ว",
+      dataIndex: "distributed",
+      key: "distributed",
+      align: "center",
+    },
+    {
+      title: "คงเหลือ",
+      dataIndex: "remaining",
+      key: "remaining",
+      align: "center",
+      render: (remaining) => (
+        <Text 
+          strong 
+          style={{ 
+            color: remaining <= 50 ? "#FF3B30" : "#32D74B",
+            backgroundColor: remaining <= 50 ? "rgba(255, 59, 48, 0.1)" : "rgba(50, 215, 75, 0.1)",
+            padding: "4px 8px",
+            borderRadius: "6px"
           }}
         >
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <span>บันทึกการรับเสื้อ</span>
-              <button
-                style={styles.closeButton}
-                onClick={() => setReceiptModalVisible(false)}
-              >
-                ×
-              </button>
-            </div>
+          {remaining}
+        </Text>
+      ),
+    },
+  ];
 
-            {selectedMember && (
-              <>
-                <div
-                  style={{
-                    ...styles.alert,
-                    ...styles.alertInfo,
-                  }}
-                >
-                  <div>
-                    <strong>สมาชิก:</strong> {selectedMember.DISPLAYNAME} (
-                    {selectedMember.MEMB_CODE})<br />
-                    <strong>ขนาดที่เลือกไว้:</strong>{" "}
-                    {selectedMember.SIZE_CODE || "ยังไม่ได้เลือก"}
-                  </div>
-                </div>
+  const sizeOptions = shirtSizes?.sizes
+    ?.filter(size => size.active)
+    ?.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
+    ?.map(size => ({
+      value: size.code,
+      label: `${size.code} (${size.chest?.inch || 'N/A'}" × ${size.length?.inch || 'N/A'}")`,
+    })) || [];
 
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>เลือกขนาดเสื้อ:</label>
-                  <div style={styles.sizeSelector}>
-                    {shirtSizes.map((size) => (
-                      <button
-                        key={size}
-                        style={{
-                          ...styles.sizeButton,
-                          ...(selectedSize === size
-                            ? styles.sizeButtonSelected
-                            : {}),
-                        }}
-                        onClick={() => setSelectedSize(size)}
-                        type="button"
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+  return (
+    <div className="admin-portal-container">
+      {/* Header */}
+      <Card
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto 16px",
+          borderRadius: "20px",
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+          position: "relative",
+        }}
+      >
+        <Button
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          type="text"
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            color: "#48484a",
+            background: "rgba(0,0,0,0.04)",
+            borderRadius: "50%",
+            width: 40,
+            height: 40,
+            minWidth: 40,
+            minHeight: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2,
+            fontSize: 20,
+          }}
+          aria-label="logout"
+        />
 
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>ผู้รับเสื้อ:</label>
-                  <select
-                    style={styles.select}
-                    value={receiverType}
-                    onChange={(e) => {
-                      setReceiverType(e.target.value);
-                      if (e.target.value === "self") {
-                        setReceiverName("");
-                      }
-                    }}
-                  >
-                    <option value="self">รับด้วยตนเอง</option>
-                    <option value="proxy">ผู้อื่นรับแทน</option>
-                  </select>
-                </div>
-
-                {receiverType === "proxy" && (
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>ชื่อผู้รับแทน:</label>
-                    <input
-                      type="text"
-                      style={styles.input}
-                      placeholder="กรอกชื่อผู้รับแทน"
-                      value={receiverName}
-                      onChange={(e) => setReceiverName(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>ลายเซ็นผู้รับ:</label>
-                  <canvas ref={canvasRef} style={styles.canvas} />
-                  <div style={{ marginTop: "8px" }}>
-                    <button
-                      type="button"
-                      style={styles.secondaryButton}
-                      onClick={clearSignature}
-                    >
-                      ล้างลายเซ็น
-                    </button>
-                  </div>
-                </div>
-
-                <div style={styles.modalButtons}>
-                  <button
-                    style={styles.secondaryButton}
-                    onClick={() => setReceiptModalVisible(false)}
-                  >
-                    ยกเลิก
-                  </button>
-                  <button style={styles.primaryButton} onClick={confirmReceipt}>
-                    ยืนยันการรับเสื้อ
-                  </button>
-                </div>
-              </>
-            )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            paddingRight: 48,
+          }}
+        >
+          <Avatar
+            size={48}
+            icon={<UserOutlined />}
+            style={{
+              background: "linear-gradient(135deg, #FF9500, #FF7A00)",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
+              minWidth: 48,
+              minHeight: 48,
+            }}
+          />
+          <div style={{ minWidth: 0 }}>
+            <Title
+              level={4}
+              style={{
+                margin: 0,
+                color: "#1d1d1f",
+                fontSize: 18,
+                wordBreak: "break-word",
+              }}
+            >
+              {user?.name || "ผู้ดูแลระบบ"}
+            </Title>
+            <Text
+              style={{
+                color: "#48484a",
+                fontSize: 14,
+                wordBreak: "break-word",
+              }}
+            >
+              ระบบจัดการแจกเสื้อ | เจ้าหน้าที่
+            </Text>
           </div>
         </div>
-      )}
+
+        <div style={{ marginTop: 12, textAlign: "center" }}>
+          <Tag
+            color="#FF9500"
+            style={{
+              padding: "8px 16px",
+              borderRadius: "20px",
+              fontSize: "14px",
+              border: "none",
+              display: "inline-block",
+              minWidth: 120,
+              marginTop: 4,
+            }}
+          >
+            สถานะ: ออนไลน์
+          </Tag>
+        </div>
+      </Card>
+
+      {/* Main Content */}
+      <Card
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          borderRadius: "24px",
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          boxShadow: "0 25px 50px rgba(0, 0, 0, 0.1)",
+        }}
+        bodyStyle={{ padding: 24 }}
+      >
+        <Tabs activeKey={activeTab} onChange={setActiveTab} centered>
+          <TabPane 
+            tab={
+              <span>
+                <SearchOutlined />
+                ค้นหาสมาชิก
+              </span>
+            } 
+            key="search"
+          >
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+                  ค้นหาสมาชิก
+                </Title>
+                <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
+                  กรอกเลขสมาชิก 6 หลักเพื่อค้นหา
+                </Paragraph>
+              </div>
+
+              <Search
+                placeholder="กรอกเลขสมาชิก 6 หลัก"
+                enterButton={<SearchOutlined />}
+                size="large"
+                loading={loading}
+                onSearch={handleSearch}
+                maxLength={6}
+                style={{ marginBottom: 24 }}
+              />
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div>
+                  <Title level={4} style={{ marginBottom: 16 }}>
+                    ผลการค้นหา
+                  </Title>
+                  {searchResults.map((member) => (
+                    <Card
+                      key={member.memberCode}
+                      style={{
+                        marginBottom: 16,
+                        borderRadius: 16,
+                        border: "1px solid rgba(0, 122, 255, 0.2)",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                      hoverable
+                      onClick={() => handleMemberSelect(member)}
+                    >
+                      <Row align="middle" justify="space-between">
+                        <Col span={16}>
+                          <Space direction="vertical" size="small">
+                            <Text strong style={{ fontSize: 16 }}>
+                              {member.name}
+                            </Text>
+                            <Text type="secondary">
+                              รหัสสมาชิก: {member.memberCode} | {member.round}
+                            </Text>
+                            <Text type="secondary">
+                              หน่วยงาน: {member.unit}
+                            </Text>
+                            {member.selectedSize && (
+                              <Text>
+                                ขนาดที่เลือก: <Tag color="#007AFF">{member.selectedSize}</Tag>
+                              </Text>
+                            )}
+                          </Space>
+                        </Col>
+                        <Col span={8} style={{ textAlign: "right" }}>
+                          <Tag
+                            icon={getStatusIcon(member.status)}
+                            color={getStatusColor(member.status)}
+                            style={{ marginBottom: 8 }}
+                          >
+                            {member.status}
+                          </Tag>
+                          <br />
+                          <Button
+                            type="primary"
+                            icon={<ShoppingOutlined />}
+                            size="small"
+                          >
+                            จ่ายเสื้อ
+                          </Button>
+                        </Col>
+                      </Row>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabPane>
+
+          <TabPane 
+            tab={
+              <span>
+                <BarChartOutlined />
+                สต็อกคงเหลือ
+              </span>
+            } 
+            key="inventory"
+          >
+            <div>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+                  สรุปสต็อกเสื้อ
+                </Title>
+                <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
+                  ข้อมูลสต็อกและการจ่ายเสื้อ
+                </Paragraph>
+              </div>
+
+              {/* Summary Statistics */}
+              <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+                <Col xs={12} sm={6}>
+                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                    <Statistic 
+                      title="ผลิตทั้งหมด" 
+                      value={totalStats.produced} 
+                      valueStyle={{ color: "#007AFF" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                    <Statistic 
+                      title="จองแล้ว" 
+                      value={totalStats.reserved} 
+                      valueStyle={{ color: "#FF9500" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                    <Statistic 
+                      title="จ่ายแล้ว" 
+                      value={totalStats.distributed} 
+                      valueStyle={{ color: "#32D74B" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={12} sm={6}>
+                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                    <Statistic 
+                      title="คงเหลือ" 
+                      value={totalStats.remaining} 
+                      valueStyle={{ color: totalStats.remaining <= 200 ? "#FF3B30" : "#32D74B" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* Low Stock Alert */}
+              {mockInventory.some(item => item.remaining <= 50) && (
+                <Alert
+                  message="แจ้งเตือนสต็อกใกล่หมด"
+                  description="พบสต็อกเสื้อบางขนาดเหลือน้อย กรุณาตรวจสอบและเติมสต็อก"
+                  type="warning"
+                  showIcon
+                  style={{ marginBottom: 24, borderRadius: 12 }}
+                  action={
+                    <Button size="small" type="primary" ghost>
+                      ดูรายละเอียด
+                    </Button>
+                  }
+                />
+              )}
+
+              {/* Inventory Table */}
+              <Card 
+                title="รายละเอียดสต็อกแต่ละขนาด" 
+                style={{ borderRadius: 16 }}
+                extra={
+                  <Button 
+                    type="primary" 
+                    ghost 
+                    icon={<EditOutlined />}
+                    size="small"
+                  >
+                    จัดการสต็อก
+                  </Button>
+                }
+              >
+                <Table
+                  dataSource={mockInventory}
+                  columns={inventoryColumns}
+                  rowKey="size"
+                  pagination={false}
+                  size="small"
+                  style={{ borderRadius: 12 }}
+                />
+              </Card>
+
+              {/* Additional Info */}
+              <div style={{ marginTop: 24 }}>
+                <Alert
+                  message="หมายเหตุ"
+                  description="สต็อกที่แสดงเป็นสีแดงคือขนาดที่เหลือ ≤ 50 ตัว ควรเติมสต็อกเพิ่มเติม"
+                  type="info"
+                  showIcon
+                  style={{ borderRadius: 12 }}
+                />
+              </div>
+            </div>
+          </TabPane>
+        </Tabs>
+      </Card>
+
+      {/* Distribution Modal */}
+      <Modal
+        title={
+          <div style={{ textAlign: "center" }}>
+            <ShoppingOutlined 
+              style={{ color: "#32D74B", fontSize: 24, marginRight: 8 }} 
+            />
+            จ่ายเสื้อให้สมาชิก
+          </div>
+        }
+        open={showDistributionModal}
+        onCancel={() => {
+          setShowDistributionModal(false);
+          setSelectedMember(null);
+          form.resetFields();
+        }}
+        footer={null}
+        width={600}
+        centered
+      >
+        {selectedMember && (
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleDistribute}
+            style={{ marginTop: 20 }}
+          >
+            <div
+              style={{
+                background: "rgba(0, 122, 255, 0.05)",
+                border: "1px solid rgba(0, 122, 255, 0.1)",
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 24,
+              }}
+            >
+              <Row align="middle">
+                <Col span={4}>
+                  <Avatar
+                    size={48}
+                    src={`https://apps2.coop.ku.ac.th/asset/member_photo/${selectedMember.memberCode}.png`}
+                    style={{
+                      background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                    }}
+                  />
+                </Col>
+                <Col span={20}>
+                  <Title level={4} style={{ margin: 0, color: "#1d1d1f" }}>
+                    {selectedMember.name}
+                  </Title>
+                  <Text type="secondary">
+                    รหัสสมาชิก: {selectedMember.memberCode} | {selectedMember.round}
+                  </Text>
+                  <br />
+                  <Tag
+                    icon={getStatusIcon(selectedMember.status)}
+                    color={getStatusColor(selectedMember.status)}
+                    style={{ marginTop: 4 }}
+                  >
+                    {selectedMember.status}
+                  </Tag>
+                </Col>
+              </Row>
+            </div>
+
+            <Form.Item
+              name="selectedSize"
+              label="ขนาดเสื้อ"
+              rules={[{ required: true, message: "กรุณาเลือกขนาดเสื้อ" }]}
+            >
+              <Select
+                placeholder="เลือกขนาดเสื้อ"
+                size="large"
+                style={{ borderRadius: 12 }}
+              >
+                {sizeOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="recipientType"
+              label="ผู้รับ"
+              rules={[{ required: true, message: "กรุณาเลือกประเภทผู้รับ" }]}
+            >
+              <Select
+                placeholder="เลือกประเภทผู้รับ"
+                size="large"
+                onChange={(value) => {
+                  if (value === "self") {
+                    form.setFieldValue("recipientName", "");
+                  }
+                }}
+              >
+                <Option value="self">รับด้วยตนเอง</Option>
+                <Option value="proxy">รับแทน</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              noStyle
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.recipientType !== currentValues.recipientType
+              }
+            >
+              {({ getFieldValue }) =>
+                getFieldValue("recipientType") === "proxy" ? (
+                  <Form.Item
+                    name="recipientName"
+                    label="ชื่อผู้รับแทน"
+                    rules={[{ required: true, message: "กรุณากรอกชื่อผู้รับแทน" }]}
+                  >
+                    <Input
+                      placeholder="กรอกชื่อผู้รับแทน"
+                      size="large"
+                    />
+                  </Form.Item>
+                ) : null
+              }
+            </Form.Item>
+
+            <Divider />
+
+            <div style={{ textAlign: "center" }}>
+              <Space size="middle">
+                <Button
+                  onClick={() => {
+                    setShowDistributionModal(false);
+                    setSelectedMember(null);
+                    form.resetFields();
+                  }}
+                  size="large"
+                  style={{ borderRadius: 12, minWidth: 100 }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  size="large"
+                  style={{
+                    borderRadius: 12,
+                    minWidth: 100,
+                    background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                    border: "none",
+                  }}
+                >
+                  ยืนยันการจ่าย
+                </Button>
+              </Space>
+            </div>
+          </Form>
+        )}
+      </Modal>
     </div>
   );
 };
