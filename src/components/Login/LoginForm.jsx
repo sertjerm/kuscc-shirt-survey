@@ -55,7 +55,7 @@ const LoginForm = () => {
 
   const handleLogin = async (values) => {
     setLoading(true);
-    
+
     try {
       // โหมด Admin - ยังใช้การตรวจสอบแบบเดิม
       if (isAdminMode) {
@@ -83,18 +83,18 @@ const LoginForm = () => {
       }
 
       // โหมดสมาชิก - ใช้ API จริง
-      console.log('เรียกใช้ API เข้าสู่ระบบ...');
+      console.log("เรียกใช้ API เข้าสู่ระบบ...");
       const memberData = await loginMember({
         memberCode: values.memberCode,
         phone: values.phone,
         idCard: values.idCard,
       });
 
-      console.log('ได้รับข้อมูลสมาชิก:', memberData);
+      console.log("ได้รับข้อมูลสมาชิก:", memberData);
 
       if (memberData) {
         login(memberData, "member");
-        
+
         await Swal.fire({
           icon: "success",
           title: "เข้าสู่ระบบสำเร็จ",
@@ -102,15 +102,14 @@ const LoginForm = () => {
           timer: 2000,
           showConfirmButton: false,
         });
-        
+
         navigate("/member");
       } else {
         throw new Error("ไม่พบข้อมูลสมาชิกหรือข้อมูลไม่ถูกต้อง");
       }
-      
     } catch (error) {
-      console.error('Login Error:', error);
-      
+      console.error("Login Error:", error);
+
       await Swal.fire({
         icon: "error",
         title: "ไม่สามารถเข้าสู่ระบบได้",
@@ -142,7 +141,7 @@ const LoginForm = () => {
             level={2}
             style={{ margin: "0 0 8px 0", color: "#007AFF", fontWeight: 700 }}
           >
-            ระบบแจกเสื้อ KUSCC
+            สำรวจไซต์เสื้อแจคเก็ต สอ.มก.
           </Title>
           <Paragraph style={{ color: "#48484a", margin: 0, fontSize: "15px" }}>
             สหกรณ์ออมทรัพย์มหาวิทยาลัยเกษตรศาสตร์
