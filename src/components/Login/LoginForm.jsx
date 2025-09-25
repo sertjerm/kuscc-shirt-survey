@@ -16,6 +16,12 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
 
+  // Admin accounts list
+  const adminAccounts = [
+    { memberCode: "999999", phone: "0000000000", idCard: "999" },
+    { memberCode: "012938", phone: "0812681022", idCard: "952" }
+  ];
+
   // Set default values for the form
   React.useEffect(() => {
     if (isAdminMode) {
@@ -33,47 +39,52 @@ const LoginForm = () => {
     }
   }, [form, isAdminMode]);
 
+  const isValidAdmin = (values) => {
+    return adminAccounts.some(admin => 
+      admin.memberCode === values.memberCode &&
+      admin.phone === values.phone &&
+      admin.idCard === values.idCard
+    );
+  };
+
   const handleLogin = async (values) => {
     setLoading(true);
 
     try {
-      // โหมด Admin - ยังใช้การตรวจสอบแบบเดิม
-      if (isAdminMode) {
-        if (
-          values.memberCode === "999999" &&
-          values.phone === "0000000000" &&
-          values.idCard === "999"
-        ) {
-          login(
-            { memberCode: "999999", name: "ผู้ดูแลระบบ", role: "admin" },
-            "admin"
-          );
-          await Swal.fire({
-            icon: "success",
-            title: "เข้าสู่ระบบสำเร็จ",
-            text: "ยินดีต้อนรับเจ้าหน้าที่",
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          navigate("/admin");
-          return;
-        } else {
-          throw new Error("ข้อมูลเจ้าหน้าที่ไม่ถูกต้อง");
-        }
-      }
-
-      // โหมดสมาชิก - ใช้ API จริง
+      // เรียก API สำหรับทุกกรณี
       console.log("เรียกใช้ API เข้าสู่ระบบ...");
-      const memberData = await loginMember({
+      const response = await loginMember({
         memberCode: values.memberCode,
         phone: values.phone,
         idCard: values.idCard,
       });
 
-      console.log("ได้รับข้อมูลสมาชิก:", memberData);
+      console.log("ได้รับ response:", response);
 
-      if (memberData) {
-        login(memberData, "member");
+      if (response) {
+        // ตรวจสอบว่ามี data ไหม (ไม่ว่าจะเป็น response.data หรือ response ตรงๆ)
+        const memberData = response.data || response;
+        
+        console.log("memberData:", memberData);
+
+        // ตรวจสอบ role - รองรับหลายรูปแบบ
+        let userRole = memberData.role || memberData.USER_ROLE || memberData.user_role;
+        
+        // ถ้าไม่มี role จาก API แต่เป็น memberCode ที่เรารู้ว่าเป็น admin
+        if (!userRole && memberData.memberCode === "012938") {
+          userRole = "admin";
+        }
+        
+        // Default เป็น member ถ้าไม่ระบุ
+        if (!userRole) {
+          userRole = "member";
+        }
+
+        const userType = userRole === "admin" ? "admin" : "member";
+        
+        console.log("userRole:", userRole, "userType:", userType);
+        
+        login(memberData, userType);
 
         await Swal.fire({
           icon: "success",
@@ -83,17 +94,48 @@ const LoginForm = () => {
           showConfirmButton: false,
         });
 
-        navigate("/member");
+        // Redirect ตาม role
+        if (userType === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/member");
+        }
       } else {
         throw new Error("ไม่พบข้อมูลสมาชิกหรือข้อมูลไม่ถูกต้อง");
       }
     } catch (error) {
       console.error("Login Error:", error);
 
+      // ถ้าเป็น admin mode และใส่ข้อมูล hardcode
+      if (isAdminMode && isValidAdmin(values)) {
+        const adminName = values.memberCode === "999999" ? "ผู้ดูแลระบบ" : "คุณสมัย เสริฐเจิม (Admin)";
+        
+        login(
+          { 
+            memberCode: values.memberCode, 
+            name: adminName, 
+            role: "admin",
+            fullName: adminName
+          },
+          "admin"
+        );
+        
+        await Swal.fire({
+          icon: "success",
+          title: "เข้าสู่ระบบสำเร็จ",
+          text: `ยินดีต้อนรับ ${adminName}`,
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        
+        navigate("/admin");
+        return;
+      }
+
       await Swal.fire({
         icon: "error",
         title: "ไม่สามารถเข้าสู่ระบบได้",
-        text: error.message,
+        text: error.message || "กรุณาตรวจสอบข้อมูลอีกครั้ง",
         confirmButtonText: "ลองใหม่",
         confirmButtonColor: "#007AFF",
       });
@@ -132,7 +174,7 @@ const LoginForm = () => {
         </div>
 
         {/* Admin Mode Toggle */}
-        {/* <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <Space>
             <SettingOutlined style={{ color: '#8e8e93' }} />
             <span style={{ color: '#48484a', fontSize: '14px' }}>
@@ -144,12 +186,12 @@ const LoginForm = () => {
               size="small"
             />
           </Space>
-        </div> */}
+        </div>
 
         {isAdminMode && (
           <Alert
             message="โหมดเจ้าหน้าที่"
-            description="กรุณาใช้รหัสเจ้าหน้าที่เพื่อเข้าสู่ระบบ"
+            description="กรุณาใช้ข้อมูลเจ้าหน้าที่เพื่อเข้าสู่ระบบ"
             type="info"
             showIcon
             style={{ marginBottom: '24px' }}
@@ -231,18 +273,20 @@ const LoginForm = () => {
           </Form.Item>
         </Form>
 
-        {/* <Alert
-          message="ทดสอบ: 999999/0000000000/999 (แอดมิน)"
-          type="info"
-          style={{
-            marginTop: 16,
-            fontSize: 12,
-            background: 'rgba(0, 122, 255, 0.08)',
-            border: '1px solid rgba(0, 122, 255, 0.2)',
-            borderRadius: '12px',
-          }}
-          showIcon
-        /> */}
+        {isAdminMode && (
+          <Alert
+            message="Admin Accounts: 999999 หรือ 012938"
+            type="info"
+            style={{
+              marginTop: 16,
+              fontSize: 12,
+              background: 'rgba(0, 122, 255, 0.08)',
+              border: '1px solid rgba(0, 122, 255, 0.2)',
+              borderRadius: '12px',
+            }}
+            showIcon
+          />
+        )}
       </Card>
     </div>
   );

@@ -1,4 +1,3 @@
-// src/pages/AdminPortal.jsx
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../App";
 import {
@@ -20,6 +19,14 @@ import {
   Select,
   message,
   Divider,
+  Progress,
+  Badge,
+  List,
+  Layout,
+  Menu,
+  Drawer,
+  Tooltip,
+  Grid,
 } from "antd";
 import {
   LogoutOutlined,
@@ -32,25 +39,78 @@ import {
   ExclamationCircleOutlined,
   InfoCircleOutlined,
   ClockCircleOutlined,
-  ShirtSize,
+  DashboardOutlined,
+  UsergroupAddOutlined,
+  FileTextOutlined,
+  SettingOutlined,
+  BellOutlined,
+  MenuOutlined,
+  TrophyOutlined,
+  CalendarOutlined,
+  LineChartOutlined,
+  PlusOutlined,
+  DownloadOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
-
-// Import shirt sizes data
 import { shirtSizes } from "../utils/shirt-size";
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 const { Search } = Input;
+const { Header, Sider, Content } = Layout;
+const { useBreakpoint } = Grid;
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.log("Error caught by boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: "50px", textAlign: "center" }}>
+          <h2>เกิดข้อผิดพลาด</h2>
+          <p>กรุณารีเฟรชหน้าเว็บ</p>
+          <Button onClick={() => window.location.reload()}>รีเฟรช</Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const AdminPortal = () => {
   const { user, logout } = useAppContext();
+  const screens = useBreakpoint();
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [showDistributionModal, setShowDistributionModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("search");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (!screens.lg) {
+      setCollapsed(true);
+      setMobileDrawerVisible(false);
+    } else {
+      setCollapsed(false);
+    }
+  }, [screens]);
 
   // Mock data - ในการใช้งานจริงจะดึงจาก API
   const [mockInventory] = useState([
@@ -64,6 +124,44 @@ const AdminPortal = () => {
     { size: "4XL", produced: 30, reserved: 20, distributed: 12, remaining: 18 },
     { size: "5XL", produced: 20, reserved: 15, distributed: 8, remaining: 12 },
     { size: "6XL", produced: 15, reserved: 10, distributed: 5, remaining: 10 },
+  ]);
+
+  const [todayStats] = useState({
+    totalDistributed: 42,
+    pendingConfirmations: 18,
+    lowStockItems: 3,
+    totalMembers: 1247,
+  });
+
+  const [recentActivities] = useState([
+    {
+      id: 1,
+      member: "สมชาย ใจดี",
+      action: "รับเสื้อขนาด M",
+      time: "2 นาทีที่แล้ว",
+      type: "success",
+    },
+    {
+      id: 2,
+      member: "สมหญิง รักษ์ดี",
+      action: "ยืนยันขนาดเสื้อ L",
+      time: "5 นาทีที่แล้ว",
+      type: "info",
+    },
+    {
+      id: 3,
+      member: "Admin",
+      action: "เติมสต็อกขนาด XL",
+      time: "10 นาทีที่แล้ว",
+      type: "warning",
+    },
+    {
+      id: 4,
+      member: "สมศักดิ์ มีสุข",
+      action: "รับเสื้อขนาด 2XL",
+      time: "15 นาทีที่แล้ว",
+      type: "success",
+    },
   ]);
 
   const handleLogout = () => {
@@ -123,18 +221,24 @@ const AdminPortal = () => {
     setLoading(true);
     try {
       // Mock distribution - ในการใช้งานจริงจะเรียก API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      message.success(`จ่ายเสื้อขนาด ${values.selectedSize} ให้ ${selectedMember.name} เรียบร้อยแล้ว`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      message.success(
+        `จ่ายเสื้อขนาด ${values.selectedSize} ให้ ${selectedMember.name} เรียบร้อยแล้ว`
+      );
       setShowDistributionModal(false);
       setSelectedMember(null);
       form.resetFields();
-      
+
       // อัปเดตสถานะในผลการค้นหา
-      setSearchResults(prev => 
-        prev.map(member => 
-          member.memberCode === selectedMember.memberCode 
-            ? { ...member, status: "รับเสื้อแล้ว", selectedSize: values.selectedSize }
+      setSearchResults((prev) =>
+        prev.map((member) =>
+          member.memberCode === selectedMember.memberCode
+            ? {
+                ...member,
+                status: "รับเสื้อแล้ว",
+                selectedSize: values.selectedSize,
+              }
             : member
         )
       );
@@ -219,13 +323,16 @@ const AdminPortal = () => {
       key: "remaining",
       align: "center",
       render: (remaining) => (
-        <Text 
-          strong 
-          style={{ 
+        <Text
+          strong
+          style={{
             color: remaining <= 50 ? "#FF3B30" : "#32D74B",
-            backgroundColor: remaining <= 50 ? "rgba(255, 59, 48, 0.1)" : "rgba(50, 215, 75, 0.1)",
+            backgroundColor:
+              remaining <= 50
+                ? "rgba(255, 59, 48, 0.1)"
+                : "rgba(50, 215, 75, 0.1)",
             padding: "4px 8px",
-            borderRadius: "6px"
+            borderRadius: "6px",
           }}
         >
           {remaining}
@@ -234,495 +341,988 @@ const AdminPortal = () => {
     },
   ];
 
-  const sizeOptions = shirtSizes?.sizes
-    ?.filter(size => size.active)
-    ?.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
-    ?.map(size => ({
-      value: size.code,
-      label: `${size.code} (${size.chest?.inch || 'N/A'}" × ${size.length?.inch || 'N/A'}")`,
-    })) || [];
+  const sizeOptions =
+    shirtSizes?.sizes
+      ?.filter((size) => size.active)
+      ?.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
+      ?.map((size) => ({
+        value: size.code,
+        label: `${size.code} (${size.chest?.inch || "N/A"}" × ${
+          size.length?.inch || "N/A"
+        }")`,
+      })) || [];
 
-  return (
-    <div className="admin-portal-container">
-      {/* Header */}
-      <Card
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto 16px",
-          borderRadius: "20px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-          position: "relative",
-        }}
-      >
-        <Button
-          icon={<LogoutOutlined />}
-          onClick={handleLogout}
-          type="text"
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            color: "#48484a",
-            background: "rgba(0,0,0,0.04)",
-            borderRadius: "50%",
-            width: 40,
-            height: 40,
-            minWidth: 40,
-            minHeight: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2,
-            fontSize: 20,
-          }}
-          aria-label="logout"
-        />
+  const menuItems = [
+    {
+      key: "dashboard",
+      icon: <DashboardOutlined />,
+      label: "แดชบอร์ด",
+    },
+    {
+      key: "search",
+      icon: <SearchOutlined />,
+      label: "ค้นหาสมาชิก",
+    },
+    {
+      key: "inventory",
+      icon: <BarChartOutlined />,
+      label: "สต็อกคงเหลือ",
+    },
+    {
+      key: "reports",
+      icon: <FileTextOutlined />,
+      label: "รายงาน",
+    },
+    {
+      key: "settings",
+      icon: <SettingOutlined />,
+      label: "การตั้งค่า",
+    },
+  ];
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-start",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-            paddingRight: 48,
-          }}
-        >
-          <Avatar
-            size={48}
-            icon={<UserOutlined />}
+  const handleMenuClick = (e) => {
+    setActiveTab(e.key);
+    if (window.innerWidth < 768) {
+      setMobileDrawerVisible(false);
+    }
+  };
+
+  const renderDashboard = () => (
+    <div style={{ padding: "24px" }}>
+      {/* Welcome Section */}
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+        <Col span={24}>
+          <Card
             style={{
-              background: "linear-gradient(135deg, #FF9500, #FF7A00)",
-              border: "2px solid rgba(255, 255, 255, 0.3)",
-              minWidth: 48,
-              minHeight: 48,
-            }}
-          />
-          <div style={{ minWidth: 0 }}>
-            <Title
-              level={4}
-              style={{
-                margin: 0,
-                color: "#1d1d1f",
-                fontSize: 18,
-                wordBreak: "break-word",
-              }}
-            >
-              {user?.name || "ผู้ดูแลระบบ"}
-            </Title>
-            <Text
-              style={{
-                color: "#48484a",
-                fontSize: 14,
-                wordBreak: "break-word",
-              }}
-            >
-              ระบบจัดการแจกเสื้อ | เจ้าหน้าที่
-            </Text>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 12, textAlign: "center" }}>
-          <Tag
-            color="#FF9500"
-            style={{
-              padding: "8px 16px",
-              borderRadius: "20px",
-              fontSize: "14px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               border: "none",
-              display: "inline-block",
-              minWidth: 120,
-              marginTop: 4,
+              borderRadius: 16,
+              color: "white",
             }}
           >
-            สถานะ: ออนไลน์
-          </Tag>
-        </div>
-      </Card>
-
-      {/* Main Content */}
-      <Card
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          borderRadius: "24px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          boxShadow: "0 25px 50px rgba(0, 0, 0, 0.1)",
-        }}
-        bodyStyle={{ padding: 24 }}
-      >
-        <Tabs activeKey={activeTab} onChange={setActiveTab} centered>
-          <TabPane 
-            tab={
-              <span>
-                <SearchOutlined />
-                ค้นหาสมาชิก
-              </span>
-            } 
-            key="search"
-          >
-            <div style={{ maxWidth: 600, margin: "0 auto" }}>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
-                  ค้นหาสมาชิก
+            <Row align="middle">
+              <Col flex="auto">
+                <Title level={2} style={{ color: "white", margin: 0 }}>
+                  สวัสดี, {user?.name || "ผู้ดูแลระบบ"} 👋
                 </Title>
-                <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
-                  กรอกเลขสมาชิก 6 หลักเพื่อค้นหา
+                <Paragraph
+                  style={{
+                    color: "rgba(255,255,255,0.8)",
+                    fontSize: 16,
+                    margin: 0,
+                  }}
+                >
+                  ยินดีต้อนรับสู่ระบบจัดการแจกเสื้อ วันนี้คุณจ่ายเสื้อได้{" "}
+                  {todayStats.totalDistributed} ตัวแล้ว
                 </Paragraph>
-              </div>
+              </Col>
+              <Col>
+                <Badge count={todayStats.pendingConfirmations} offset={[-8, 8]}>
+                  <Avatar
+                    size={64}
+                    icon={<UserOutlined />}
+                    style={{
+                      background: "rgba(255,255,255,0.2)",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                    }}
+                  />
+                </Badge>
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
 
-              <Search
-                placeholder="กรอกเลขสมาชิก 6 หลัก"
-                enterButton={<SearchOutlined />}
-                size="large"
-                loading={loading}
-                onSearch={handleSearch}
-                maxLength={6}
-                style={{ marginBottom: 24 }}
-              />
-
-              {/* Search Results */}
-              {searchResults.length > 0 && (
-                <div>
-                  <Title level={4} style={{ marginBottom: 16 }}>
-                    ผลการค้นหา
-                  </Title>
-                  {searchResults.map((member) => (
-                    <Card
-                      key={member.memberCode}
-                      style={{
-                        marginBottom: 16,
-                        borderRadius: 16,
-                        border: "1px solid rgba(0, 122, 255, 0.2)",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                      }}
-                      hoverable
-                      onClick={() => handleMemberSelect(member)}
-                    >
-                      <Row align="middle" justify="space-between">
-                        <Col span={16}>
-                          <Space direction="vertical" size="small">
-                            <Text strong style={{ fontSize: 16 }}>
-                              {member.name}
-                            </Text>
-                            <Text type="secondary">
-                              รหัสสมาชิก: {member.memberCode} | {member.round}
-                            </Text>
-                            <Text type="secondary">
-                              หน่วยงาน: {member.unit}
-                            </Text>
-                            {member.selectedSize && (
-                              <Text>
-                                ขนาดที่เลือก: <Tag color="#007AFF">{member.selectedSize}</Tag>
-                              </Text>
-                            )}
-                          </Space>
-                        </Col>
-                        <Col span={8} style={{ textAlign: "right" }}>
-                          <Tag
-                            icon={getStatusIcon(member.status)}
-                            color={getStatusColor(member.status)}
-                            style={{ marginBottom: 8 }}
-                          >
-                            {member.status}
-                          </Tag>
-                          <br />
-                          <Button
-                            type="primary"
-                            icon={<ShoppingOutlined />}
-                            size="small"
-                          >
-                            จ่ายเสื้อ
-                          </Button>
-                        </Col>
-                      </Row>
-                    </Card>
-                  ))}
-                </div>
-              )}
+      {/* Stats Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+        <Col xs={12} sm={6}>
+          <Card style={{ borderRadius: 12, textAlign: "center" }}>
+            <div style={{ color: "#32D74B", fontSize: 24, marginBottom: 8 }}>
+              <TrophyOutlined />
             </div>
-          </TabPane>
-
-          <TabPane 
-            tab={
-              <span>
-                <BarChartOutlined />
-                สต็อกคงเหลือ
-              </span>
-            } 
-            key="inventory"
-          >
-            <div>
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
-                  สรุปสต็อกเสื้อ
-                </Title>
-                <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
-                  ข้อมูลสต็อกและการจ่ายเสื้อ
-                </Paragraph>
-              </div>
-
-              {/* Summary Statistics */}
-              <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-                <Col xs={12} sm={6}>
-                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
-                    <Statistic 
-                      title="ผลิตทั้งหมด" 
-                      value={totalStats.produced} 
-                      valueStyle={{ color: "#007AFF" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
-                    <Statistic 
-                      title="จองแล้ว" 
-                      value={totalStats.reserved} 
-                      valueStyle={{ color: "#FF9500" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
-                    <Statistic 
-                      title="จ่ายแล้ว" 
-                      value={totalStats.distributed} 
-                      valueStyle={{ color: "#32D74B" }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Card style={{ textAlign: "center", borderRadius: 12 }}>
-                    <Statistic 
-                      title="คงเหลือ" 
-                      value={totalStats.remaining} 
-                      valueStyle={{ color: totalStats.remaining <= 200 ? "#FF3B30" : "#32D74B" }}
-                    />
-                  </Card>
-                </Col>
-              </Row>
-
-              {/* Low Stock Alert */}
-              {mockInventory.some(item => item.remaining <= 50) && (
-                <Alert
-                  message="แจ้งเตือนสต็อกใกล่หมด"
-                  description="พบสต็อกเสื้อบางขนาดเหลือน้อย กรุณาตรวจสอบและเติมสต็อก"
-                  type="warning"
-                  showIcon
-                  style={{ marginBottom: 24, borderRadius: 12 }}
-                  action={
-                    <Button size="small" type="primary" ghost>
-                      ดูรายละเอียด
-                    </Button>
-                  }
-                />
-              )}
-
-              {/* Inventory Table */}
-              <Card 
-                title="รายละเอียดสต็อกแต่ละขนาด" 
-                style={{ borderRadius: 16 }}
-                extra={
-                  <Button 
-                    type="primary" 
-                    ghost 
-                    icon={<EditOutlined />}
-                    size="small"
-                  >
-                    จัดการสต็อก
-                  </Button>
-                }
-              >
-                <Table
-                  dataSource={mockInventory}
-                  columns={inventoryColumns}
-                  rowKey="size"
-                  pagination={false}
-                  size="small"
-                  style={{ borderRadius: 12 }}
-                />
-              </Card>
-
-              {/* Additional Info */}
-              <div style={{ marginTop: 24 }}>
-                <Alert
-                  message="หมายเหตุ"
-                  description="สต็อกที่แสดงเป็นสีแดงคือขนาดที่เหลือ ≤ 50 ตัว ควรเติมสต็อกเพิ่มเติม"
-                  type="info"
-                  showIcon
-                  style={{ borderRadius: 12 }}
-                />
-              </div>
-            </div>
-          </TabPane>
-        </Tabs>
-      </Card>
-
-      {/* Distribution Modal */}
-      <Modal
-        title={
-          <div style={{ textAlign: "center" }}>
-            <ShoppingOutlined 
-              style={{ color: "#32D74B", fontSize: 24, marginRight: 8 }} 
+            <Statistic
+              title="จ่ายแล้ววันนี้"
+              value={todayStats.totalDistributed}
+              valueStyle={{ color: "#32D74B", fontSize: 24 }}
+              suffix="ตัว"
             />
-            จ่ายเสื้อให้สมาชิก
-          </div>
-        }
-        open={showDistributionModal}
-        onCancel={() => {
-          setShowDistributionModal(false);
-          setSelectedMember(null);
-          form.resetFields();
-        }}
-        footer={null}
-        width={600}
-        centered
-      >
-        {selectedMember && (
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleDistribute}
-            style={{ marginTop: 20 }}
+            <Progress
+              percent={Math.round((todayStats.totalDistributed / 100) * 100)}
+              strokeColor="#32D74B"
+              showInfo={false}
+              size="small"
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card style={{ borderRadius: 12, textAlign: "center" }}>
+            <div style={{ color: "#FF9500", fontSize: 24, marginBottom: 8 }}>
+              <ClockCircleOutlined />
+            </div>
+            <Statistic
+              title="รอยืนยัน"
+              value={todayStats.pendingConfirmations}
+              valueStyle={{ color: "#FF9500", fontSize: 24 }}
+              suffix="คน"
+            />
+            <Progress
+              percent={Math.round((todayStats.pendingConfirmations / 50) * 100)}
+              strokeColor="#FF9500"
+              showInfo={false}
+              size="small"
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card style={{ borderRadius: 12, textAlign: "center" }}>
+            <div style={{ color: "#FF3B30", fontSize: 24, marginBottom: 8 }}>
+              <ExclamationCircleOutlined />
+            </div>
+            <Statistic
+              title="สต็อกใกล่หมด"
+              value={todayStats.lowStockItems}
+              valueStyle={{ color: "#FF3B30", fontSize: 24 }}
+              suffix="รายการ"
+            />
+            <Progress
+              percent={Math.round((todayStats.lowStockItems / 10) * 100)}
+              strokeColor="#FF3B30"
+              showInfo={false}
+              size="small"
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card style={{ borderRadius: 12, textAlign: "center" }}>
+            <div style={{ color: "#007AFF", fontSize: 24, marginBottom: 8 }}>
+              <UsergroupAddOutlined />
+            </div>
+            <Statistic
+              title="สมาชิกทั้งหมด"
+              value={todayStats.totalMembers}
+              valueStyle={{ color: "#007AFF", fontSize: 24 }}
+              suffix="คน"
+            />
+            <Progress
+              percent={85}
+              strokeColor="#007AFF"
+              showInfo={false}
+              size="small"
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Charts and Recent Activities */}
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={16}>
+          <Card
+            title={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <LineChartOutlined style={{ color: "#007AFF" }} />
+                การจ่ายเสื้อรายสัปดาห์
+              </div>
+            }
+            extra={
+              <Button size="small" icon={<DownloadOutlined />}>
+                ส่งออก
+              </Button>
+            }
+            style={{ borderRadius: 16, height: 400 }}
           >
             <div
               style={{
-                background: "rgba(0, 122, 255, 0.05)",
-                border: "1px solid rgba(0, 122, 255, 0.1)",
+                height: 300,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "linear-gradient(45deg, #f0f8ff, #e6f3ff)",
                 borderRadius: 12,
-                padding: 16,
-                marginBottom: 24,
+                color: "#666",
+                flexDirection: "column",
               }}
             >
-              <Row align="middle">
-                <Col span={4}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+              <div style={{ textAlign: "center" }}>
+                <div>กราฟแสดงการจ่ายเสื้อรายสัปดาห์</div>
+                <small>(อยู่ระหว่างพัฒนา)</small>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card
+            title={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <CalendarOutlined style={{ color: "#32D74B" }} />
+                กิจกรรมล่าสุด
+              </div>
+            }
+            style={{ borderRadius: 16, height: 400 }}
+          >
+            <List
+              dataSource={recentActivities}
+              renderItem={(item) => (
+                <List.Item style={{ padding: "8px 0", border: "none" }}>
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar
+                        size="small"
+                        style={{
+                          background:
+                            item.type === "success"
+                              ? "#32D74B"
+                              : item.type === "warning"
+                              ? "#FF9500"
+                              : "#007AFF",
+                        }}
+                      >
+                        {item.type === "success"
+                          ? "✓"
+                          : item.type === "warning"
+                          ? "!"
+                          : "i"}
+                      </Avatar>
+                    }
+                    title={
+                      <Text style={{ fontSize: 13, fontWeight: 500 }}>
+                        {item.member}
+                      </Text>
+                    }
+                    description={
+                      <div>
+                        <Text style={{ fontSize: 12, color: "#666" }}>
+                          {item.action}
+                        </Text>
+                        <br />
+                        <Text style={{ fontSize: 11, color: "#999" }}>
+                          {item.time}
+                        </Text>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  const renderSearch = () => (
+    <div style={{ padding: "24px" }}>
+      <Row gutter={[24, 24]}>
+        <Col span={24}>
+          <Card style={{ borderRadius: 16 }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+                ค้นหาสมาชิก
+              </Title>
+              <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
+                กรอกเลขสมาชิก 6 หลักเพื่อค้นหาและจ่ายเสื้อ
+              </Paragraph>
+            </div>
+
+            <Row justify="center">
+              <Col xs={24} sm={16} md={12}>
+                <Search
+                  placeholder="กรอกเลขสมาชิก 6 หลัก"
+                  enterButton={
+                    <Button type="primary" icon={<SearchOutlined />}>
+                      ค้นหา
+                    </Button>
+                  }
+                  size="large"
+                  loading={loading}
+                  onSearch={handleSearch}
+                  maxLength={6}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <Col span={24}>
+            <Card
+              title="ผลการค้นหา"
+              style={{ borderRadius: 16 }}
+              extra={<Badge count={searchResults.length} />}
+            >
+              {searchResults.map((member) => (
+                <Card
+                  key={member.memberCode}
+                  style={{
+                    marginBottom: 16,
+                    borderRadius: 12,
+                    border: "1px solid rgba(0, 122, 255, 0.2)",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  hoverable
+                  onClick={() => handleMemberSelect(member)}
+                >
+                  <Row align="middle" justify="space-between">
+                    <Col span={16}>
+                      <Space direction="vertical" size="small">
+                        <Text strong style={{ fontSize: 16 }}>
+                          {member.name}
+                        </Text>
+                        <Text type="secondary">
+                          รหัสสมาชิก: {member.memberCode} | {member.round}
+                        </Text>
+                        <Text type="secondary">หน่วยงาน: {member.unit}</Text>
+                        {member.selectedSize && (
+                          <Text>
+                            ขนาดที่เลือก:{" "}
+                            <Tag color="#007AFF">{member.selectedSize}</Tag>
+                          </Text>
+                        )}
+                      </Space>
+                    </Col>
+                    <Col span={8} style={{ textAlign: "right" }}>
+                      <Tag
+                        icon={getStatusIcon(member.status)}
+                        color={getStatusColor(member.status)}
+                        style={{ marginBottom: 8 }}
+                      >
+                        {member.status}
+                      </Tag>
+                      <br />
+                      <Button
+                        type="primary"
+                        icon={<ShoppingOutlined />}
+                        size="small"
+                      >
+                        จ่ายเสื้อ
+                      </Button>
+                    </Col>
+                  </Row>
+                </Card>
+              ))}
+            </Card>
+          </Col>
+        )}
+      </Row>
+    </div>
+  );
+
+  const renderInventory = () => (
+    <div style={{ padding: "24px" }}>
+      <Row gutter={[24, 24]}>
+        <Col span={24}>
+          <Card style={{ borderRadius: 16 }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+                สรุปสต็อกเสื้อ
+              </Title>
+              <Paragraph style={{ color: "#48484a", fontSize: 16 }}>
+                ข้อมูลสต็อกและการจ่ายเสื้อแบบเรียลไทม์
+              </Paragraph>
+            </div>
+
+            {/* Summary Statistics */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+              <Col xs={12} sm={6}>
+                <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                  <Statistic
+                    title="ผลิตทั้งหมด"
+                    value={totalStats.produced}
+                    valueStyle={{ color: "#007AFF" }}
+                    prefix={<TrophyOutlined />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} sm={6}>
+                <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                  <Statistic
+                    title="จองแล้ว"
+                    value={totalStats.reserved}
+                    valueStyle={{ color: "#FF9500" }}
+                    prefix={<ClockCircleOutlined />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} sm={6}>
+                <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                  <Statistic
+                    title="จ่ายแล้ว"
+                    value={totalStats.distributed}
+                    valueStyle={{ color: "#32D74B" }}
+                    prefix={<CheckCircleOutlined />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={12} sm={6}>
+                <Card style={{ textAlign: "center", borderRadius: 12 }}>
+                  <Statistic
+                    title="คงเหลือ"
+                    value={totalStats.remaining}
+                    valueStyle={{
+                      color:
+                        totalStats.remaining <= 200 ? "#FF3B30" : "#32D74B",
+                    }}
+                    prefix={<ExclamationCircleOutlined />}
+                  />
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Low Stock Alert */}
+            {mockInventory.some((item) => item.remaining <= 50) && (
+              <Alert
+                message="แจ้งเตือนสต็อกใกล่หมด"
+                description="พบสต็อกเสื้อบางขนาดเหลือน้อย กรุณาตรวจสอบและเติมสต็อก"
+                type="warning"
+                showIcon
+                style={{ marginBottom: 24, borderRadius: 12 }}
+                action={
+                  <Space>
+                    <Button
+                      size="small"
+                      type="primary"
+                      ghost
+                      icon={<PlusOutlined />}
+                    >
+                      เติมสต็อก
+                    </Button>
+                    <Button size="small" icon={<DownloadOutlined />}>
+                      ส่งออกรายงาน
+                    </Button>
+                  </Space>
+                }
+              />
+            )}
+
+            {/* Inventory Table */}
+            <Card
+              title="รายละเอียดสต็อกแต่ละขนาด"
+              style={{ borderRadius: 16 }}
+              extra={
+                <Space>
+                  <Button
+                    type="primary"
+                    ghost
+                    icon={<FilterOutlined />}
+                    size="small"
+                  >
+                    กรองข้อมูล
+                  </Button>
+                  <Button type="primary" icon={<EditOutlined />} size="small">
+                    จัดการสต็อก
+                  </Button>
+                </Space>
+              }
+            >
+              <Table
+                dataSource={mockInventory}
+                columns={inventoryColumns}
+                rowKey="size"
+                pagination={false}
+                size="middle"
+                style={{ borderRadius: 12 }}
+                scroll={{ x: 600 }}
+              />
+            </Card>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  const renderReports = () => (
+    <div style={{ padding: "24px" }}>
+      <Card style={{ borderRadius: 16, textAlign: "center", minHeight: 400 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 300,
+            color: "#666",
+          }}
+        >
+          <FileTextOutlined
+            style={{ fontSize: 64, color: "#007AFF", marginBottom: 16 }}
+          />
+          <Title level={3} style={{ color: "#1d1d1f" }}>
+            รายงานและสถิติ
+          </Title>
+          <Paragraph style={{ fontSize: 16, marginBottom: 24 }}>
+            ฟีเจอร์รายงานกำลังพัฒนา
+          </Paragraph>
+          <div style={{ fontSize: 14, color: "#999", lineHeight: 1.6 }}>
+            • รายงานการจ่ายเสื้อรายวัน/รายเดือน
+            <br />
+            • สถิติการใช้งานระบบ
+            <br />
+            • ส่งออกข้อมูลเป็น Excel/PDF
+            <br />• กราฟแสดงแนวโน้ม
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div style={{ padding: "24px" }}>
+      <Card style={{ borderRadius: 16, textAlign: "center", minHeight: 400 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 300,
+            color: "#666",
+          }}
+        >
+          <SettingOutlined
+            style={{ fontSize: 64, color: "#007AFF", marginBottom: 16 }}
+          />
+          <Title level={3} style={{ color: "#1d1d1f" }}>
+            การตั้งค่าระบบ
+          </Title>
+          <Paragraph style={{ fontSize: 16, marginBottom: 24 }}>
+            ฟีเจอร์การตั้งค่ากำลังพัฒนา
+          </Paragraph>
+          <div style={{ fontSize: 14, color: "#999", lineHeight: 1.6 }}>
+            • จัดการข้อมูลสมาชิก
+            <br />
+            • ตั้งค่าขนาดเสื้อ
+            <br />
+            • กำหนดสิทธิ์การใช้งาน
+            <br />• ตั้งค่าการแจ้งเตือน
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  return (
+    <ErrorBoundary>
+      <div className="admin-portal-container">
+        <Layout style={{ minHeight: "100vh", background: "transparent" }}>
+          {/* Desktop Sidebar */}
+          <Sider
+            trigger={null}
+            collapsible
+            collapsed={collapsed}
+            breakpoint="lg"
+            collapsedWidth={80}
+            width={260}
+            style={{
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRight: "1px solid rgba(0, 122, 255, 0.1)",
+              boxShadow: "4px 0 24px rgba(0, 0, 0, 0.06)",
+              position: "fixed",
+              height: "100vh",
+              left: 0,
+              zIndex: 100,
+            }}
+            className="desktop-sidebar"
+          >
+            {/* Logo Section */}
+            <div
+              style={{
+                padding: collapsed ? "20px 8px" : "20px 24px",
+                textAlign: collapsed ? "center" : "left",
+                borderBottom: "1px solid rgba(0, 122, 255, 0.1)",
+              }}
+            >
+              {!collapsed ? (
+                <div>
+                  <Title
+                    level={4}
+                    style={{ color: "#1d1d1f", margin: 0, fontSize: 18 }}
+                  >
+                    ระบบจัดการเสื้อ
+                  </Title>
+                  <Text style={{ color: "#48484a", fontSize: 12 }}>
+                    Admin Dashboard
+                  </Text>
+                </div>
+              ) : (
+                <Avatar
+                  size={40}
+                  style={{
+                    background: "linear-gradient(135deg, #007AFF, #0051D5)",
+                    fontSize: 18,
+                    fontWeight: 600,
+                  }}
+                >
+                  A
+                </Avatar>
+              )}
+            </div>
+
+            {/* Menu */}
+            <Menu
+              mode="inline"
+              selectedKeys={[activeTab]}
+              style={{
+                background: "transparent",
+                border: "none",
+                paddingTop: 16,
+              }}
+              onClick={handleMenuClick}
+              items={menuItems}
+            />
+
+            {/* User Info */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                padding: collapsed ? "16px 8px" : "16px 24px",
+                borderTop: "1px solid rgba(0, 122, 255, 0.1)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Avatar
+                  size={collapsed ? 32 : 40}
+                  icon={<UserOutlined />}
+                  style={{
+                    background: "linear-gradient(135deg, #FF9500, #FF7A00)",
+                  }}
+                />
+                {!collapsed && (
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 14 }}>
+                      {user?.name || "ผู้ดูแลระบบ"}
+                    </Text>
+                    <br />
+                    <Text style={{ color: "#48484a", fontSize: 12 }}>
+                      เจ้าหน้าที่
+                    </Text>
+                  </div>
+                )}
+              </div>
+              {!collapsed && (
+                <Button
+                  type="text"
+                  icon={<LogoutOutlined />}
+                  onClick={handleLogout}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    color: "#FF3B30",
+                    borderRadius: 8,
+                  }}
+                >
+                  ออกจากระบบ
+                </Button>
+              )}
+            </div>
+          </Sider>
+
+          {/* Mobile Header */}
+          <Header
+            style={{
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderBottom: "1px solid rgba(0, 122, 255, 0.1)",
+              padding: "0 16px",
+              display: "none",
+              position: "fixed",
+              width: "100%",
+              zIndex: 99,
+            }}
+            className="mobile-header"
+          >
+            <Row align="middle" justify="space-between">
+              <Col>
+                <Space>
+                  <Button
+                    type="text"
+                    icon={<MenuOutlined />}
+                    onClick={() => setMobileDrawerVisible(true)}
+                    style={{ fontSize: 18 }}
+                  />
+                  <Title level={4} style={{ margin: 0, color: "#1d1d1f" }}>
+                    ระบบจัดการเสื้อ
+                  </Title>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <Badge count={3}>
+                    <Button
+                      type="text"
+                      icon={<BellOutlined />}
+                      style={{ fontSize: 18 }}
+                    />
+                  </Badge>
                   <Avatar
-                    size={48}
-                    src={`https://apps2.coop.ku.ac.th/asset/member_photo/${selectedMember.memberCode}.png`}
+                    size={32}
+                    icon={<UserOutlined />}
                     style={{
-                      background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                      background: "linear-gradient(135deg, #FF9500, #FF7A00)",
                     }}
                   />
-                </Col>
-                <Col span={20}>
-                  <Title level={4} style={{ margin: 0, color: "#1d1d1f" }}>
-                    {selectedMember.name}
-                  </Title>
-                  <Text type="secondary">
-                    รหัสสมาชิก: {selectedMember.memberCode} | {selectedMember.round}
-                  </Text>
-                  <br />
-                  <Tag
-                    icon={getStatusIcon(selectedMember.status)}
-                    color={getStatusColor(selectedMember.status)}
-                    style={{ marginTop: 4 }}
-                  >
-                    {selectedMember.status}
-                  </Tag>
-                </Col>
-              </Row>
+                </Space>
+              </Col>
+            </Row>
+          </Header>
+
+          {/* Mobile Drawer */}
+          <Drawer
+            title={
+              <div>
+                <Title level={4} style={{ color: "#1d1d1f", margin: 0 }}>
+                  ระบบจัดการเสื้อ
+                </Title>
+                <Text style={{ color: "#48484a", fontSize: 12 }}>
+                  Admin Dashboard
+                </Text>
+              </div>
+            }
+            placement="left"
+            onClose={() => setMobileDrawerVisible(false)}
+            open={mobileDrawerVisible}
+            bodyStyle={{ padding: 0 }}
+            width={280}
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[activeTab]}
+              style={{ background: "transparent", border: "none" }}
+              onClick={handleMenuClick}
+              items={menuItems}
+            />
+
+            <div
+              style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}
+            >
+              <Card size="small" style={{ borderRadius: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Avatar
+                    size={40}
+                    icon={<UserOutlined />}
+                    style={{
+                      background: "linear-gradient(135deg, #FF9500, #FF7A00)",
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 14 }}>
+                      {user?.name || "ผู้ดูแลระบบ"}
+                    </Text>
+                    <br />
+                    <Text style={{ color: "#48484a", fontSize: 12 }}>
+                      เจ้าหน้าที่
+                    </Text>
+                  </div>
+                </div>
+                <Button
+                  type="text"
+                  icon={<LogoutOutlined />}
+                  onClick={handleLogout}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    color: "#FF3B30",
+                  }}
+                >
+                  ออกจากระบบ
+                </Button>
+              </Card>
             </div>
+          </Drawer>
 
-            <Form.Item
-              name="selectedSize"
-              label="ขนาดเสื้อ"
-              rules={[{ required: true, message: "กรุณาเลือกขนาดเสื้อ" }]}
-            >
-              <Select
-                placeholder="เลือกขนาดเสื้อ"
-                size="large"
-                style={{ borderRadius: 12 }}
-              >
-                {sizeOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+          {/* Main Content */}
+          <Layout
+            className={`content-layout ${collapsed ? "sidebar-collapsed" : ""}`}
+            style={{ background: "transparent" }}
+          >
+            <Content style={{ minHeight: "100vh", background: "transparent" }}>
+              {/* Toggle Button -> Only show on desktop */}
+              {screens?.lg && (
+                <Button
+                  type="text"
+                  icon={<MenuOutlined />}
+                  onClick={() => setCollapsed(!collapsed)}
+                  className={`desktop-toggle ${
+                    collapsed ? "sidebar-collapsed" : ""
+                  }`}
+                />
+              )}
+              {/* Content Area (No changes here) */}
+              <div style={{ paddingTop: screens?.lg ? 70 : 80 }}>
+                {activeTab === "dashboard" && renderDashboard()}
+                {activeTab === "search" && renderSearch()}
+                {activeTab === "inventory" && renderInventory()}
+                {activeTab === "reports" && renderReports()}
+                {activeTab === "settings" && renderSettings()}
+              </div>
+            </Content>
+          </Layout>
+        </Layout>
 
-            <Form.Item
-              name="recipientType"
-              label="ผู้รับ"
-              rules={[{ required: true, message: "กรุณาเลือกประเภทผู้รับ" }]}
+        {/* Distribution Modal */}
+        <Modal
+          title={
+            <div style={{ textAlign: "center" }}>
+              <ShoppingOutlined
+                style={{ color: "#32D74B", fontSize: 24, marginRight: 8 }}
+              />
+              จ่ายเสื้อให้สมาชิก
+            </div>
+          }
+          open={showDistributionModal}
+          onCancel={() => {
+            setShowDistributionModal(false);
+            setSelectedMember(null);
+            form.resetFields();
+          }}
+          footer={null}
+          width={600}
+          centered
+        >
+          {selectedMember && (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleDistribute}
+              style={{ marginTop: 20 }}
             >
-              <Select
-                placeholder="เลือกประเภทผู้รับ"
-                size="large"
-                onChange={(value) => {
-                  if (value === "self") {
-                    form.setFieldValue("recipientName", "");
-                  }
+              <div
+                style={{
+                  background: "rgba(0, 122, 255, 0.05)",
+                  border: "1px solid rgba(0, 122, 255, 0.1)",
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 24,
                 }}
               >
-                <Option value="self">รับด้วยตนเอง</Option>
-                <Option value="proxy">รับแทน</Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              noStyle
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.recipientType !== currentValues.recipientType
-              }
-            >
-              {({ getFieldValue }) =>
-                getFieldValue("recipientType") === "proxy" ? (
-                  <Form.Item
-                    name="recipientName"
-                    label="ชื่อผู้รับแทน"
-                    rules={[{ required: true, message: "กรุณากรอกชื่อผู้รับแทน" }]}
-                  >
-                    <Input
-                      placeholder="กรอกชื่อผู้รับแทน"
-                      size="large"
+                <Row align="middle">
+                  <Col span={4}>
+                    <Avatar
+                      size={48}
+                      icon={<UserOutlined />}
+                      style={{
+                        background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                      }}
                     />
-                  </Form.Item>
-                ) : null
-              }
-            </Form.Item>
+                  </Col>
+                  <Col span={20}>
+                    <Title level={4} style={{ margin: 0, color: "#1d1d1f" }}>
+                      {selectedMember.name}
+                    </Title>
+                    <Text type="secondary">
+                      รหัสสมาชิก: {selectedMember.memberCode} |{" "}
+                      {selectedMember.round}
+                    </Text>
+                    <br />
+                    <Tag
+                      icon={getStatusIcon(selectedMember.status)}
+                      color={getStatusColor(selectedMember.status)}
+                      style={{ marginTop: 4 }}
+                    >
+                      {selectedMember.status}
+                    </Tag>
+                  </Col>
+                </Row>
+              </div>
 
-            <Divider />
+              <Form.Item
+                name="selectedSize"
+                label="ขนาดเสื้อ"
+                rules={[{ required: true, message: "กรุณาเลือกขนาดเสื้อ" }]}
+              >
+                <Select
+                  placeholder="เลือกขนาดเสื้อ"
+                  size="large"
+                  style={{ borderRadius: 12 }}
+                >
+                  {sizeOptions.map((option) => (
+                    <Option key={option.value} value={option.value}>
+                      {option.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
 
-            <div style={{ textAlign: "center" }}>
-              <Space size="middle">
-                <Button
-                  onClick={() => {
-                    setShowDistributionModal(false);
-                    setSelectedMember(null);
-                    form.resetFields();
-                  }}
+              <Form.Item
+                name="recipientType"
+                label="ผู้รับ"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทผู้รับ" }]}
+              >
+                <Select
+                  placeholder="เลือกประเภทผู้รับ"
                   size="large"
-                  style={{ borderRadius: 12, minWidth: 100 }}
-                >
-                  ยกเลิก
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading}
-                  size="large"
-                  style={{
-                    borderRadius: 12,
-                    minWidth: 100,
-                    background: "linear-gradient(135deg, #32D74B, #30B84E)",
-                    border: "none",
+                  onChange={(value) => {
+                    if (value === "self") {
+                      form.setFieldValue("recipientName", "");
+                    }
                   }}
                 >
-                  ยืนยันการจ่าย
-                </Button>
-              </Space>
-            </div>
-          </Form>
-        )}
-      </Modal>
-    </div>
+                  <Option value="self">รับด้วยตนเอง</Option>
+                  <Option value="proxy">รับแทน</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) =>
+                  prevValues.recipientType !== currentValues.recipientType
+                }
+              >
+                {({ getFieldValue }) =>
+                  getFieldValue("recipientType") === "proxy" ? (
+                    <Form.Item
+                      name="recipientName"
+                      label="ชื่อผู้รับแทน"
+                      rules={[
+                        { required: true, message: "กรุณากรอกชื่อผู้รับแทน" },
+                      ]}
+                    >
+                      <Input placeholder="กรอกชื่อผู้รับแทน" size="large" />
+                    </Form.Item>
+                  ) : null
+                }
+              </Form.Item>
+
+              <Divider />
+
+              <div style={{ textAlign: "center" }}>
+                <Space size="middle">
+                  <Button
+                    onClick={() => {
+                      setShowDistributionModal(false);
+                      setSelectedMember(null);
+                      form.resetFields();
+                    }}
+                    size="large"
+                    style={{ borderRadius: 12, minWidth: 100 }}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    size="large"
+                    style={{
+                      borderRadius: 12,
+                      minWidth: 100,
+                      background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                      border: "none",
+                    }}
+                  >
+                    ยืนยันการจ่าย
+                  </Button>
+                </Space>
+              </div>
+            </Form>
+          )}
+        </Modal>
+      </div>
+    </ErrorBoundary>
   );
 };
 

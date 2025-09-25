@@ -360,11 +360,11 @@ const MemberPortal = () => {
           <Title level={2} style={{ color: "#1d1d1f", marginBottom: 8 }}>
             เลือกขนาดเสื้อแจ็คเก็ต
           </Title>
-          <Paragraph
+          {/* <Paragraph
             style={{ color: "#48484a", marginBottom: 24, fontSize: 16 }}
           >
             กรุณาเลือกขนาดเสื้อที่เหมาะสมกับคุณ
-          </Paragraph>
+          </Paragraph> */}
           <Button
             type="primary"
             ghost

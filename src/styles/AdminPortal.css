@@ -1,0 +1,71 @@
+/* src/styles/AdminPortal.css */
+
+/* ... (other styles) */
+
+/* CHANGE THIS SELECTOR */
+.admin-portal-container .content-layout {
+  margin-left: 260px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Desktop Sidebar */
+/* ... (no changes) */
+
+/* Desktop Toggle */
+.desktop-toggle {
+  position: fixed;
+  top: 20px;
+  left: 280px;
+  z-index: 101;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  /* Added from inline style for consistency */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ... (other styles) */
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+  
+  .desktop-toggle {
+    display: none !important;
+  }
+  
+  .mobile-header {
+    display: flex !important;
+  }
+  
+  /* CHANGE THIS SELECTOR */
+  .admin-portal-container .content-layout {
+    margin-left: 0 !important;
+  }
+  
+  .admin-portal-container .ant-layout-content > div {
+    padding-top: 80px !important;
+  }
+  /* ... (other responsive styles) */
+}
+
+/* ... (other media queries) */
+
+/* Collapsed Sidebar */
+/* CHANGE THIS SELECTOR */
+.admin-portal-container .content-layout.sidebar-collapsed {
+  margin-left: 80px;
+}
+
+/* CHANGE THIS SELECTOR */
+.desktop-toggle.sidebar-collapsed {
+  left: 100px;
+}
+/* ... (rest of the file) */
