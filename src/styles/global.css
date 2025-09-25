@@ -72,3 +72,6 @@ body {
 }
 
 /* ... (the rest of your shared styles like .ant-btn-primary, .ant-input, etc.) ... */
+.member-header-responsive {
+    flex-direction: column;
+}

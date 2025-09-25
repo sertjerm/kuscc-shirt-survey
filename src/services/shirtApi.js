@@ -1,10 +1,10 @@
-// services/shirtApi.js
 import axios from "axios";
 
+// ---- CONSTANTS ----
 const REAL_API_BASE_URL =
   "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 
-// ใช้ instance เดียวตลอด เพื่อแชร์ cookie/session
+// ---- AXIOS INSTANCE ----
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
   withCredentials: true, // สำคัญ: ให้เบราว์เซอร์ส่ง/รับ cookie
@@ -14,6 +14,30 @@ export const api = axios.create({
   timeout: 15000,
   maxBodyLength: Infinity,
 });
+
+// ---- API FUNCTIONS ----
+
+// ---- GET SHIRT MEMBER LIST ----
+export async function getShirtMemberList(sizeCode) {
+  const res = await api.get(
+    `/GetShirtMemberList?size_code=${encodeURIComponent(sizeCode)}`
+  );
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "API error");
+  }
+  return res.data.data;
+}
+
+// Search member by mbcode (real API)
+export async function SearchMember(mbcode) {
+  const res = await api.get(
+    `/SearchShirtMember?mbcode=${encodeURIComponent(mbcode)}`
+  );
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "API error");
+  }
+  return res.data.data;
+}
 
 // ---- Login (ให้ server เซ็ต ASP.NET_SessionId กลับมา) ----
 export const loginMember = async ({ memberCode, phone, idCard }) => {
@@ -50,6 +74,7 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
     status: d.SIZE_CODE ? "ยืนยันขนาดแล้ว" : "ยังไม่ยืนยันขนาด",
     socialId: d.MEMB_SOCID,
   };
+  
 };
 
 // ---- AddShirtSurvey (ต้องมี session จาก login ก่อน) ----

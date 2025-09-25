@@ -1,3 +1,29 @@
+/* Responsive member info: stack name and code vertically on small screens */
+.member-info-responsive {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .member-info-responsive {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100%;
+    gap: 0;
+  }
+  .member-info-responsive .member-name,
+  .member-info-responsive .member-code {
+    margin-left: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    text-align: center !important;
+    padding: 0 !important;
+  }
+}
 body {
   /* Gradient background: ฟ้าไปม่วง */
   background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 50%, #a084ee 100%);

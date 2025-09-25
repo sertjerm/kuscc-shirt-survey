@@ -11,6 +11,7 @@ import {
   Modal,
   Row,
   Col,
+  Alert,
 } from "antd";
 import {
   LogoutOutlined,
@@ -29,7 +30,7 @@ import { saveMemberSize } from "../services/shirtApi";
 
 const { Title, Paragraph, Text } = Typography;
 
-/** ------------------------------------------------------- 
+/** -------------------------------------------------------
  * Helper: แปลงโครงสร้างจาก shirtSizes.sizes → SIZE_OPTIONS
  *  - ใช้เฉพาะ active = true
  *  - sort ตาม sortOrder หากมี
@@ -63,36 +64,72 @@ const MemberPortal = () => {
   // --- Navigation & Context ---
   const navigate = useNavigate();
   const { user, logout } = useAppContext();
-  
-  const [memberData, setMemberData] = useState(
-    user || {
-      memberCode: "",
-      name: "",
-      round: "",
-      status: "ยังไม่ยืนยันขนาด",
-      selectedSize: null,
-      displayName: "",
-      fullName: "",
-      remarks: "",
-    }
-  );
+
+  // เริ่มต้นด้วยข้อมูล default แล้วค่อย sync กับ user context
+  const [memberData, setMemberData] = useState({
+    memberCode: "",
+    name: "",
+    fullName: "",
+    displayName: "",
+    phone: "",
+    idCard: "",
+    role: "member",
+    sizeCode: null,
+    surveyDate: null,
+    surveyMethod: null,
+    updatedDate: null,
+    remarks: null,
+    status: "ยังไม่ยืนยันขนาด",
+    selectedSize: null,
+  });
 
   // ✅ ใช้ useMemo เพื่อสร้าง SIZE_OPTIONS จากค่าคงที่เพียงครั้งเดียว/เมื่อ shirtSizes เปลี่ยน
   const SIZE_OPTIONS = useMemo(() => toSizeOptions(shirtSizes?.sizes), []);
 
-  // --- sync กับ user context ---
+  // --- sync กับ user context เมื่อ component mount หรือ user เปลี่ยน ---
   useEffect(() => {
+    console.log("User from context:", user);
+
     if (user) {
-      setMemberData(user);
-      if (user.selectedSize) setSelectedSize(user.selectedSize);
+      // กำหนดสถานะจาก SIZE_CODE
+      let currentStatus = "ยังไม่ยืนยันขนาด";
+      if (user.sizeCode || user.SIZE_CODE) {
+        currentStatus = "ยืนยันขนาดแล้ว";
+      }
+
+      const updatedMemberData = {
+        memberCode: user.memberCode || user.MEMB_CODE || "",
+        name: user.name || user.DISPLAYNAME || "",
+        fullName: user.fullName || user.FULLNAME || "",
+        displayName: user.displayName || user.DISPLAYNAME || "",
+        phone: user.phone || user.MEMB_MOBILE || "",
+        idCard: user.idCard || user.MEMB_SOCID || "",
+        role: user.role || user.USER_ROLE || "member",
+        sizeCode: user.sizeCode || user.SIZE_CODE || null,
+        surveyDate: user.surveyDate || user.SURVEY_DATE || null,
+        surveyMethod: user.surveyMethod || user.SURVEY_METHOD || null,
+        updatedDate: user.updatedDate || user.UPDATED_DATE || null,
+        remarks: user.remarks || user.REMARKS || null,
+        status: currentStatus,
+        selectedSize: user.sizeCode || user.SIZE_CODE || null,
+      };
+
+      console.log("Updated member data:", updatedMemberData);
+
+      setMemberData(updatedMemberData);
+
+      // Set selectedSize ถ้ามีข้อมูลจาก user
+      if (updatedMemberData.selectedSize) {
+        setSelectedSize(updatedMemberData.selectedSize);
+      }
     }
   }, [user]);
 
+  // --- Debug log สำหรับตรวจสอบข้อมูล ---
   useEffect(() => {
-    if (memberData.selectedSize) {
-      setSelectedSize(memberData.selectedSize);
-    }
-  }, [memberData.selectedSize]);
+    console.log("Current memberData:", memberData);
+    console.log("Current selectedSize:", selectedSize);
+  }, [memberData, selectedSize]);
 
   const handleLogout = () => {
     Modal.confirm({
@@ -106,11 +143,11 @@ const MemberPortal = () => {
           // ใช้ logout function จาก context
           logout();
           // Redirect ไปหน้า login
-          navigate('/login');
+          navigate("/login");
         } catch (error) {
-          console.error('Logout error:', error);
+          console.error("Logout error:", error);
           // Fallback redirect
-          window.location.href = '/login';
+          window.location.href = "/login";
         }
       },
     });
@@ -132,7 +169,7 @@ const MemberPortal = () => {
   const confirmSizeSelection = async () => {
     setIsLoading(true);
     setShowConfirmModal(false);
-    
+
     try {
       const res = await saveMemberSize({
         memberCode: memberData.memberCode,
@@ -145,11 +182,18 @@ const MemberPortal = () => {
         throw new Error(res.responseMessage || "บันทึกขนาดไม่สำเร็จ");
       }
 
-      setMemberData((prev) => ({
-        ...prev,
+      // อัพเดต memberData และ user context
+      const updatedData = {
+        ...memberData,
         selectedSize,
+        sizeCode: selectedSize,
         status: "ยืนยันขนาดแล้ว",
-      }));
+        surveyDate: new Date().toISOString(),
+        surveyMethod: "ONLINE",
+        updatedDate: new Date().toISOString(),
+      };
+
+      setMemberData(updatedData);
 
       Modal.success({
         title: "ยืนยันขนาดสำเร็จ",
@@ -276,7 +320,11 @@ const MemberPortal = () => {
         >
           <Avatar
             size={108}
-            src={`https://apps2.coop.ku.ac.th/asset/member_photo/${memberData.memberCode}.png`}
+            src={
+              memberData.memberCode
+                ? `https://apps2.coop.ku.ac.th/asset/member_photo/${memberData.memberCode}.png`
+                : null
+            }
             style={{
               background: "linear-gradient(135deg, #32D74B, #30B84E)",
               border: "4px solid rgba(255, 255, 255, 0.9)",
@@ -286,42 +334,67 @@ const MemberPortal = () => {
             }}
             alt="member avatar"
           />
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <Title
-              level={3}
-              style={{
-                margin: "0 0 4px 0",
-                color: "#1d1d1f",
-                fontSize: 24,
-                fontWeight: 700,
-                wordBreak: "break-word",
-              }}
-            >
-              {memberData.fullName}
-            </Title>
-            <Text
-              style={{
-                color: "#48484a",
-                fontSize: 16,
-                fontWeight: 500,
-                wordBreak: "break-word",
-                display: "block",
-                marginBottom: 8,
-              }}
-            >
-              รหัสสมาชิก: {memberData.memberCode}
-            </Text>
+          <div
+            className="member-info-responsive"
+            style={{ minWidth: 0, flex: 1 }}
+          >
+            <span className="member-name">
+              <Title
+                level={3}
+                style={{
+                  margin: "0 0 4px 0",
+                  color: "#1d1d1f",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  wordBreak: "break-word",
+                  display: "inline",
+                }}
+              >
+                {memberData.fullName ||
+                  memberData.displayName ||
+                  memberData.name ||
+                  "ไม่ระบุชื่อ"}
+              </Title>
+            </span>
+            <span className="member-code" style={{ marginLeft: 12 }}>
+              <Text
+                style={{
+                  color: "#48484a",
+                  fontSize: 16,
+                  fontWeight: 500,
+                  wordBreak: "break-word",
+                  display: "inline-block",
+                  marginBottom: 8,
+                }}
+              >
+                รหัสสมาชิก: {memberData.memberCode || "ไม่ระบุ"}
+              </Text>
+            </span>
+            {memberData.sizeCode && (
+              <Text
+                style={{
+                  color: "#007AFF",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  display: "block",
+                }}
+              >
+                ขนาดที่เลือก: {memberData.sizeCode}
+              </Text>
+            )}
           </div>
         </div>
 
         {/* Status - Enhanced */}
-        <div style={{ 
-          textAlign: "center", 
-          paddingBottom: 20,
-          borderTop: "1px solid rgba(0, 122, 255, 0.1)",
-          marginTop: 16,
-          paddingTop: 20,
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            paddingBottom: 20,
+            borderTop: "1px solid rgba(0, 122, 255, 0.1)",
+            marginTop: 16,
+            paddingTop: 20,
+          }}
+        >
           <Tag
             color={getStatusColor(memberData.status)}
             style={{
@@ -339,6 +412,20 @@ const MemberPortal = () => {
             สถานะ: {memberData.status}
           </Tag>
         </div>
+        {/* แจ้งเตือนตัดรอบ */}
+        <Alert
+          message="ตัดรอบแรก 15 ตุลาคม 2568"
+          description="ได้รับเสื้อประมาณต้นเดือนธันวาคมนี้"
+          type="warning"
+          showIcon
+          style={{
+            marginTop: "16px",
+            marginBottom: "16px",
+            borderRadius: "12px",
+            border: "1px solid #FFD700",
+            background: "linear-gradient(135deg, #FFF8DC 0%, #FFFACD 100%)",
+          }}
+        />
       </Card>
 
       {/* Main */}
@@ -356,15 +443,11 @@ const MemberPortal = () => {
         bodyStyle={{ padding: 24 }}
         className="main-content-card"
       >
-        <div style={{ textAlign: "center"}}>
-          <Title level={2} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+        <div style={{ textAlign: "center" }}>
+          <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
             เลือกขนาดเสื้อแจ็คเก็ต
           </Title>
-          {/* <Paragraph
-            style={{ color: "#48484a", marginBottom: 24, fontSize: 16 }}
-          >
-            กรุณาเลือกขนาดเสื้อที่เหมาะสมกับคุณ
-          </Paragraph> */}
+
           <Button
             type="primary"
             ghost
@@ -491,8 +574,8 @@ const MemberPortal = () => {
                   <Text
                     strong
                     style={{
-                      fontSize: 16,
-                      color: selectedSize === option.size ? "white" : "#1d1d1f",
+                      fontSize: 18,
+                      color: selectedSize === option.size ? "white" : "#000",
                       marginBottom: 4,
                       ...(selectedSize === option.size && {
                         WebkitTextFillColor: "white",
@@ -504,11 +587,11 @@ const MemberPortal = () => {
                   </Text>
                   <Text
                     style={{
-                      fontSize: 12,
+                      fontSize: 16,
                       color:
                         selectedSize === option.size
                           ? "rgba(255,255,255,0.9)"
-                          : "#8e8e93",
+                          : "#000",
                       ...(selectedSize === option.size && {
                         WebkitTextFillColor: "rgba(255,255,255,0.9)",
                         textShadow: "none",
@@ -581,7 +664,9 @@ const MemberPortal = () => {
           }}
         >
           <Text style={{ color: "#007AFF", fontSize: 13 }}>
-            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ 2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้ 40" ให้เลือกขนาดเสื้อ 42" (Size S) แทน)
+            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
+            2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้ 40"
+            ให้เลือกขนาดเสื้อ 42" (Size S) แทน)
           </Text>
         </div>
       </Card>
