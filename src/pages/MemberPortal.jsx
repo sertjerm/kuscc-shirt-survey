@@ -414,7 +414,7 @@ const MemberPortal = () => {
         </div>
         {/* แจ้งเตือนตัดรอบ */}
         <Alert
-          message="ตัดรอบแรก 15 ตุลาคม 2568"
+          message="ตัดรอบแรกวันที่ 15 ตุลาคม 2568"
           description="ได้รับเสื้อประมาณต้นเดือนธันวาคมนี้"
           type="warning"
           showIcon
@@ -530,8 +530,8 @@ const MemberPortal = () => {
               {selectedSizeInfo && (
                 <div style={{ marginTop: 8 }}>
                   <Text style={{ color: "#48484a" }}>
-                    รอบอก: {selectedSizeInfo.chestInch}" | ความยาว:{" "}
-                    {selectedSizeInfo.lengthInch}"
+                    รอบอก: {selectedSizeInfo.chestInch} นิ้ว | ความยาว:{" "}
+                    {selectedSizeInfo.lengthInch} นิ้ว
                   </Text>
                 </div>
               )}
@@ -598,7 +598,7 @@ const MemberPortal = () => {
                       }),
                     }}
                   >
-                    {option.chestInch}" × {option.lengthInch}"
+อก {option.chestInch}" | ยาว {option.lengthInch}"
                   </Text>
                 </Button>
               </Col>
@@ -647,7 +647,7 @@ const MemberPortal = () => {
           }}
         >
           <InfoCircleOutlined style={{ color: "#FF9500", marginRight: 8 }} />
-          <Text style={{ color: "#FF9500", fontSize: 14 }}>
+          <Text style={{ color: "#FF9500", fontSize: 14 ,backgroundColor:"#ffffff85"}}>
             คุณสามารถเปลี่ยนแปลงขนาดได้ตลอดเวลา
             หรือเปลี่ยนขนาดตอนมารับเสื้อที่หน้างาน
           </Text>
@@ -663,7 +663,7 @@ const MemberPortal = () => {
             textAlign: "center",
           }}
         >
-          <Text style={{ color: "#007AFF", fontSize: 13 }}>
+          <Text style={{ color: "#007AFF", fontSize: 13,backgroundColor:"#ffffff85" }}>
             <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
             2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้ 40"
             ให้เลือกขนาดเสื้อ 42" (Size S) แทน)

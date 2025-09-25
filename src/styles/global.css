@@ -75,3 +75,8 @@ body {
 .member-header-responsive {
     flex-direction: column;
 }
+/* Restore default padding for Ant Design inputs */
+.ant-input-affix-wrapper .ant-input {
+  padding: 4px 11px !important;
+}
+
