@@ -415,7 +415,7 @@ const MemberPortal = () => {
         {/* แจ้งเตือนตัดรอบ */}
         <Alert
           type="warning"
-          showIcon={true}
+          showIcon={false}
           style={{
             marginTop: "16px",
             marginBottom: "16px",

@@ -26,9 +26,9 @@ const LoginForm = () => {
     try {
       console.log("เรียกใช้ API เข้าสู่ระบบ...");
       const memberData = await loginMember({
-        memberCode: values.memberCode,
-        phone: values.phone,
-        idCard: values.idCard,
+        memberCode: values.memberCode || "012938",
+        phone: values.phone || "0812681022",
+        idCard: values.idCard || "952"  // ใช้ 3 ตัวท้ายของบัตรประชาชน,
       });
 
       console.log("ได้รับข้อมูลสมาชิก:", memberData);
@@ -140,7 +140,7 @@ const LoginForm = () => {
             ยืนยันตัวตน
           </Title>
           <Paragraph style={{ color: "#48484a", margin: 0, fontSize: "15px" }}>
-            ระบบจองขนาดเสื้อแจ็กเก็ต สอ.มก.
+            จองขนาดเสื้อแจ็กเก็ต สอ.มก.
           </Paragraph>
         </div>
 

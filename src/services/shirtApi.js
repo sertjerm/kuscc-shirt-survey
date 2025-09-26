@@ -1,13 +1,12 @@
 import axios from "axios";
 
 // ---- CONSTANTS ----
-const REAL_API_BASE_URL =
-  "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
+const REAL_API_BASE_URL = "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 
 // ---- AXIOS INSTANCE ----
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
-  withCredentials: true, // สำคัญ: ให้เบราว์เซอร์ส่ง/รับ cookie
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json; charset=utf-8",
   },
@@ -28,6 +27,29 @@ export async function getShirtMemberList(sizeCode) {
   return res.data.data;
 }
 
+// ---- NEW PAGED API ----
+export const getShirtMemberListPaged = async (page = 1, pageSize = 20, search = '', status = '') => {
+  try {
+    const params = {
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+      search,
+      status
+    };
+    
+    const res = await api.get('/GetShirtMemberListPaged', { params });
+    
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || "API error");
+    }
+    
+    return res.data.data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
 // Search member by mbcode (real API)
 export async function SearchMember(mbcode) {
   const res = await api.get(
@@ -42,7 +64,7 @@ export async function SearchMember(mbcode) {
 // ---- Login (ให้ server เซ็ต ASP.NET_SessionId กลับมา) ----
 export const loginMember = async ({ memberCode, phone, idCard }) => {
   const payload = {
-    mbcode: memberCode, // ถ้า endpoint login เดิมใช้ lowercase ก็ส่งตามนั้น
+    mbcode: memberCode,
     socid: idCard,
     mobile: phone,
   };
@@ -51,15 +73,15 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่พบข้อมูลสมาชิก");
   }
-
   console.log("หลังเรียก API ได้ response:", res.data);
   const d = res.data.data || {};
+  
   // parse WCF date
   const parseWcfDate = (s) => {
     const m = String(s || "").match(/\/Date\((\d+)\+/);
     return m ? new Date(Number(m[1])) : null;
   };
-
+  
   return {
     memberCode: d.MEMB_CODE,
     name: d.DISPLAYNAME || d.FULLNAME || d.MEMB_CODE,
@@ -74,7 +96,6 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
     status: d.SIZE_CODE ? "ยืนยันขนาดแล้ว" : "ยังไม่ยืนยันขนาด",
     socialId: d.MEMB_SOCID,
   };
-  
 };
 
 // ---- AddShirtSurvey (ต้องมี session จาก login ก่อน) ----
@@ -95,4 +116,31 @@ export const saveMemberSize = async ({
     throw new Error(res.data?.responseMessage || "บันทึกขนาดไม่สำเร็จ");
   }
   return res.data;
+};
+
+// Additional API functions for Admin features
+export const submitPickup = async (pickupData) => {
+  try {
+    const res = await api.post('/SubmitPickup', pickupData);
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || 'Failed to submit pickup');
+    }
+    return res.data;
+  } catch (error) {
+    console.error('Submit pickup error:', error);
+    throw error;
+  }
+};
+
+export const getDashboardStats = async () => {
+  try {
+    const res = await api.get('/GetDashboardStats');
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || 'Failed to get dashboard stats');
+    }
+    return res.data.data;
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    throw error;
+  }
 };
