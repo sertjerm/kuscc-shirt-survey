@@ -1,0 +1,92 @@
+/* ===== เพิ่มเติมใน MemberPortal.jsx หรือ global.css ===== */
+
+/* Size Selection Button Enhancement - แก้ปัญหา Size Button เพี้ยน */
+.size-button-container {
+  /* ให้ background สีขาวพื้นฐาน สำหรับ contrast ที่ชัดเจน */
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+.size-button-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 12px !important;
+}
+
+.size-option-button {
+  /* Reset ทุกอย่างเพื่อให้แน่ใจว่าไม่มี inherit style มาขัด */
+  all: initial !important;
+  
+  /* กำหนด style ใหม่ */
+  font-family: "Sarabun", "Noto Sans Thai", -apple-system, BlinkMacSystemFont, sans-serif !important;
+  width: 100% !important;
+  height: 80px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  
+  /* Style สำหรับ unselected state */
+  background: white !important;
+  border: 2px solid #f0f0f0 !important;
+  color: #1d1d1f !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.size-option-button:hover {
+  border-color: #1890ff !important;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2) !important;
+  transform: translateY(-2px) !important;
+}
+
+.size-option-button.selected {
+  background: linear-gradient(135deg, #007AFF, #5856D6) !important;
+  border: 2px solid #007AFF !important;
+  color: white !important;
+  box-shadow: 0 8px 16px rgba(0, 122, 255, 0.3) !important;
+}
+
+.size-label {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+  line-height: 1 !important;
+}
+
+.size-dimensions {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  opacity: 0.8 !important;
+}
+
+/* Responsive สำหรับ mobile */
+@media (max-width: 768px) {
+  .size-button-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .size-option-button {
+    height: 70px !important;
+  }
+  
+  .size-label {
+    font-size: 16px !important;
+  }
+  
+  .size-dimensions {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .size-button-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

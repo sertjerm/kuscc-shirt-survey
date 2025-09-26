@@ -1,12 +1,13 @@
 /*
- * Path: src/styles/AdminDashboard.css
- * Description: Cleaned-up CSS for AdminDashboard, now that global styles are fixed.
+ * Enhanced AdminDashboard.css
+ * Updated to match the draft functionality and styling
+ ขาวเทา
  */
 
 .admin-dashboard-layout {
   width: 100%;
   min-height: 100vh;
-  background-color: transparent !important;
+  background: linear-gradient(135deg, #f0f2f5 0%, #d9d9d9 100%) !important;
   display: flex;
   flex-direction: row;
 }
@@ -15,18 +16,40 @@
   background-color: transparent;
 }
 
-/* --- Sider & Drawer Styling (Glass Theme) --- */
+/* --- Sider & Drawer Styling --- */
 .desktop-sider,
 .mobile-drawer .ant-drawer-content-wrapper {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .desktop-sider .ant-menu,
 .mobile-drawer .ant-menu {
   background: transparent !important;
+  border-right: none !important;
+}
+
+.desktop-sider .ant-menu-item {
+  margin: 4px 8px !important;
+  border-radius: 8px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+}
+
+.desktop-sider .ant-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+.desktop-sider .ant-menu-item-selected {
+  background-color: rgba(24, 144, 255, 0.15) !important;
+  color: #1890ff !important;
+}
+
+.desktop-sider .ant-menu-item-selected::after {
+  display: none !important;
 }
 
 .logo-container {
@@ -41,7 +64,7 @@
 
 .logo-text {
   margin: 0 !important;
-  color: #007aff !important;
+  color: #1890ff !important;
   font-weight: 600 !important;
   white-space: nowrap;
   overflow: hidden;
@@ -56,7 +79,7 @@
 }
 
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   padding: 0 24px;
@@ -66,6 +89,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .mobile-menu-button {
@@ -82,39 +106,384 @@
 .dashboard-content {
   padding: 24px;
   overflow-y: auto;
+  background: transparent;
 }
 
-/* --- Card & Component Styling --- */
+/* --- Enhanced Card Styling --- */
+.ant-card {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  margin-bottom: 24px;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: transparent !important;
+}
+
+.ant-card-head-title {
+  color: #1d1d1f !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+}
+
+.ant-card-body {
+  background: transparent !important;
+}
+
+/* --- Stat Cards --- */
 .stat-card {
-  border-radius: 12px;
+  border-radius: 16px !important;
+  overflow: hidden;
 }
+
 .stat-card .ant-card-body {
-  padding: 20px !important;
+  padding: 24px !important;
 }
+
 .stat-card .ant-statistic-title {
-  font-size: 14px;
-  color: #48484a;
+  font-size: 14px !important;
+  color: #48484a !important;
+  margin-bottom: 8px !important;
 }
+
 .stat-card .ant-statistic-content {
-  font-size: 28px;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  color: #1d1d1f !important;
+}
+
+.stat-card-icon {
+  font-size: 28px !important;
+  padding: 20px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+}
+
+/* --- Enhanced Table Styling --- */
+.ant-table {
+  background: transparent !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #f8f9fa !important;
+  border-bottom: 2px solid #e9ecef !important;
+  font-weight: 600 !important;
+  color: #495057 !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05) !important;
+}
+
+.ant-table-summary > tr > td {
+  background: #f8f9fa !important;
+  font-weight: 600 !important;
+  border-top: 2px solid #dee2e6 !important;
+}
+
+/* --- Status Tags Enhanced --- */
+.ant-tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* --- Stock Warning Colors --- */
+.stock-warning {
+  background-color: #fff2e8 !important;
+  border: 1px solid #ffb84d !important;
+  color: #d46b08 !important;
+}
+
+.stock-critical {
+  background-color: #fff1f0 !important;
+  border: 1px solid #ff7875 !important;
+  color: #cf1322 !important;
+}
+
+.stock-good {
+  background-color: #f6ffed !important;
+  border: 1px solid #95de64 !important;
+  color: #389e0d !important;
+}
+
+/* --- Modal Enhancements --- */
+.ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+.ant-modal-header {
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+.ant-modal-title {
+  font-weight: 600 !important;
+  color: #1d1d1f !important;
+}
+
+/* Size Selection Modal */
+.size-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.size-option-card {
+  text-align: center;
+  padding: 16px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.size-option-card:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.size-option-card.selected {
+  border-color: #1890ff;
+  background: #f0f8ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.size-label {
+  font-size: 18px;
   font-weight: 600;
   color: #1d1d1f;
-}
-.stat-card-icon {
-  font-size: 24px;
-  padding: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-bottom: 4px;
 }
 
+.size-dimensions {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.size-guide-note {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.size-guide-note .ant-typography {
+  color: #856404 !important;
+  margin: 0 !important;
+}
+
+/* --- Form Enhancements --- */
+.ant-form-item-label > label {
+  font-weight: 500 !important;
+  color: #1d1d1f !important;
+}
+
+.ant-input,
+.ant-select-selector,
+.ant-input-number {
+  border-radius: 8px !important;
+  border: 1px solid #d9d9d9 !important;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-input-number-focused {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* --- Button Enhancements --- */
+.ant-btn {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.ant-btn-primary {
+  box-shadow: 0 2px 6px rgba(24, 144, 255, 0.3) !important;
+}
+
+.ant-btn-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4) !important;
+}
+
+.ant-btn-danger {
+  box-shadow: 0 2px 6px rgba(255, 77, 79, 0.3) !important;
+}
+
+.ant-btn-danger:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.4) !important;
+}
+
+/* --- Stock Management Specific --- */
+.stock-management-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.stock-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.stock-actions .ant-btn {
+  flex: 1;
+}
+
+/* --- History Lists --- */
+.history-list .ant-list-item {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  background: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+  border-radius: 8px;
+}
+
+.history-list .ant-list-item:hover {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+.history-timestamp {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.history-action-add {
+  color: #52c41a !important;
+  font-weight: 600 !important;
+}
+
+.history-action-withdraw {
+  color: #ff4d4f !important;
+  font-weight: 600 !important;
+}
+
+.history-action-pickup {
+  color: #1890ff !important;
+  font-weight: 600 !important;
+}
+
+/* --- Descriptions Component --- */
+.ant-descriptions-bordered .ant-descriptions-item-label {
+  background: #fafafa !important;
+  font-weight: 600 !important;
+}
+
+/* --- Radio Group --- */
+.ant-radio-group {
+  display: flex;
+  gap: 16px;
+}
+
+.ant-radio-wrapper {
+  font-weight: 500;
+}
+
+/* --- Loading States --- */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-text {
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* --- Alert Enhancements --- */
+.ant-alert {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- Placeholder Content --- */
 .placeholder-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  min-height: 250px;
+  min-height: 300px;
   text-align: center;
+  color: #8c8c8c;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  border: 2px dashed #d9d9d9;
+}
+
+.placeholder-content .anticon {
+  margin-bottom: 16px;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 16px;
+  }
+  
+  .stat-card .ant-card-body {
+    padding: 20px !important;
+  }
+  
+  .stat-card .ant-statistic-content {
+    font-size: 24px !important;
+  }
+  
+  .size-selection-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .stock-actions {
+    flex-direction: column;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-view {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0 16px;
+  }
+  
+  .size-selection-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .size-option-card {
+    padding: 12px 8px;
+  }
 }

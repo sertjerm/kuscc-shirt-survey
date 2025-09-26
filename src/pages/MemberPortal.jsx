@@ -19,6 +19,7 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
+import "../styles/MemberPortal.css";
 
 // วิธีวัดขนาด (ภาพ)
 const shirtSize = "https://apps2.coop.ku.ac.th/asset/images/png/sizewidth.png";
@@ -413,17 +414,48 @@ const MemberPortal = () => {
         </div>
         {/* แจ้งเตือนตัดรอบ */}
         <Alert
-          message="จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568 "
-          description="จะได้รับเสื้อประมาณต้นเดือน ธันวาคม 2568"
           type="warning"
-          showIcon={false}
+          showIcon={true}
           style={{
             marginTop: "16px",
             marginBottom: "16px",
             borderRadius: "12px",
             border: "1px solid #FFD700",
             background: "linear-gradient(135deg, #FFF8DC 0%, #FFFACD 100%)",
+            boxShadow: "0 2px 8px rgba(255, 215, 0, 0.2)",
           }}
+          message={
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={12}>
+                <div>
+                  <Text strong style={{ fontSize: "16px", display: "block" }}>
+                    📅 จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568
+                  </Text>
+                  <Text style={{ color: "#666", fontSize: "14px" }}>
+                    จะได้รับเสื้อประมาณต้นเดือน ธันวาคม 2568
+                  </Text>
+                </div>
+              </Col>
+              <Col xs={24} lg={12}>
+                <div
+                  style={{
+                    backgroundColor: "rgba(255, 136, 0, 0.1)",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 136, 0, 0.3)",
+                    textAlign: "center",
+                  }}
+                >
+                  <Text strong style={{ color: "#d46b08", display: "block" }}>
+                    🏢 หากไม่มั่นใจขนาดเสื้อ
+                  </Text>
+                  <Text style={{ color: "#d46b08", fontSize: "14px" }}>
+                    ทดสอบขนาดเสื้อตัวอย่างได้ที่สำนักงาน สอ.มก
+                  </Text>
+                </div>
+              </Col>
+            </Row>
+          }
         />
       </Card>
 
@@ -539,26 +571,34 @@ const MemberPortal = () => {
         )}
 
         {/* Size Selection */}
-        <div style={{ marginBottom: 32 }}>
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: "16px",
+            padding: "16px",
+            marginBottom: "24px",
+            backdropFilter: "blur(10px)",
+          }}
+        >
           <Row gutter={[12, 12]}>
             {SIZE_OPTIONS.map((option) => (
               <Col xs={12} sm={8} md={6} key={option.size}>
-                <Button
-                  size="large"
+                <div
                   onClick={() => handleSizeSelect(option.size)}
                   style={{
                     width: "100%",
-                    height: 80,
-                    borderRadius: 12,
+                    height: "80px",
+                    borderRadius: "12px",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
                     background:
                       selectedSize === option.size
                         ? "linear-gradient(135deg, #007AFF, #5856D6)"
-                        : "white",
-                    color: selectedSize === option.size ? "white" : "#1d1d1f",
+                        : "#ffffff",
                     border:
                       selectedSize === option.size
                         ? "2px solid #007AFF"
@@ -567,43 +607,70 @@ const MemberPortal = () => {
                       selectedSize === option.size
                         ? "0 8px 16px rgba(0, 122, 255, 0.3)"
                         : "0 2px 8px rgba(0, 0, 0, 0.1)",
-                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedSize !== option.size) {
+                      e.currentTarget.style.borderColor = "#1890ff";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(24, 144, 255, 0.2)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedSize !== option.size) {
+                      e.currentTarget.style.borderColor = "#f0f0f0";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(0, 0, 0, 0.1)";
+                    }
                   }}
                 >
-                  <Text
-                    strong
+                  <div
                     style={{
-                      fontSize: 18,
-                      color: selectedSize === option.size ? "white" : "#000",
-                      marginBottom: 4,
-                      ...(selectedSize === option.size && {
-                        WebkitTextFillColor: "white",
-                        textShadow: "none",
-                      }),
+                      fontSize: "18px",
+                      fontWeight: "600",
+                      color: selectedSize === option.size ? "white" : "#1d1d1f",
+                      marginBottom: "4px",
+                      lineHeight: "1",
                     }}
                   >
                     {option.size}
-                  </Text>
-                  <Text
+                  </div>
+                  <div
                     style={{
-                      fontSize: 16,
+                      fontSize: "12px",
                       color:
                         selectedSize === option.size
                           ? "rgba(255,255,255,0.9)"
-                          : "#000",
-                      ...(selectedSize === option.size && {
-                        WebkitTextFillColor: "rgba(255,255,255,0.9)",
-                        textShadow: "none",
-                      }),
+                          : "#8e8e93",
+                      lineHeight: "1.2",
                     }}
                   >
                     อก {option.chestInch}" | ยาว {option.lengthInch}"
-                  </Text>
-                </Button>
+                  </div>
+                </div>
               </Col>
             ))}
           </Row>
         </div>
+        {/* <div
+          style={{ width: "100%", maxWidth: 700, margin: "0 auto 16px auto" }}
+        >
+          <Alert
+            message="หากไม่มั่นใจขนาดเสื้อหรือไม่มีขนาดที่เหมาะสม"
+            description="ทดสอบขนาดเสื้อตัวอย่างได้ที่สำนักงาน สอ.มก"
+            type="danger"
+            // showIcon={true}
+            style={{
+              marginTop: "16px",
+              marginBottom: "0px",
+              borderRadius: "12px",
+         
+              textAlign: "center",
+              fontWeight: 500,
+            }}
+          />
+        </div> */}
 
         {/* Confirm Button */}
         <div style={{ textAlign: "center" }}>

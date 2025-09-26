@@ -88,3 +88,7 @@ body {
     font-size: 0.8rem !important;
     white-space: nowrap;
 }
+.ant-input, .ant-select-selector, .ant-input-number {
+    border-radius: 8px !important;
+    border: none !important;
+}
