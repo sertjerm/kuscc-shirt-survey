@@ -197,7 +197,9 @@ const MemberPortal = () => {
 
       Modal.success({
         title: "ยืนยันขนาดสำเร็จ",
-        content: `คุณได้เลือกขนาด ${selectedSize} เรียบร้อยแล้ว`,
+        content: `คุณได้เลือกขนาด ${selectedSize} เรียบร้อยแล้ว `,
+        okText: "ตกลง",
+        onOk: () => navigate("/login"),
       });
     } catch (err) {
       console.error("save size failed:", err?.response?.data || err);
@@ -350,10 +352,7 @@ const MemberPortal = () => {
                   display: "inline",
                 }}
               >
-                {memberData.fullName ||
-                  memberData.displayName ||
-                  memberData.name ||
-                  "ไม่ระบุชื่อ"}
+                {memberData.displayName || memberData.name || "ไม่ระบุชื่อ"}
               </Title>
             </span>
             <span className="member-code" style={{ marginLeft: 12 }}>
@@ -414,10 +413,10 @@ const MemberPortal = () => {
         </div>
         {/* แจ้งเตือนตัดรอบ */}
         <Alert
-          message="ตัดรอบแรกวันที่ 15 ตุลาคม 2568"
-          description="ได้รับเสื้อประมาณต้นเดือนธันวาคมนี้"
+          message="จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568 "
+          description="จะได้รับเสื้อประมาณต้นเดือน ธันวาคม 2568"
           type="warning"
-          showIcon
+          showIcon={false}
           style={{
             marginTop: "16px",
             marginBottom: "16px",
@@ -444,7 +443,7 @@ const MemberPortal = () => {
         className="main-content-card"
       >
         <div style={{ textAlign: "center" }}>
-          <Title level={3} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+          <Title level={4} style={{ color: "#1d1d1f", marginBottom: 8 }}>
             เลือกขนาดเสื้อแจ็คเก็ต
           </Title>
 
@@ -598,7 +597,7 @@ const MemberPortal = () => {
                       }),
                     }}
                   >
-อก {option.chestInch}" | ยาว {option.lengthInch}"
+                    อก {option.chestInch}" | ยาว {option.lengthInch}"
                   </Text>
                 </Button>
               </Col>
@@ -636,7 +635,7 @@ const MemberPortal = () => {
         </div>
 
         {/* Info Notes */}
-        <div
+        {/* <div
           style={{
             background: "rgba(255, 149, 0, 0.08)",
             border: "1px solid rgba(255, 149, 0, 0.2)",
@@ -647,11 +646,11 @@ const MemberPortal = () => {
           }}
         >
           <InfoCircleOutlined style={{ color: "#FF9500", marginRight: 8 }} />
-          <Text style={{ color: "#FF9500", fontSize: 14 ,backgroundColor:"#ffffff85"}}>
-            คุณสามารถเปลี่ยนแปลงขนาดได้ตลอดเวลา
+          <Text style={{ color: "#000", fontSize: 14 }}>
+            สามารถเปลี่ยนแปลงขนาดได้ตลอดจนกว่าจะถึงวันสิ้นสุดการจอง
             หรือเปลี่ยนขนาดตอนมารับเสื้อที่หน้างาน
           </Text>
-        </div>
+        </div> */}
 
         <div
           style={{
@@ -663,7 +662,13 @@ const MemberPortal = () => {
             textAlign: "center",
           }}
         >
-          <Text style={{ color: "#007AFF", fontSize: 13,backgroundColor:"#ffffff85" }}>
+          <Text
+            style={{
+              color: "#000",
+              fontSize: 13,
+              // backgroundColor: "#ffffff85",
+            }}
+          >
             <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
             2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้ 40"
             ให้เลือกขนาดเสื้อ 42" (Size S) แทน)
@@ -713,7 +718,8 @@ const MemberPortal = () => {
           )}
           <div style={{ marginTop: 16 }}>
             <Text style={{ color: "#8e8e93", fontSize: 14 }}>
-              หลังจากยืนยันแล้ว คุณยังสามารถเปลี่ยนขนาดได้ในภายหลัง
+              {/* หลังจากยืนยันแล้ว คุณยังสามารถเปลี่ยนขนาดได้ในภายหลัง */}
+              สามารถเปลี่ยนแปลงขนาดได้ถึง 15 ตุลาคม 2568
             </Text>
           </div>
         </div>

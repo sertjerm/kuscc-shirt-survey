@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สำรวจขนาดเสื้อ KUSCC</title>
+    <style>
+        :root {
+            --primary-color: #3a506b;
+            --secondary-color: #1c2541;
+            --accent-color: #5bc0be;
+            --light-bg: #f7f9fb;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --danger-color: #e53e3e;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kanit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-bg);
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container, .admin-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-container {
+            max-width: 1200px;
+            align-items: flex-start;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+            margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        h1, h2, h3 {
+            color: var(--secondary-color);
+            text-align: center;
+            font-weight: 600;
+        }
+        h1 {
+             margin-bottom: 10px;
+            font-size: 24px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            text-align: left;
+        }
+
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #fdfdfd;
+        }
+        
+        input[readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(58, 80, 107, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(58, 80, 107, 0.2);
+        }
+
+        .error {
+            color: var(--danger-color);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* --- Page Toggler --- */
+        .page-toggler {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+        }
+        .toggle-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+
+        /* --- Survey Page Styles --- */
+        .survey-container {
+            max-width: 800px;
+        }
+
+        .survey-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .shirt-display {
+            position: relative;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .shirt-image {
+            width: 100%;
+            padding-top: 100%;
+            background-image: url('https://apps2.coop.ku.ac.th/asset/images/png/bluejacket5.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .selected-size-display {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--secondary-color);
+            height: 25px;
+            transition: opacity 0.3s ease;
+        }
+
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .size-option {
+            padding: 12px 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.4;
+        }
+        
+        .size-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .size-dims {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .size-option:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .size-option.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .size-option.selected .size-dims {
+            color: #f0f0f0;
+        }
+
+        .recommendation-text {
+            text-align: center;
+            margin: 30px 0 20px 0;
+            padding: 15px;
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .submit-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .message.success {
+             background: #d4edda;
+             color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .size-guide-link {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .size-guide-link a {
+            font-size: 0.9rem; 
+            color: var(--primary-color); 
+            text-decoration: none;
+        }
+        .size-guide-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* --- Admin Page Styles --- */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            width: 100%;
+        }
+        .admin-col {
+            display: flex;
+            flex-direction: column;
+        }
+        #pickupSection { display: none; }
+        
+        .search-results-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .search-result-item:hover {
+            background-color: #f0f8ff;
+        }
+        .search-result-item.picked-up {
+            background-color: #e9f5e9;
+            border-left-color: var(--success-color);
+        }
+        .search-result-item.confirmed {
+            border-left-color: var(--primary-color);
+        }
+        .search-result-item.not-confirmed {
+            background-color: #fff8e1;
+            border-left-color: var(--warning-color);
+        }
+        .search-result-item .meta-info {
+            font-size: 0.85rem; 
+            color: #555; 
+            margin-top: 5px;
+        }
+
+        .radio-group label {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        
+        #proxyInputsContainer {
+            display: none;
+            margin-top: 10px;
+        }
+        #proxyInputsContainer .form-group {
+            margin-bottom: 10px;
+        }
+
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .inventory-table th, .inventory-table td {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .inventory-table th {
+            background-color: var(--light-bg);
+        }
+        .inventory-table tr.low-stock td:last-child {
+            background-color: #f8d7da;
+            color: #721c24;
+            font-weight: 600;
+        }
+        .inventory-table .total-row td {
+            font-weight: bold;
+            background-color: #e9ecef;
+            border-top: 2px solid #adb5bd;
+        }
+
+        .pickup-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .info-block {
+            text-align: center;
+            padding: 10px;
+        }
+        .info-block p {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: #6c757d;
+        }
+        .info-block .info-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .clickable-size {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .clickable-size:hover {
+            background-color: var(--light-bg);
+        }
+        
+        .stock-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .stock-actions .btn {
+            width: 50%;
+        }
+        
+        .history-container {
+            margin-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 5px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-item .timestamp {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        .history-item .details.add { color: var(--success-color); font-weight: 500; }
+        .history-item .details.withdraw { color: var(--danger-color); font-weight: 500; }
+        .history-item .details.pickup { color: var(--primary-color); font-weight: 500; }
+
+        .history-toggle {
+            cursor: pointer;
+            position: relative;
+        }
+        .history-toggle::after {
+            content: '►';
+            font-size: 0.8em;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.2s ease;
+        }
+        .history-toggle.expanded::after {
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .modal-close-btn:hover {
+            color: #333;
+        }
+        #modalSizeGrid {
+            margin-top: 20px;
+        }
+
+
+        @media (max-width: 992px) {
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .container, .survey-container, .admin-container { padding: 10px; }
+            .card, .survey-card { padding: 25px; }
+            .shirt-display { max-width: none; }
+            .size-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page-toggler">
+        <button id="togglePageBtn" class="toggle-btn">สำหรับเจ้าหน้าที่</button>
+    </div>
+
+    <!-- User Login Page -->
+    <div id="userPage">
+        <div id="loginPage" class="container">
+            <div class="card">
+                <div class="logo">
+                    <div class="logo-icon">K</div>
+                    <h1>สำรวจขนาดเสื้อ KUSCC</h1>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="memberId">เลขสมาชิก (6 หลัก)</label>
+                        <input type="text" id="memberId" name="memberId" maxlength="6" pattern="[0-9]{6}" value="123456" required>
+                        <div class="error" id="memberIdError">กรุณากรอกเลขสมาชิก 6 หลัก</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">เบอร์โทรศัพท์</label>
+                        <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" value="0812345678" required>
+                        <div class="error" id="phoneError">กรุณากรอกเบอร์โทรศัพท์ 10 หลัก</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="idCard">เลขบัตรประจำตัวประชาชน (3 หลักสุดท้าย)</label>
+                        <input type="text" id="idCard" name="idCard" maxlength="3" pattern="[0-9]{3}" value="789" required>
+                        <div class="error" id="idCardError">กรุณากรอกเลขบัตรประชาชน 3 หลักสุดท้าย</div>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="loginBtn" disabled>กำลังโหลด...</button>
+                    <div id="loginError" class="message error"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="surveyPage" class="container survey-container" style="display: none;">
+            <div class="survey-card">
+                 <div class="logo">
+                    <div class="logo-icon">K</div>
+                    <h1>เลือกขนาดเสื้อของคุณ</h1>
+                </div>
+                
+                <div class="size-guide-link">
+                    <a href="https://apps2.coop.ku.ac.th/asset/images/png/sizewidth.png" target="_blank" rel="noopener noreferrer">📏 วิธีวัดขนาดเสื้อ</a>
+                </div>
+
+                <div class="shirt-display">
+                    <div class="shirt-image"></div>
+                </div>
+                 <div class="selected-size-display" id="selectedSizeDisplay"></div>
+                
+                <div class="size-grid">
+                    <div class="size-option" data-size="XS" data-chest="40" data-length="24"><span class="size-label">XS</span><span class="size-dims">อก 40" | ยาว 24"</span></div>
+                    <div class="size-option" data-size="S" data-chest="42" data-length="25"><span class="size-label">S</span><span class="size-dims">อก 42" | ยาว 25"</span></div>
+                    <div class="size-option" data-size="M" data-chest="44" data-length="26"><span class="size-label">M</span><span class="size-dims">อก 44" | ยาว 26"</span></div>
+                    <div class="size-option" data-size="L" data-chest="46" data-length="27"><span class="size-label">L</span><span class="size-dims">อก 46" | ยาว 27"</span></div>
+                    <div class="size-option" data-size="XL" data-chest="48" data-length="28"><span class="size-label">XL</span><span class="size-dims">อก 48" | ยาว 28"</span></div>
+                    <div class="size-option" data-size="2XL" data-chest="50" data-length="29"><span class="size-label">2XL</span><span class="size-dims">อก 50" | ยาว 29"</span></div>
+                    <div class="size-option" data-size="3XL" data-chest="52" data-length="30"><span class="size-label">3XL</span><span class="size-dims">อก 52" | ยาว 30"</span></div>
+                    <div class="size-option" data-size="4XL" data-chest="54" data-length="31"><span class="size-label">4XL</span><span class="size-dims">อก 54" | ยาว 31"</span></div>
+                    <div class="size-option" data-size="5XL" data-chest="56" data-length="32"><span class="size-label">5XL</span><span class="size-dims">อก 56" | ยาว 32"</span></div>
+                    <div class="size-option" data-size="6XL" data-chest="58" data-length="33"><span class="size-label">6XL</span><span class="size-dims">อก 58" | ยาว 33"</span></div>
+                </div>
+                
+                <div class="recommendation-text">
+                    <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ 2" เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น<br>เช่น วัดได้ 40" ให้เลือกขนาดเสื้อ 42" แทน
+                </div>
+
+                <div class="submit-section">
+                    <button type="button" class="btn" id="submitSize" onclick="submitSize()">ยืนยันขนาด</button>
+                </div>
+                
+                <div class="message" id="surveyMessage"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Page -->
+    <div id="adminPage" class="admin-container" style="display: none;">
+        <div class="admin-grid">
+            <div class="admin-col">
+                <!-- Search & Pickup Section -->
+                <div class="card">
+                    <h2>ค้นหาและบันทึกการรับเสื้อ</h2>
+                    <div class="form-group">
+                        <label for="searchInput">ค้นหาด้วยเลขสมาชิก</label>
+                        <input type="text" id="searchInput" placeholder="กรอกเลขสมาชิก 6 หลัก">
+                    </div>
+                    <button class="btn" id="searchBtn" disabled>กำลังโหลด...</button>
+                    <div id="searchResults" class="search-results-container"></div>
+                    
+                    <hr style="margin: 25px 0;">
+                    <h3 class="history-toggle" id="pickupHistoryToggle">ประวัติการรับล่าสุด</h3>
+                    <div id="pickupHistoryContainer" class="history-container" style="display: none;">
+                        <!-- Pickup history will be populated here -->
+                    </div>
+                </div>
+
+                <div class="card" id="pickupSection">
+                    <h2>บันทึกข้อมูลการรับเสื้อ</h2>
+                    <div class="pickup-info-header">
+                        <div class="info-block">
+                            <p>เลขสมาชิก:</p>
+                            <span id="pickupMemberId" class="info-value"></span>
+                        </div>
+                        <div class="info-block">
+                            <p>ขนาดที่เลือกไว้:</p>
+                            <span id="pickupSelectedSize" class="info-value clickable-size"></span>
+                        </div>
+                    </div>
+                    <hr style="margin: 15px 0;">
+
+                    <div class="form-group">
+                        <label>ผู้รับเสื้อ:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="pickupType" value="self" checked> รับด้วยตนเอง</label>
+                            <label><input type="radio" name="pickupType" value="proxy"> รับแทน</label>
+                        </div>
+                        <div id="proxyInputsContainer">
+                            <div class="form-group">
+                                <label for="proxyMemberIdInput">เลขสมาชิกผู้รับแทน</label>
+                                <input type="text" id="proxyMemberIdInput" placeholder="กรอกเลขสมาชิก 6 หลัก" maxlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="proxyNameInput">ชื่อ-สกุล ผู้รับแทน</label>
+                                <input type="text" id="proxyNameInput" placeholder="กรอกชื่อ หรือค้นหาจากเลขสมาชิก">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="savePickupBtn" style="background-color: var(--success-color);">บันทึกการรับเสื้อ</button>
+                    <div id="pickupMessage" class="message"></div>
+                </div>
+            </div>
+            <div class="admin-col">
+                <!-- Inventory Summary -->
+                 <div class="card">
+                    <h2>สรุปข้อมูล</h2>
+                    <table id="inventoryTable" class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>ขนาด</th>
+                                <th>ผลิต</th>
+                                <th>จอง</th>
+                                <th>รับแล้ว</th>
+                                <th>คงเหลือ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Stock Management -->
+                 <div class="card" id="stockManagementCard">
+                    <h2>จัดการสต็อก</h2>
+                    <div class="form-group">
+                        <label for="stockSizeSelect">เลือกขนาด</label>
+                        <select id="stockSizeSelect">
+                           <!-- Options populated by JS -->
+                        </select>
+                    </div>
+                     <div class="form-group">
+                        <label for="stockQuantityInput">จำนวน</label>
+                        <input type="number" id="stockQuantityInput" placeholder="กรอกจำนวน" min="1">
+                    </div>
+                    <div class="stock-actions">
+                        <button class="btn" id="addStockBtn" style="background-color: var(--accent-color);">เติมสต็อก</button>
+                        <button class="btn" id="withdrawStockBtn" style="background-color: var(--warning-color); color: #333;">เบิกสต็อก</button>
+                    </div>
+                    <div id="stockMessage" class="message"></div>
+
+                    <hr style="margin: 25px 0;">
+                    <h3 class="history-toggle" id="stockHistoryToggle">ประวัติสต็อกล่าสุด</h3>
+                    <div id="stockHistoryContainer" class="history-container" style="display: none;">
+                        <!-- History items will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Size Change Modal -->
+    <div id="sizeChangeModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-btn">&times;</span>
+            <h2>เลือกขนาดใหม่</h2>
+            <div id="modalSizeGrid" class="size-grid">
+                <!-- Size options will be populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, query, where, getDocs, addDoc, updateDoc, increment, serverTimestamp, orderBy, limit, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let app, db, auth, isFirebaseReady = false;
+        let selectedSize = '';
+        let userInfo = {};
+        let currentPickupDocId = null;
+        let originalPickupSize = null;
+        let newPickupSize = null;
+        let currentMemberInfo = {};
+        
+        const memberCollectionPath = `/artifacts/${appId}/public/data/initial_members`;
+        const surveyCollectionPath = `/artifacts/${appId}/public/data/shirt_surveys`;
+        const stockSummaryCollectionPath = `/artifacts/${appId}/public/data/stock_summary`;
+        const stockTransactionsCollectionPath = `/artifacts/${appId}/public/data/stock_transactions`;
+
+        const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+        const INITIAL_PRODUCTION_QUANTITY = {
+            "XS": 50, "S": 100, "M": 150, "L": 200, "XL": 150,
+            "2XL": 100, "3XL": 80, "4XL": 50, "5XL": 30, "6XL": 20
+        };
+
+        // --- UI Elements ---
+        const userPage = document.getElementById('userPage');
+        const adminPage = document.getElementById('adminPage');
+        const togglePageBtn = document.getElementById('togglePageBtn');
+        const loginPage = document.getElementById('loginPage');
+        const surveyPage = document.getElementById('surveyPage');
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const submitBtn = document.getElementById('submitSize');
+        const selectedSizeDisplay = document.getElementById('selectedSizeDisplay');
+        // Admin UI
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const pickupSection = document.getElementById('pickupSection');
+        const savePickupBtn = document.getElementById('savePickupBtn');
+        const inventoryTableBody = document.querySelector('#inventoryTable tbody');
+        const proxyInputsContainer = document.getElementById('proxyInputsContainer');
+        const proxyMemberIdInput = document.getElementById('proxyMemberIdInput');
+        const proxyNameInput = document.getElementById('proxyNameInput');
+        const pickupMemberIdEl = document.getElementById('pickupMemberId');
+        const pickupSelectedSizeEl = document.getElementById('pickupSelectedSize');
+        const stockManagementCard = document.getElementById('stockManagementCard');
+        const stockSizeSelect = document.getElementById('stockSizeSelect');
+        const stockQuantityInput = document.getElementById('stockQuantityInput');
+        const addStockBtn = document.getElementById('addStockBtn');
+        const withdrawStockBtn = document.getElementById('withdrawStockBtn');
+        const stockHistoryContainer = document.getElementById('stockHistoryContainer');
+        const stockHistoryToggle = document.getElementById('stockHistoryToggle');
+        const pickupHistoryContainer = document.getElementById('pickupHistoryContainer');
+        const pickupHistoryToggle = document.getElementById('pickupHistoryToggle');
+
+        // Modal UI
+        const sizeChangeModal = document.getElementById('sizeChangeModal');
+        const modalCloseBtn = document.querySelector('.modal-close-btn');
+        const modalSizeGrid = document.getElementById('modalSizeGrid');
+
+        // --- Initialize Firebase and App ---
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                // setLogLevel('debug');
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Firebase initialized and user signed in.");
+                isFirebaseReady = true;
+
+                // Enable UI elements
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'เข้าสู่ระบบ';
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'ค้นหา';
+                
+                // One-time setup functions
+                await addDummyMembers();
+                await initializeStockSummary();
+
+                // Populate dynamic UI elements
+                populateStockSizeSelect();
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                displayMessage('loginError', 'ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาลองใหม่อีกครั้ง', true);
+                loginBtn.textContent = 'เกิดข้อผิดพลาด';
+                searchBtn.textContent = 'เกิดข้อผิดพลาด';
+            }
+        }
+        
+        // Helper to add initial members for demonstration purposes
+        async function addDummyMembers() {
+             const membersCol = collection(db, memberCollectionPath);
+             const q = query(membersCol, where("memberId", "in", ["111111", "222222", "123456"]));
+             const existingMembers = await getDocs(q);
+             if (existingMembers.size >= 3) {
+                 console.log("Dummy members already exist.");
+                 return;
+             }
+
+             console.log("Adding dummy members...");
+             const dummyData = [
+                 { memberId: "111111", name: "สมชาย ใจดี", surveyEligibility: "2568-รอบที่ 1" },
+                 { memberId: "222222", name: "สมหญิง จริงใจ", surveyEligibility: "2568-รอบที่ 1" },
+                 { memberId: "123456", name: "ทดสอบ ระบบ", surveyEligibility: "2568-รอบที่ 2" },
+             ];
+             for (const member of dummyData) {
+                 const check = query(membersCol, where("memberId", "==", member.memberId));
+                 const snapshot = await getDocs(check);
+                 if (snapshot.empty) {
+                     await addDoc(membersCol, member);
+                 }
+             }
+        }
+        
+        async function initializeStockSummary() {
+            const stockCol = collection(db, stockSummaryCollectionPath);
+            const snapshot = await getDocs(stockCol);
+            if (!snapshot.empty) {
+                console.log("Stock summary already initialized.");
+                return;
+            }
+            console.log("Initializing stock summary...");
+            for (const size of ALL_SIZES) {
+                const sizeDocRef = doc(db, stockSummaryCollectionPath, size);
+                await setDoc(sizeDocRef, { produced: INITIAL_PRODUCTION_QUANTITY[size] || 0 });
+            }
+        }
+
+        function populateStockSizeSelect() {
+            stockSizeSelect.innerHTML = ALL_SIZES.map(size => `<option value="${size}">${size}</option>`).join('');
+        }
+
+        // --- Page Navigation ---
+        togglePageBtn.addEventListener('click', () => {
+            if (!isFirebaseReady) return;
+            if (adminPage.style.display === 'none') {
+                userPage.style.display = 'none';
+                adminPage.style.display = 'block';
+                togglePageBtn.textContent = 'สำหรับสมาชิก';
+                updateInventorySummary();
+                updateStockHistory();
+                updatePickupHistory();
+            } else {
+                adminPage.style.display = 'none';
+                userPage.style.display = 'block';
+                togglePageBtn.textContent = 'สำหรับเจ้าหน้าที่';
+            }
+        });
+
+
+        // --- User Form Validation and Submission Logic ---
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!isFirebaseReady) {
+                 displayMessage('loginError', 'ระบบยังไม่พร้อมใช้งาน กรุณารอสักครู่', true);
+                 return;
+            }
+            const memberId = document.getElementById('memberId').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const idCard = document.getElementById('idCard').value.trim();
+            if (!validateLoginForm(memberId, phone, idCard)) return;
+
+            userInfo = { memberId, phone, idCard };
+            hideMessage('loginError');
+            
+            const membersCol = collection(db, memberCollectionPath);
+            const qMember = query(membersCol, where("memberId", "==", memberId));
+            const memberSnapshot = await getDocs(qMember);
+
+            if (memberSnapshot.empty) {
+                displayMessage('loginError', 'ไม่พบข้อมูลสมาชิกในระบบ', true);
+                return;
+            }
+
+            const surveysCol = collection(db, surveyCollectionPath);
+            const qSurvey = query(surveysCol, where("memberId", "==", memberId));
+            const surveySnapshot = await getDocs(qSurvey);
+            
+            if (!surveySnapshot.empty) {
+                const doc = surveySnapshot.docs[0];
+                showSurveyPage(doc.id, doc.data().selectedSize);
+            } else {
+                showSurveyPage(null, null);
+            }
+        });
+
+        // --- Survey Page Logic ---
+        document.querySelectorAll('.size-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedSize = this.dataset.size;
+                selectedSizeDisplay.textContent = `รอบอก ${this.dataset.chest}" | ความยาว ${this.dataset.length}"`;
+                hideMessage('surveyMessage');
+            });
+        });
+        
+        window.submitSize = async function() {
+            if (!isFirebaseReady) return;
+            if (!selectedSize) {
+                displayMessage('surveyMessage', 'กรุณาเลือกขนาดเสื้อ', true);
+                return;
+            }
+            submitBtn.disabled = true; submitBtn.textContent = 'กำลังบันทึก...';
+            hideMessage('surveyMessage');
+            
+            const surveysCol = collection(db, surveyCollectionPath);
+            const q = query(surveysCol, where("memberId", "==", userInfo.memberId));
+            const querySnapshot = await getDocs(q);
+
+            const surveyData = { 
+                ...userInfo, 
+                selectedSize, 
+                confirmationTimestamp: new Date(),
+            };
+
+            try {
+                if (!querySnapshot.empty) {
+                    const docId = querySnapshot.docs[0].id;
+                    await updateDoc(doc(db, surveyCollectionPath, docId), surveyData);
+                } else {
+                    await addDoc(surveysCol, surveyData);
+                }
+                displayMessage('surveyMessage', 'บันทึกขนาดเสื้อเรียบร้อยแล้ว!', false);
+            } catch (e) {
+                console.error("Error saving document: ", e);
+                displayMessage('surveyMessage', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', true);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        // --- Admin Page Logic ---
+        searchBtn.addEventListener('click', async () => {
+            if (!isFirebaseReady) return;
+            const searchTerm = searchInput.value.trim();
+            if (searchTerm.length === 0) return;
+            searchResults.innerHTML = '<p>กำลังค้นหา...</p>';
+            pickupSection.style.display = 'none';
+
+            try {
+                const membersCol = collection(db, memberCollectionPath);
+                const qMember = query(membersCol, where("memberId", "==", searchTerm));
+                const memberSnapshot = await getDocs(qMember);
+
+                if (memberSnapshot.empty) {
+                    searchResults.innerHTML = '<p>ไม่พบข้อมูลสมาชิกตั้งต้น</p>';
+                    return;
+                }
+                
+                const memberDoc = memberSnapshot.docs[0];
+                const memberData = { ...memberDoc.data(), id: memberDoc.id };
+
+                const surveysCol = collection(db, surveyCollectionPath);
+                const qSurvey = query(surveysCol, where("memberId", "==", searchTerm));
+                const surveySnapshot = await getDocs(qSurvey);
+
+                searchResults.innerHTML = '';
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+
+                if (surveySnapshot.empty) {
+                    item.classList.add('not-confirmed');
+                    item.innerHTML = `
+                        <div><strong>เลขสมาชิก:</strong> ${memberData.memberId} (${memberData.name})</div>
+                        <div class="meta-info" style="color: var(--warning-color);">สถานะ: ยังไม่ยืนยันขนาด (คลิกเพื่อบันทึกและรับ)</div>
+                        <div class="meta-info">รอบที่เปิดให้ยืนยัน: ${memberData.surveyEligibility}</div>
+                    `;
+                    item.addEventListener('click', () => showPickupSection(null, memberData));
+
+                } else {
+                    const surveyDoc = surveySnapshot.docs[0];
+                    const surveyData = surveyDoc.data();
+                    const combinedData = { ...memberData, ...surveyData };
+
+                    const confirmationTime = surveyData.confirmationTimestamp?.toDate ? surveyData.confirmationTimestamp.toDate() : null;
+                    const formattedTime = confirmationTime ? confirmationTime.toLocaleString('th-TH') : 'ไม่มีข้อมูล';
+
+                    let pickupInfo = '';
+                    if (surveyData.pickupDetails?.pickedUp) {
+                        item.classList.add('picked-up');
+                        const pickupBy = (surveyData.pickupDetails.pickupType === 'proxy' && surveyData.pickupDetails.proxyName)
+                            ? `โดย: ${surveyData.pickupDetails.proxyName} (${surveyData.pickupDetails.proxyMemberId || ''})`
+                            : `(รับด้วยตนเอง)`;
+                        pickupInfo = `<div class="meta-info" style="color: var(--success-color);">รับแล้ว ${pickupBy}</div>`;
+                    } else {
+                        item.classList.add('confirmed');
+                    }
+
+                    const surveyEligibility = combinedData.surveyEligibility || 'ไม่มีข้อมูล';
+
+                    item.innerHTML = `
+                        <div><strong>เลขสมาชิก:</strong> ${surveyData.memberId} (${combinedData.name})</div>
+                        <div><strong>ขนาดที่ยืนยัน:</strong> ${surveyData.selectedSize}</div>
+                        <div class="meta-info">ยืนยันเมื่อ: ${formattedTime} | รอบ: ${surveyEligibility}</div>
+                        ${pickupInfo}
+                    `;
+                    item.dataset.docId = surveyDoc.id;
+                    if (!surveyData.pickupDetails?.pickedUp) {
+                         item.addEventListener('click', () => showPickupSection(surveyDoc.id, combinedData));
+                    }
+                }
+                searchResults.appendChild(item);
+
+            } catch (error) {
+                console.error("Error searching:", error);
+                searchResults.innerHTML = '<p>เกิดข้อผิดพลาดในการค้นหา</p>';
+            }
+        });
+        
+        function showPickupSection(docId, data) {
+            currentMemberInfo = data;
+            currentPickupDocId = docId;
+            newPickupSize = null;
+            
+            pickupSection.style.display = 'block';
+            pickupMemberIdEl.textContent = data.memberId;
+            
+            if (docId) { 
+                originalPickupSize = data.selectedSize;
+                pickupSelectedSizeEl.innerHTML = originalPickupSize;
+                savePickupBtn.disabled = false;
+            } else { 
+                originalPickupSize = null;
+                pickupSelectedSizeEl.innerHTML = `<span style="color: var(--warning-color);">คลิกเพื่อเลือกขนาด</span>`;
+                savePickupBtn.disabled = true;
+            }
+            
+            document.querySelector('input[name="pickupType"][value="self"]').checked = true;
+            proxyInputsContainer.style.display = 'none';
+            proxyMemberIdInput.value = '';
+            proxyNameInput.value = '';
+            proxyNameInput.readOnly = false;
+            
+            hideMessage('pickupMessage');
+        }
+
+        document.querySelectorAll('input[name="pickupType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                proxyInputsContainer.style.display = e.target.value === 'proxy' ? 'block' : 'none';
+                if (e.target.value !== 'proxy') {
+                    proxyMemberIdInput.value = '';
+                    proxyNameInput.value = '';
+                }
+            });
+        });
+
+        proxyMemberIdInput.addEventListener('input', async (e) => {
+            const memberId = e.target.value;
+            proxyNameInput.value = '';
+            proxyNameInput.readOnly = false;
+
+            if (memberId.length === 6) {
+                const membersCol = collection(db, memberCollectionPath);
+                const q = query(membersCol, where("memberId", "==", memberId));
+                const snapshot = await getDocs(q);
+
+                if (!snapshot.empty) {
+                    const memberData = snapshot.docs[0].data();
+                    proxyNameInput.value = memberData.name;
+                    proxyNameInput.readOnly = true;
+                }
+            }
+        });
+
+
+        savePickupBtn.addEventListener('click', async () => {
+            if (!isFirebaseReady || !currentMemberInfo.memberId) return;
+
+            if (!originalPickupSize && !newPickupSize) {
+                displayMessage('pickupMessage', 'กรุณาเลือกขนาดเสื้อสำหรับสมาชิก', true);
+                return;
+            }
+            
+            const pickupType = document.querySelector('input[name="pickupType"]:checked').value;
+            const proxyMemberId = proxyMemberIdInput.value.trim();
+            const proxyName = proxyNameInput.value.trim();
+
+            if (pickupType === 'proxy' && (proxyMemberId === '' || proxyName === '')) {
+                displayMessage('pickupMessage', 'กรุณากรอกข้อมูลผู้รับแทนให้ครบถ้วน', true);
+                return;
+            }
+
+            savePickupBtn.disabled = true; savePickupBtn.textContent = 'กำลังบันทึก...';
+            
+            const finalSize = newPickupSize || originalPickupSize;
+
+            const pickupData = {
+                pickedUp: true, pickupTimestamp: new Date(),
+                pickupType: pickupType, 
+                originalSize: originalPickupSize || finalSize, 
+                finalSize: finalSize
+            };
+            if (pickupType === 'proxy') {
+                pickupData.proxyMemberId = proxyMemberId;
+                pickupData.proxyName = proxyName;
+            }
+
+            try {
+                if (currentPickupDocId) {
+                    const docRef = doc(db, surveyCollectionPath, currentPickupDocId);
+                    await updateDoc(docRef, { pickupDetails: pickupData });
+                } else {
+                    const surveyData = {
+                        memberId: currentMemberInfo.memberId,
+                        phone: '', idCard: '',
+                        selectedSize: finalSize,
+                        confirmationTimestamp: new Date(),
+                        pickupDetails: pickupData
+                    };
+                    await addDoc(collection(db, surveyCollectionPath), surveyData);
+                }
+
+                displayMessage('pickupMessage', 'บันทึกการรับเสื้อสำเร็จ', false);
+                pickupSection.style.display = 'none';
+                currentPickupDocId = null;
+                currentMemberInfo = {};
+                await updateInventorySummary();
+                await updatePickupHistory();
+                searchBtn.click(); 
+            } catch (error) {
+                console.error("Error saving pickup:", error);
+                displayMessage('pickupMessage', 'เกิดข้อผิดพลาดในการบันทึก', true);
+            } finally {
+                savePickupBtn.disabled = false; savePickupBtn.textContent = 'บันทึกการรับเสื้อ';
+            }
+        });
+        
+        async function updateInventorySummary() {
+            if (!isFirebaseReady) return;
+            inventoryTableBody.innerHTML = `<tr><td colspan="5">กำลังโหลด...</td></tr>`;
+            try {
+                const stockSummaryCol = collection(db, stockSummaryCollectionPath);
+                const stockSnapshot = await getDocs(stockSummaryCol);
+                const productionQuantities = {};
+                stockSnapshot.forEach(doc => {
+                    productionQuantities[doc.id] = doc.data().produced || 0;
+                });
+
+                 const surveysCol = collection(db, surveyCollectionPath);
+                 const snapshot = await getDocs(surveysCol);
+                 const summary = ALL_SIZES.reduce((acc, size) => ({ ...acc, [size]: { reserved: 0, pickedUp: 0 } }), {});
+
+                 snapshot.forEach(doc => {
+                     const data = doc.data();
+                     if (data.pickupDetails?.pickedUp) {
+                         const finalSize = data.pickupDetails.finalSize;
+                         if (summary[finalSize]) {
+                             summary[finalSize].pickedUp++;
+                         }
+                     } 
+                     else {
+                         const reservedSize = data.selectedSize;
+                         if (summary[reservedSize]) {
+                             summary[reservedSize].reserved++;
+                         }
+                     }
+                 });
+                
+                inventoryTableBody.innerHTML = '';
+                let totalProduced = 0;
+                let totalReserved = 0;
+                let totalPickedUp = 0;
+                let totalRemaining = 0;
+
+                 ALL_SIZES.forEach(size => {
+                     const row = document.createElement('tr');
+                     const produced = productionQuantities[size] || 0;
+                     const reserved = summary[size].reserved;
+                     const pickedUp = summary[size].pickedUp;
+                     const remaining = produced - reserved - pickedUp;
+
+                     totalProduced += produced;
+                     totalReserved += reserved;
+                     totalPickedUp += pickedUp;
+                     totalRemaining += remaining;
+
+                     if (remaining <= 50) {
+                         row.classList.add('low-stock');
+                     }
+
+                     row.innerHTML = `
+                        <td><strong>${size}</strong></td> <td>${produced}</td> <td>${reserved}</td>
+                        <td>${pickedUp}</td> <td>${remaining}</td>
+                     `;
+                     inventoryTableBody.appendChild(row);
+                 });
+
+                 const totalRow = document.createElement('tr');
+                 totalRow.className = 'total-row';
+                 totalRow.innerHTML = `
+                    <td><strong>รวม</strong></td>
+                    <td><strong>${totalProduced}</strong></td>
+                    <td><strong>${totalReserved}</strong></td>
+                    <td><strong>${totalPickedUp}</strong></td>
+                    <td><strong>${totalRemaining}</strong></td>
+                 `;
+                 inventoryTableBody.appendChild(totalRow);
+
+            } catch (error)
+            {
+                console.error("Error updating summary:", error);
+                inventoryTableBody.innerHTML = `<tr><td colspan="5">เกิดข้อผิดพลาด</td></tr>`;
+            }
+        }
+        
+        // --- Stock Management Logic ---
+        async function handleStockUpdate(isAdding) {
+            const size = stockSizeSelect.value;
+            const quantity = parseInt(stockQuantityInput.value, 10);
+
+            if (isNaN(quantity) || quantity <= 0) {
+                displayMessage('stockMessage', 'กรุณากรอกจำนวนที่ถูกต้อง', true);
+                return;
+            }
+            
+            hideMessage('stockMessage');
+            addStockBtn.disabled = true;
+            withdrawStockBtn.disabled = true;
+
+            const updateValue = isAdding ? quantity : -quantity;
+            const transactionType = isAdding ? 'add' : 'withdraw';
+
+            try {
+                const stockDocRef = doc(db, stockSummaryCollectionPath, size);
+                await updateDoc(stockDocRef, { produced: increment(updateValue) });
+
+                await addDoc(collection(db, stockTransactionsCollectionPath), {
+                    size,
+                    quantity,
+                    type: transactionType,
+                    timestamp: serverTimestamp()
+                });
+                
+                displayMessage('stockMessage', `ทำรายการ${isAdding ? 'เติม' : 'เบิก'}สต็อกสำเร็จ`, false);
+                stockQuantityInput.value = '';
+                await updateInventorySummary();
+                await updateStockHistory();
+
+            } catch(error) {
+                console.error('Error updating stock:', error);
+                displayMessage('stockMessage', 'เกิดข้อผิดพลาดในการอัปเดตสต็อก', true);
+            } finally {
+                addStockBtn.disabled = false;
+                withdrawStockBtn.disabled = false;
+            }
+        }
+
+        async function updateStockHistory() {
+            if (!isFirebaseReady) return;
+            stockHistoryContainer.innerHTML = '<p>กำลังโหลด...</p>';
+            try {
+                const transCol = collection(db, stockTransactionsCollectionPath);
+                const q = query(transCol, orderBy("timestamp", "desc"), limit(10));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    stockHistoryContainer.innerHTML = '<p>ยังไม่มีประวัติ</p>';
+                    return;
+                }
+
+                stockHistoryContainer.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+
+                    const timestamp = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString('th-TH') : 'N/A';
+                    const typeText = data.type === 'add' ? 'เติม' : 'เบิก';
+                    const quantity = data.quantity;
+                    const size = data.size;
+
+                    item.innerHTML = `
+                        <div class="timestamp">${timestamp}</div>
+                        <div class="details ${data.type}">${typeText} ${size} (${quantity} ตัว)</div>
+                    `;
+                    stockHistoryContainer.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Error fetching stock history:", error);
+                stockHistoryContainer.innerHTML = '<p>เกิดข้อผิดพลาดในการโหลดประวัติ</p>';
+            }
+        }
+        
+        async function updatePickupHistory() {
+            if (!isFirebaseReady) return;
+            pickupHistoryContainer.innerHTML = '<p>กำลังโหลด...</p>';
+            try {
+                const surveysCol = collection(db, surveyCollectionPath);
+                const q = query(surveysCol, where("pickupDetails.pickedUp", "==", true));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    pickupHistoryContainer.innerHTML = '<p>ยังไม่มีประวัติ</p>';
+                    return;
+                }
+
+                const pickupHistory = [];
+                snapshot.forEach(doc => pickupHistory.push(doc.data()));
+
+                pickupHistory.sort((a, b) => {
+                    const timeA = a.pickupDetails.pickupTimestamp?.toDate() || 0;
+                    const timeB = b.pickupDetails.pickupTimestamp?.toDate() || 0;
+                    return timeB - timeA;
+                });
+
+                const latestPickups = pickupHistory.slice(0, 10);
+                
+                pickupHistoryContainer.innerHTML = '';
+                latestPickups.forEach(data => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    const timestamp = data.pickupDetails.pickupTimestamp?.toDate()?.toLocaleString('th-TH') || 'N/A';
+                    const sizeInfo = data.pickupDetails.originalSize === data.pickupDetails.finalSize
+                        ? data.pickupDetails.finalSize
+                        : `${data.pickupDetails.originalSize} → ${data.pickupDetails.finalSize}`;
+                    item.innerHTML = `
+                        <div class="timestamp">${timestamp}</div>
+                        <div class="details pickup">สมาชิก ${data.memberId} รับ ${sizeInfo}</div>
+                    `;
+                    pickupHistoryContainer.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Error fetching pickup history:", error);
+                pickupHistoryContainer.innerHTML = '<p>เกิดข้อผิดพลาดในการโหลดประวัติ</p>';
+            }
+        }
+
+
+        addStockBtn.addEventListener('click', () => handleStockUpdate(true));
+        withdrawStockBtn.addEventListener('click', () => handleStockUpdate(false));
+        
+        // --- Modal Logic ---
+        function populateSizeModal() {
+            const userSizeGrid = document.querySelector('#surveyPage .size-grid');
+            modalSizeGrid.innerHTML = userSizeGrid.innerHTML;
+            modalSizeGrid.querySelectorAll('.size-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    newPickupSize = option.dataset.size;
+                    if (originalPickupSize) {
+                        pickupSelectedSizeEl.innerHTML = `${originalPickupSize} <span style="color: var(--danger-color); font-weight: normal;">→</span> ${newPickupSize}`;
+                    } else {
+                        pickupSelectedSizeEl.innerHTML = newPickupSize;
+                    }
+                    savePickupBtn.disabled = false;
+                    closeSizeModal();
+                });
+            });
+        }
+        function openSizeModal() { sizeChangeModal.style.display = 'flex'; }
+        function closeSizeModal() { sizeChangeModal.style.display = 'none'; }
+
+        // --- Helper and Navigation Functions ---
+        function validateLoginForm(memberId, phone, idCard) {
+            let isValid = true;
+            hideError('memberIdError'); hideError('phoneError'); hideError('idCardError');
+            if (!/^[0-9]{6}$/.test(memberId)) { showError('memberIdError'); isValid = false; }
+            if (!/^[0-9]{10}$/.test(phone)) { showError('phoneError'); isValid = false; }
+            if (!/^[0-9]{3}$/.test(idCard)) { showError('idCardError'); isValid = false; }
+            return isValid;
+        }
+
+        function showSurveyPage(docId = null, size = null) {
+            loginPage.style.display = 'none'; surveyPage.style.display = 'block';
+            surveyPage.dataset.docId = docId || '';
+            selectedSizeDisplay.textContent = ''; hideMessage('surveyMessage');
+            if (docId) {
+                const sizeOption = document.querySelector(`.size-option[data-size="${size}"]`);
+                if (sizeOption) sizeOption.click();
+            } else {
+                const defaultSize = document.querySelector('[data-size="S"]');
+                if (defaultSize) defaultSize.click();
+            }
+        }
+
+        function showError(errorId) { document.getElementById(errorId).style.display = 'block'; }
+        function hideError(errorId) { document.getElementById(errorId).style.display = 'none'; }
+        function displayMessage(elementId, text, isError) {
+            const el = document.getElementById(elementId);
+            el.textContent = text;
+            el.className = 'message ' + (isError ? 'error' : 'success');
+            el.style.display = 'block';
+        }
+        function hideMessage(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+
+        // --- App Entry Point ---
+        window.addEventListener('load', () => {
+            initializeFirebase();
+            populateSizeModal();
+            // Modal Listeners
+            pickupSelectedSizeEl.addEventListener('click', openSizeModal);
+            modalCloseBtn.addEventListener('click', closeSizeModal);
+            sizeChangeModal.addEventListener('click', (e) => {
+                if (e.target === sizeChangeModal) closeSizeModal();
+            });
+
+            // History Toggles
+            [pickupHistoryToggle, stockHistoryToggle].forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const content = toggle.nextElementSibling;
+                    toggle.classList.toggle('expanded');
+                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

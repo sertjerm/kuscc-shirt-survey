@@ -140,7 +140,7 @@ const LoginForm = () => {
             ยืนยันตัวตน
           </Title>
           <Paragraph style={{ color: "#48484a", margin: 0, fontSize: "15px" }}>
-            ระบบสำรวจขนาดเสื้อแจ็กเก็ต สอ.มก.
+            ระบบจองขนาดเสื้อแจ็กเก็ต สอ.มก.
           </Paragraph>
         </div>
 
