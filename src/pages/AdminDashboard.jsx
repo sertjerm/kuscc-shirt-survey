@@ -1,5 +1,6 @@
 // src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import {
   Layout,
@@ -11,10 +12,9 @@ import {
   Drawer,
   Grid,
   Alert,
-  Spin,
-  Card,
   Form,
   message,
+  Modal,
 } from "antd";
 import {
   DashboardOutlined,
@@ -26,6 +26,7 @@ import {
   BellOutlined,
   LogoutOutlined,
   HistoryOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import "../styles/AdminDashboard.css";
 
@@ -34,7 +35,7 @@ import MembersList from "../components/Admin/MembersList";
 import DashboardStats from "../components/Admin/DashboardStats";
 import PickupModal from "../components/Admin/PickupModal";
 import InventoryManagement from "../components/Admin/InventoryManagement";
-import { getShirtMemberListPaged, getDashboardStats } from "../services/shirtApi";
+import { getDashboardStats, submitPickup } from "../services/shirtApi";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -42,185 +43,145 @@ const { useBreakpoint } = Grid;
 
 const AdminDashboard = () => {
   const { user, logout } = useAppContext();
+  const navigate = useNavigate();
   const screens = useBreakpoint();
 
   // UI State
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [activeMenuKey, setActiveMenuKey] = useState("dashboard");
-  
+
   // Dashboard State
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [dashboardError, setDashboardError] = useState(null);
-  const [dashboardStats, setDashboardStats] = useState({
-    total: 0,
-    confirmed: 0,
-    pending: 0,
-    received: 0,
-    distributedToday: 0,
-    inventory: []
-  });
-  
+  const [dashboardStats, setDashboardStats] = useState(null);
+
   // Pickup Management State
   const [selectedMember, setSelectedMember] = useState(null);
   const [pickupModalVisible, setPickupModalVisible] = useState(false);
   const [pickupForm] = Form.useForm();
 
+  // Auto-collapse sidebar on mobile
   useEffect(() => {
     setCollapsed(!screens.lg);
   }, [screens.lg]);
 
+  // Load dashboard stats when dashboard page is active
   useEffect(() => {
     if (activeMenuKey === "dashboard") {
       loadDashboardStats();
     }
   }, [activeMenuKey]);
 
-  // ฟังก์ชันคำนวณสถิติจาก API data
-  const calculateStats = (data) => {
-    const total = data.length;
-    const confirmed = data.filter(m => m.SIZE_CODE).length;
-    const pending = total - confirmed;
-    const received = data.filter(m => m.RECEIVED_DATE).length;
-    
-    // นับจำนวนแต่ละไซซ์
-    const sizeCount = {};
-    const sizeReceived = {};
-    
-    data.forEach(member => {
-      if (member.SIZE_CODE) {
-        sizeCount[member.SIZE_CODE] = (sizeCount[member.SIZE_CODE] || 0) + 1;
-        if (member.RECEIVED_DATE) {
-          sizeReceived[member.SIZE_CODE] = (sizeReceived[member.SIZE_CODE] || 0) + 1;
-        }
-      }
-    });
+  // Check if user is admin
+  useEffect(() => {
+    if (user && user.role !== "admin" && user.USER_ROLE !== "admin") {
+      message.error("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
+      navigate("/member");
+    }
+  }, [user, navigate]);
 
-    // สร้างข้อมูลสต็อก - ใช้ข้อมูลจริงจาก API ร่วมกับ mock data
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL'];
-    const mockProduced = {
-      'XS': 50, 'S': 100, 'M': 150, 'L': 200, 'XL': 150,
-      '2XL': 100, '3XL': 80, '4XL': 50, '5XL': 30, '6XL': 20
-    };
-    
-    const inventory = sizes.map(size => {
-      const reserved = sizeCount[size] || 0;
-      const receivedCount = sizeReceived[size] || 0;
-      const produced = mockProduced[size];
-      
-      return {
-        size,
-        produced,
-        reserved,
-        received: receivedCount,
-        remaining: Math.max(0, produced - reserved)
-      };
-    });
-
-    // คำนวณจ่ายแล้ววันนี้
-    const today = new Date().toDateString();
-    const distributedToday = data.filter(m => {
-      if (!m.RECEIVED_DATE) return false;
-      try {
-        const receivedDate = new Date(parseInt(m.RECEIVED_DATE.match(/\d+/)[0]));
-        return receivedDate.toDateString() === today;
-      } catch {
-        return false;
-      }
-    }).length;
-
-    return {
-      total,
-      confirmed,
-      pending,
-      received,
-      distributedToday,
-      inventory
-    };
-  };
-
+  // Load dashboard statistics
   const loadDashboardStats = async () => {
     setLoadingDashboard(true);
     setDashboardError(null);
-    
-    try {
-      // เรียก API เพื่อได้ข้อมูลทั้งหมด
-      const result = await getShirtMemberListPaged({
-        page: 1,
-        pageSize: 9999, // ดึงทั้งหมดเพื่อคำนวณสถิติ
-        search: '',
-        status: '',
-        size_code: ''
-      });
 
-      const stats = calculateStats(result.data || []);
+    try {
+      console.log("📊 Loading dashboard stats...");
+      const stats = await getDashboardStats();
       setDashboardStats(stats);
-      
-    } catch (error) {
-      console.error('Dashboard stats error:', error);
-      
-      // ถ้า error ให้ใช้ mock data แทน
-      const mockInventory = [
-        { size: 'XS', produced: 50, reserved: 0, received: 0, remaining: 50 },
-        { size: 'S', produced: 100, reserved: 1, received: 0, remaining: 99 },
-        { size: 'M', produced: 150, reserved: 0, received: 0, remaining: 150 },
-        { size: 'L', produced: 200, reserved: 0, received: 0, remaining: 200 },
-        { size: 'XL', produced: 150, reserved: 0, received: 0, remaining: 150 },
-        { size: '2XL', produced: 100, reserved: 0, received: 0, remaining: 100 },
-        { size: '3XL', produced: 80, reserved: 0, received: 0, remaining: 80 },
-        { size: '4XL', produced: 50, reserved: 0, received: 0, remaining: 50 },
-        { size: '5XL', produced: 30, reserved: 0, received: 0, remaining: 30 },
-        { size: '6XL', produced: 20, reserved: 0, received: 0, remaining: 20 },
-      ];
-      
-      setDashboardStats({
-        total: 1250,
-        confirmed: 980,
-        pending: 270,
-        received: 45,
-        distributedToday: 12,
-        inventory: mockInventory
-      });
+      console.log("✅ Dashboard stats loaded:", stats);
+    } catch (err) {
+      console.error("❌ Dashboard stats error:", err);
+      setDashboardError(err.message || "ไม่สามารถโหลดข้อมูลได้");
     } finally {
       setLoadingDashboard(false);
     }
   };
 
-  const handlePickupClick = (record) => {
-    setSelectedMember(record);
-    pickupForm.setFieldsValue({
-      memberCode: record.MEMB_CODE,
-      selectedSize: record.SIZE_CODE,
-      pickupType: "self",
-    });
+  // Handle pickup button click from MembersList
+  const handlePickupClick = (member) => {
+    console.log("📦 Opening pickup modal for:", member);
+    setSelectedMember(member);
     setPickupModalVisible(true);
+
+    // Pre-fill form with member data
+    pickupForm.setFieldsValue({
+      sizeCode: member.sizeCode || "",
+      receiverType: "SELF",
+      receiverName: "",
+      remarks: "",
+    });
   };
 
-  const handlePickupSubmit = async (values) => {
+  // Handle pickup submission
+  const handlePickupSubmit = async (pickupData) => {
     try {
-      // เรียก API เพื่อบันทึกการรับเสื้อ
-      console.log("Pickup submitted:", values);
-      // await submitPickup(values);
-      
+      console.log("📤 Submitting pickup:", pickupData);
+
+      await submitPickup(pickupData);
+
       message.success("บันทึกการรับเสื้อสำเร็จ");
+
+      // Close modal and reset
       setPickupModalVisible(false);
       pickupForm.resetFields();
       setSelectedMember(null);
-      
-      // Refresh stats
-      loadDashboardStats();
+
+      // Refresh stats if on dashboard
+      if (activeMenuKey === "dashboard") {
+        loadDashboardStats();
+      }
+
+      return true;
     } catch (error) {
-      message.error("เกิดข้อผิดพลาดในการบันทึก");
+      console.error("❌ Pickup submit error:", error);
+      message.error(error.message || "เกิดข้อผิดพลาดในการบันทึก");
+      return false;
     }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    Modal.confirm({
+      title: "ออกจากระบบ",
+      content: "คุณต้องการออกจากระบบหรือไม่?",
+      okText: "ออกจากระบบ",
+      cancelText: "ยกเลิก",
+      onOk: () => {
+        logout();
+        navigate("/");
+      },
+    });
   };
 
   // Menu items
   const menuItems = [
-    { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
-    { key: "members", icon: <SearchOutlined />, label: "ค้นหาและรับเสื้อ" },
-    { key: "inventory", icon: <BarChartOutlined />, label: "จัดการสต็อก" },
-    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการจ่าย" },
-    { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
+    {
+      key: "dashboard",
+      icon: <DashboardOutlined />,
+      label: "ภาพรวม",
+    },
+    {
+      key: "members",
+      icon: <SearchOutlined />,
+      label: "ค้นหาและจ่ายเสื้อ",
+    },
+    {
+      key: "inventory",
+      icon: <BarChartOutlined />,
+      label: "จัดการสต็อก",
+    },
+    {
+      key: "history",
+      icon: <HistoryOutlined />,
+      label: "ประวัติการจ่าย",
+    },
+    {
+      key: "settings",
+      icon: <SettingOutlined />,
+      label: "ตั้งค่า",
+    },
   ];
 
   // Render content based on active menu
@@ -234,27 +195,57 @@ const AdminDashboard = () => {
 
       case "history":
         return (
-          <Card title="ประวัติการรับเสื้อ" bordered={false}>
-            <div style={{ textAlign: "center", padding: 48 }}>
-              <Text type="secondary">ส่วนประวัติการรับเสื้อ (อยู่ระหว่างพัฒนา)</Text>
-            </div>
-          </Card>
+          <div>
+            <Title level={3} style={{ marginBottom: 24 }}>
+              ประวัติการรับเสื้อ
+            </Title>
+            <Alert
+              message="ฟีเจอร์นี้อยู่ระหว่างการพัฒนา"
+              description="ส่วนประวัติการรับเสื้อจะพร้อมใช้งานในเร็วๆ นี้"
+              type="info"
+              showIcon
+            />
+          </div>
         );
 
       case "settings":
         return (
-          <Card title="ตั้งค่าระบบ" bordered={false}>
-            <div style={{ textAlign: "center", padding: 48 }}>
-              <Text type="secondary">ส่วนการตั้งค่า (อยู่ระหว่างพัฒนา)</Text>
-            </div>
-          </Card>
+          <div>
+            <Title level={3} style={{ marginBottom: 24 }}>
+              ตั้งค่าระบบ
+            </Title>
+            <Alert
+              message="ฟีเจอร์นี้อยู่ระหว่างการพัฒนา"
+              description="ส่วนการตั้งค่าจะพร้อมใช้งานในเร็วๆ นี้"
+              type="info"
+              showIcon
+            />
+          </div>
         );
 
       case "dashboard":
       default:
         return (
-          <>
-            <Title level={3} style={{ marginBottom: 24 }}>ภาพรวมวันนี้</Title>
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
+            >
+              <Title level={3} style={{ margin: 0 }}>
+                ภาพรวมระบบจองเสื้อแจ็คเก็ต
+              </Title>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={loadDashboardStats}
+                loading={loadingDashboard}
+              >
+                รีเฟรช
+              </Button>
+            </div>
 
             {dashboardError && (
               <Alert
@@ -268,17 +259,11 @@ const AdminDashboard = () => {
               />
             )}
 
-            {loadingDashboard ? (
-              <Card>
-                <div style={{ textAlign: "center", padding: 48 }}>
-                  <Spin size="large" />
-                  <div style={{ marginTop: 16 }}>กำลังโหลดข้อมูล...</div>
-                </div>
-              </Card>
-            ) : (
-              <DashboardStats stats={dashboardStats} />
-            )}
-          </>
+            <DashboardStats
+              stats={dashboardStats}
+              loading={loadingDashboard}
+            />
+          </div>
         );
     }
   };
@@ -309,6 +294,7 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard-layout">
       <Layout style={{ minHeight: "100vh" }}>
+        {/* Desktop Sidebar */}
         {screens.lg ? (
           <Sider
             collapsible
@@ -320,6 +306,7 @@ const AdminDashboard = () => {
             {siderContent}
           </Sider>
         ) : (
+          /* Mobile Drawer */
           <Drawer
             placement="left"
             onClose={() => setMobileDrawerVisible(false)}
@@ -331,9 +318,12 @@ const AdminDashboard = () => {
             {siderContent}
           </Drawer>
         )}
-        
+
+        {/* Main Layout */}
         <Layout className="site-layout">
+          {/* Header */}
           <Header className="dashboard-header">
+            {/* Mobile Menu Button */}
             {!screens.lg && (
               <Button
                 type="text"
@@ -342,6 +332,8 @@ const AdminDashboard = () => {
                 className="mobile-menu-button"
               />
             )}
+
+            {/* Header Content */}
             <div className="header-content">
               <Title
                 level={4}
@@ -349,22 +341,34 @@ const AdminDashboard = () => {
               >
                 {menuItems.find((item) => item.key === activeMenuKey)?.label}
               </Title>
+
+              {/* User Info & Actions */}
               <Space size="middle">
-                <BellOutlined style={{ fontSize: "20px", cursor: "pointer", color: "#48484a" }} />
-                <Avatar icon={<UserOutlined />} />
+                <BellOutlined
+                  style={{
+                    fontSize: "20px",
+                    cursor: "pointer",
+                    color: "#48484a",
+                  }}
+                />
+                <Avatar icon={<UserOutlined />} style={{ backgroundColor: "#1890ff" }} />
                 <Text style={{ color: "#1d1d1f" }}>
-                  {user?.name || "Admin"}
+                  {user?.displayName || user?.name || "Admin"}
                 </Text>
                 <Button
                   type="text"
                   icon={<LogoutOutlined />}
-                  onClick={logout}
+                  onClick={handleLogout}
                   danger
                   aria-label="Logout"
-                />
+                >
+                  {screens.md && "ออกจากระบบ"}
+                </Button>
               </Space>
             </div>
           </Header>
+
+          {/* Main Content */}
           <Content className="dashboard-content">{renderContent()}</Content>
         </Layout>
       </Layout>
@@ -377,9 +381,8 @@ const AdminDashboard = () => {
           pickupForm.resetFields();
           setSelectedMember(null);
         }}
-        onSubmit={handlePickupSubmit}
+        onSuccess={handlePickupSubmit}
         selectedMember={selectedMember}
-        form={pickupForm}
       />
     </div>
   );

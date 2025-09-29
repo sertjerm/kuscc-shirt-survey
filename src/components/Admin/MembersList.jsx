@@ -1,17 +1,23 @@
 // src/components/Admin/MembersList.jsx
 import { useState, useEffect, useCallback } from "react";
-import { Form } from "antd";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
 import PickupModal from "./PickupModal";
-import {
-  SHIRT_SIZES,
-  MEMBER_STATUS,
-} from "../../utils/constants";
 import "../../styles/MembersList.css";
 
-const MembersList = () => {
-  const [pickupForm] = Form.useForm();
+// Constants
+const SHIRT_SIZES = [
+  { code: "XS" }, { code: "S" }, { code: "M" }, { code: "L" },
+  { code: "XL" }, { code: "2XL" }, { code: "3XL" }, { code: "4XL" },
+  { code: "5XL" }, { code: "6XL" }
+];
 
+const MEMBER_STATUS = {
+  NOT_CONFIRMED: "NOT_CONFIRMED",
+  CONFIRMED: "CONFIRMED",
+  RECEIVED: "RECEIVED",
+};
+
+const MembersList = ({ onPickupClick }) => {
   // States
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,6 +47,14 @@ const MembersList = () => {
     setError(null);
 
     try {
+      console.log("📋 Loading members with filters:", {
+        page: currentPage,
+        pageSize,
+        search: searchTerm,
+        status: statusFilter,
+        size_code: sizeFilter,
+      });
+
       const result = await getShirtMemberListPaged({
         page: currentPage,
         pageSize,
@@ -49,10 +63,13 @@ const MembersList = () => {
         size_code: sizeFilter,
       });
 
+      console.log("✅ Members loaded:", result);
+
       setMembers(result.data || []);
       setTotalPages(result.totalPages || 1);
       setTotalCount(result.totalCount || 0);
     } catch (err) {
+      console.error("❌ Load members error:", err);
       setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
       setMembers([]);
     } finally {
@@ -108,8 +125,14 @@ const MembersList = () => {
 
   // Handler: เปิด Modal บันทึกการรับเสื้อ
   const handleOpenPickupModal = (member) => {
+    console.log("📦 Opening pickup modal for:", member);
     setSelectedMember(member);
     setShowPickupModal(true);
+    
+    // ถ้ามี callback จาก parent (AdminDashboard)
+    if (onPickupClick) {
+      onPickupClick(member);
+    }
   };
 
   // Handler: ปิด Modal
@@ -126,10 +149,11 @@ const MembersList = () => {
 
   // Helper: กำหนด status ของสมาชิก
   const getMemberStatus = (member) => {
-    if (member.RECEIVED_DATE) {
+    // ตรวจสอบจากฟิลด์ใหม่
+    if (member.hasReceived || member.receiveStatus === "RECEIVED" || member.RECEIVE_STATUS === "RECEIVED" || member.RECEIVE_DATE) {
       return MEMBER_STATUS.RECEIVED;
     }
-    if (member.SIZE_CODE) {
+    if (member.sizeCode || member.SIZE_CODE) {
       return MEMBER_STATUS.CONFIRMED;
     }
     return MEMBER_STATUS.NOT_CONFIRMED;
@@ -138,9 +162,11 @@ const MembersList = () => {
   // Helper: Format วันที่เป็น dd/mm/yyyy HH:mm (บรรทัดเดียว)
   const formatDateTime = (dateString) => {
     try {
+      if (!dateString) return '-';
+      
       let date;
       // Check if it's WCF format /Date(...)/
-      if (dateString && dateString.includes('/Date(')) {
+      if (dateString.includes('/Date(')) {
         const timestamp = parseInt(dateString.match(/\d+/)[0]);
         date = new Date(timestamp);
       } else {
@@ -184,8 +210,10 @@ const MembersList = () => {
 
   // Helper: แสดงปุ่มตามสถานะ
   const getActionButton = (member) => {
+    const status = getMemberStatus(member);
+    
     // ถ้ารับเสื้อแล้ว ไม่แสดงปุ่ม
-    if (member.RECEIVED_DATE) {
+    if (status === MEMBER_STATUS.RECEIVED) {
       return <span className="text-muted">-</span>;
     }
 
@@ -234,9 +262,9 @@ const MembersList = () => {
               className="filter-select"
             >
               <option value="">สถานะทั้งหมด</option>
-              <option value="pending">ยังไม่ยืนยัน</option>
-              <option value="confirmed">ยืนยันแล้ว</option>
-              <option value="received">รับแล้ว</option>
+              <option value="PENDING">ยังไม่ยืนยัน</option>
+              <option value="CONFIRMED">ยืนยันแล้ว</option>
+              <option value="RECEIVED">รับแล้ว</option>
             </select>
 
             {/* Size Filter */}
@@ -269,7 +297,7 @@ const MembersList = () => {
       </div>
 
       {/* Error Display */}
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message">❌ {error}</div>}
 
       {/* Members Table */}
       {loading ? (
@@ -295,42 +323,52 @@ const MembersList = () => {
                 </tr>
               </thead>
               <tbody>
-                {members.map((member) => (
-                  <tr key={member.MEMB_CODE}>
-                    <td data-label="รหัสสมาชิก">
-                      <strong>{member.MEMB_CODE}</strong>
-                    </td>
-                    <td data-label="ชื่อ-นามสกุล">{member.FULLNAME}</td>
-                    <td data-label="ขนาดที่เลือก">
-                      {member.SIZE_CODE ? (
-                        <span className="size-display">{member.SIZE_CODE}</span>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
-                    </td>
-                    <td data-label="วันที่จอง/รับ">
-                      <span className="date-value">
-                        {member.RECEIVED_DATE 
-                          ? formatDateTime(member.RECEIVED_DATE)
-                          : member.SURVEY_DATE 
-                            ? formatDateTime(member.SURVEY_DATE)
-                            : '-'
-                        }
-                      </span>
-                    </td>
-                    <td data-label="สถานะ">{getStatusTag(member)}</td>
-                    <td data-label="หมายเหตุ">
-                      {member.REMARKS ? (
-                        <span className="remarks-text" title={member.REMARKS}>
-                          {member.REMARKS}
+                {members.map((member) => {
+                  // Support both camelCase and UPPERCASE
+                  const memberCode = member.memberCode || member.MEMB_CODE;
+                  const fullName = member.fullName || member.FULLNAME;
+                  const sizeCode = member.sizeCode || member.SIZE_CODE;
+                  const receiveDate = member.receiveDate || member.RECEIVE_DATE;
+                  const surveyDate = member.surveyDate || member.SURVEY_DATE;
+                  const remarks = member.remarks || member.REMARKS;
+
+                  return (
+                    <tr key={memberCode}>
+                      <td data-label="รหัสสมาชิก">
+                        <strong>{memberCode}</strong>
+                      </td>
+                      <td data-label="ชื่อ-นามสกุล">{fullName}</td>
+                      <td data-label="ขนาดที่เลือก">
+                        {sizeCode ? (
+                          <span className="size-display">{sizeCode}</span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      <td data-label="วันที่จอง/รับ">
+                        <span className="date-value">
+                          {receiveDate 
+                            ? formatDateTime(receiveDate)
+                            : surveyDate 
+                              ? formatDateTime(surveyDate)
+                              : '-'
+                          }
                         </span>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
-                    </td>
-                    <td data-label="การดำเนินการ">{getActionButton(member)}</td>
-                  </tr>
-                ))}
+                      </td>
+                      <td data-label="สถานะ">{getStatusTag(member)}</td>
+                      <td data-label="หมายเหตุ">
+                        {remarks ? (
+                          <span className="remarks-text" title={remarks}>
+                            {remarks}
+                          </span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      <td data-label="การดำเนินการ">{getActionButton(member)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -381,9 +419,8 @@ const MembersList = () => {
         <PickupModal
           visible={showPickupModal}
           onCancel={handleClosePickupModal}
-          onSubmit={handlePickupSuccess}
+          onSuccess={handlePickupSuccess}
           selectedMember={selectedMember}
-          form={pickupForm}
         />
       )}
     </div>

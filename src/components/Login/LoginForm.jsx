@@ -1,3 +1,4 @@
+// src/components/Login/LoginForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Form, Input, Button, Typography, Alert } from "antd";
@@ -17,11 +18,10 @@ const { Title, Paragraph } = Typography;
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAppContext();
-  // เพิ่ม initialValues สำหรับ default ค่า
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  // กำหนดค่า default
+  // กำหนดค่า default สำหรับทดสอบ
   const initialValues = {
     memberCode: "012938",
     phone: "0812681022",
@@ -32,34 +32,33 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      console.log("เรียกใช้ API เข้าสู่ระบบ...");
+      console.log("🔐 เรียกใช้ API เข้าสู่ระบบ...");
       const memberData = await loginMember({
         memberCode: values.memberCode || "012938",
         phone: values.phone || "0812681022",
-        idCard: values.idCard || "952", // ใช้ 3 ตัวท้ายของบัตรประชาชน,
+        idCard: values.idCard || "952",
       });
 
-      console.log("ได้รับข้อมูลสมาชิก:", memberData);
+      console.log("✅ ได้รับข้อมูลสมาชิก:", memberData);
 
       if (memberData) {
-        // กำหนด role เป็น member เสมอ (เนื่องจาก API ไม่ส่ง USER_ROLE มา)
-        // หากต้องการ admin role ให้เพิ่มเงื่อนไขตรวจสอบเพิ่มเติม
+        // กำหนด role (default: member)
         let userRole = "member";
         let userType = "member";
 
-        // ตรวจสอบว่าเป็น admin หรือไม่ (ตัวอย่างเงื่อนไข)
-        // สามารถแก้ไขเงื่อนไขตามความเหมาะสม
+        // ตรวจสอบว่าเป็น admin หรือไม่
         if (
           memberData.memberCode === "012938" ||
-          memberData.memberCode === "999999"
+          memberData.memberCode === "999999" ||
+          memberData.userRole === "admin"
         ) {
           userRole = "admin";
           userType = "admin";
         }
 
-        console.log("userRole:", userRole, "userType:", userType);
+        console.log("👤 userRole:", userRole, "userType:", userType);
 
-        // สร้าง user object ที่จะเก็บใน context ให้สอดคล้องกับ MemberPortal
+        // สร้าง user object ให้สอดคล้องกับโค้ดเดิม
         const userData = {
           memberCode: memberData.memberCode,
           name: memberData.name,
@@ -68,28 +67,47 @@ const LoginForm = () => {
           phone: memberData.phone,
           idCard: memberData.socialId,
           role: userRole,
-          sizeCode: memberData.selectedSize,
+          sizeCode: memberData.sizeCode, // ใช้ sizeCode แทน selectedSize
           surveyDate: memberData.surveyDate,
           surveyMethod: memberData.surveyMethod,
-          updatedDate: null, // API ไม่มีข้อมูลนี้
+          updatedDate: memberData.updatedDate,
           remarks: memberData.remarks,
-          // เพิ่มข้อมูลที่ MemberPortal ต้องการ
+          
+          // ฟิลด์ใหม่สำหรับการรับเสื้อ
+          hasReceived: memberData.hasReceived || false,
+          receiveStatus: memberData.receiveStatus,
+          receiveDate: memberData.receiveDate,
+          receiverType: memberData.receiverType,
+          receiverName: memberData.receiverName,
+          processedBy: memberData.processedBy,
+          
+          // เพิ่มข้อมูลที่ MemberPortal ต้องการ (backward compatibility)
           MEMB_CODE: memberData.memberCode,
           DISPLAYNAME: memberData.displayName || memberData.name,
           FULLNAME: memberData.fullName,
           MEMB_MOBILE: memberData.phone,
           MEMB_SOCID: memberData.socialId,
-          SIZE_CODE: memberData.selectedSize,
+          SIZE_CODE: memberData.sizeCode,
           SURVEY_DATE: memberData.surveyDate,
           SURVEY_METHOD: memberData.surveyMethod,
           REMARKS: memberData.remarks,
           USER_ROLE: userRole,
+          
+          // ฟิลด์ใหม่ในรูปแบบ uppercase (สำหรับ compatibility)
+          PROCESSED_BY: memberData.processedBy,
+          RECEIVER_NAME: memberData.receiverName,
+          RECEIVER_TYPE: memberData.receiverType,
+          RECEIVE_DATE: memberData.receiveDate,
+          RECEIVE_STATUS: memberData.receiveStatus,
+          UPDATED_DATE: memberData.updatedDate,
         };
 
-        console.log("Final userData:", userData);
+        console.log("💾 Final userData:", userData);
 
+        // บันทึกข้อมูลใน context
         login(userData, userType);
 
+        // แสดง success message
         await Swal.fire({
           icon: "success",
           title: "เข้าสู่ระบบสำเร็จ",
@@ -98,17 +116,17 @@ const LoginForm = () => {
           showConfirmButton: false,
         });
 
-        // Redirect ตาม role
+        // 🔥 FLOW เดิม: Navigate ตาม role
         if (userType === "admin") {
           navigate("/admin");
         } else {
-          navigate("/member");
+          navigate("/member"); // ไปหน้า Survey (เดิม)
         }
       } else {
         throw new Error("ไม่พบข้อมูลสมาชิกหรือข้อมูลไม่ถูกต้อง");
       }
     } catch (error) {
-      console.error("Login Error:", error);
+      console.error("❌ Login Error:", error);
 
       await Swal.fire({
         icon: "error",
@@ -158,7 +176,7 @@ const LoginForm = () => {
           layout="vertical"
           onFinish={handleLogin}
           size="large"
-          initialValues={initialValues} // ✅ กำหนดค่า default
+          initialValues={initialValues}
         >
           <Form.Item
             name="memberCode"

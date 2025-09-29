@@ -1,195 +1,290 @@
 // src/components/Admin/DashboardStats.jsx
-import React from 'react';
-import { Row, Col, Card, Statistic, Progress, Table, Tag } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Statistic, Progress, Space, Typography, Spin, Alert } from 'antd';
 import { 
-  TrophyOutlined, 
+  TeamOutlined, 
   CheckCircleOutlined, 
-  ClockCircleOutlined, 
-  TeamOutlined,
-  ShoppingOutlined 
+  ClockCircleOutlined,
+  GiftOutlined,
+  TrophyOutlined,
+  RiseOutlined
 } from '@ant-design/icons';
+import { getDashboardStats } from '../../services/shirtApi';
 
-const StatCard = ({ icon, title, value, subtitle, color, progress }) => (
-  <Card bordered={false} hoverable style={{ height: '100%' }}>
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-      <div 
-        style={{ 
-          backgroundColor: color, 
-          borderRadius: '12px',
-          padding: '16px',
-          fontSize: '24px',
-          color: '#fff',
-          flexShrink: 0
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ flex: 1 }}>
-        <Statistic 
-          title={title} 
-          value={value}
-          valueStyle={{ fontSize: '32px', fontWeight: '600' }}
-        />
-        {subtitle && (
-          <div style={{ color: '#666', fontSize: '13px', marginTop: '4px' }}>
-            {subtitle}
+const { Title, Text } = Typography;
+
+const DashboardStats = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await getDashboardStats();
+      setStats(data);
+    } catch (err) {
+      console.error('Error loading dashboard stats:', err);
+      setError(err.message || 'ไม่สามารถโหลดข้อมูลสถิติได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary">กำลังโหลดข้อมูล...</Text>
           </div>
-        )}
-        {progress !== undefined && (
-          <Progress 
-            percent={progress} 
-            size="small" 
-            strokeColor={color}
-            style={{ marginTop: '8px' }}
-            showInfo={false}
-          />
-        )}
-      </div>
-    </div>
-  </Card>
-);
+        </div>
+      </Card>
+    );
+  }
 
-const DashboardStats = ({ stats }) => {
-  // คำนวณเปอร์เซ็นต์
-  const confirmedPercent = stats.total > 0 
-    ? Math.round((stats.confirmed / stats.total) * 100) 
+  if (error) {
+    return (
+      <Alert
+        message="เกิดข้อผิดพลาด"
+        description={error}
+        type="error"
+        showIcon
+        action={
+          <button onClick={loadStats}>ลองอีกครั้ง</button>
+        }
+      />
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
+  // Calculate percentages
+  const confirmedPercent = stats.totalMembers > 0 
+    ? Math.round((stats.confirmedMembers / stats.totalMembers) * 100) 
     : 0;
   
-  const receivedPercent = stats.confirmed > 0 
-    ? Math.round((stats.received / stats.confirmed) * 100) 
+  const receivedPercent = stats.totalMembers > 0 
+    ? Math.round((stats.receivedMembers / stats.totalMembers) * 100) 
     : 0;
 
-  // ข้อมูลสำหรับตารางสต็อก
-  const stockColumns = [
-    {
-      title: 'ขนาด',
-      dataIndex: 'size',
-      key: 'size',
-      align: 'center',
-      render: (text) => <strong>{text}</strong>
-    },
-    {
-      title: 'ผลิต',
-      dataIndex: 'produced',
-      key: 'produced',
-      align: 'center',
-    },
-    {
-      title: 'จอง',
-      dataIndex: 'reserved',
-      key: 'reserved',
-      align: 'center',
-      render: (value) => value > 0 ? value : '-'
-    },
-    {
-      title: 'รับแล้ว',
-      dataIndex: 'received',
-      key: 'received',
-      align: 'center',
-      render: (value) => value > 0 ? value : '-'
-    },
-    {
-      title: 'คงเหลือ',
-      dataIndex: 'remaining',
-      key: 'remaining',
-      align: 'center',
-      render: (value, record) => {
-        const isLow = value <= 50;
-        return (
-          <Tag color={isLow ? 'red' : 'green'}>
-            <strong>{value}</strong>
-          </Tag>
-        );
-      }
-    }
-  ];
+  const pendingPercent = 100 - confirmedPercent;
 
   return (
-    <>
-      {/* สถิติหลัก */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            icon={<TrophyOutlined />}
-            title="จ่ายแล้ววันนี้"
-            value={stats.distributedToday || 0}
-            subtitle={`รวมทั้งหมด ${stats.received || 0} คน`}
-            color="#52c41a"
-          />
-        </Col>
-        
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            icon={<CheckCircleOutlined />}
-            title="ยืนยันแล้ว"
-            value={stats.confirmed || 0}
-            subtitle={`${confirmedPercent}% ของสมาชิกทั้งหมด`}
-            color="#1890ff"
-            progress={confirmedPercent}
-          />
-        </Col>
-        
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            icon={<ClockCircleOutlined />}
-            title="รอยืนยัน"
-            value={stats.pending || 0}
-            subtitle={`${100 - confirmedPercent}% ยังไม่ยืนยัน`}
-            color="#fa8c16"
-          />
-        </Col>
-        
-        <Col xs={24} sm={12} lg={6}>
-          <StatCard
-            icon={<TeamOutlined />}
-            title="สมาชิกทั้งหมด"
-            value={stats.total || 0}
-            subtitle="ที่มีสิทธิ์รับเสื้อ"
-            color="#722ed1"
-          />
-        </Col>
-      </Row>
-
-      {/* ตารางสต็อกเสื้อ */}
+    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      {/* Overview Stats */}
       <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card 
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShoppingOutlined />
-                <span>สรุปข้อมูลสต็อกเสื้อ</span>
-              </div>
-            }
-            bordered={false}
-          >
-            <Table
-              columns={stockColumns}
-              dataSource={stats.inventory || []}
-              pagination={false}
-              size="middle"
-              rowKey="size"
-              style={{ marginTop: 16 }}
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="สมาชิกทั้งหมด"
+              value={stats.totalMembers}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: '#1890ff' }}
             />
-            
-            <div style={{ 
-              marginTop: 16, 
-              padding: '12px 16px', 
-              background: '#fff7e6',
-              borderRadius: '6px',
-              border: '1px solid #ffe58f',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '16px' }}>⚠️</span>
-              <span style={{ color: '#ad6800', fontSize: '14px' }}>
-                <strong>คำเตือน:</strong> ขนาดที่มีสต็อกคงเหลือ ≤ 50 ตัว จะแสดงเป็นสีแดง
-              </span>
-            </div>
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="ยืนยันขนาดแล้ว"
+              value={stats.confirmedMembers}
+              prefix={<CheckCircleOutlined />}
+              suffix={`/ ${stats.totalMembers}`}
+              valueStyle={{ color: '#52c41a' }}
+            />
+            <Progress 
+              percent={confirmedPercent} 
+              strokeColor="#52c41a"
+              size="small"
+              style={{ marginTop: 8 }}
+            />
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="รับเสื้อแล้ว"
+              value={stats.receivedMembers}
+              prefix={<GiftOutlined />}
+              suffix={`/ ${stats.totalMembers}`}
+              valueStyle={{ color: '#faad14' }}
+            />
+            <Progress 
+              percent={receivedPercent} 
+              strokeColor="#faad14"
+              size="small"
+              style={{ marginTop: 8 }}
+            />
+          </Card>
+        </Col>
+        
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="ยังไม่ยืนยัน"
+              value={stats.pendingMembers}
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
+            />
+            <Progress 
+              percent={pendingPercent} 
+              strokeColor="#ff4d4f"
+              size="small"
+              style={{ marginTop: 8 }}
+            />
           </Card>
         </Col>
       </Row>
-    </>
+
+      {/* Detailed Stats */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
+          <Card 
+            title={
+              <Space>
+                <TrophyOutlined />
+                <span>ขนาดที่ได้รับความนิยม</span>
+              </Space>
+            }
+          >
+            {stats.popularSizes && stats.popularSizes.length > 0 ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {stats.popularSizes.slice(0, 5).map((item, index) => (
+                  <div key={item.size} style={{ width: '100%' }}>
+                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                      <Text strong>
+                        {index === 0 && '🥇 '}
+                        {index === 1 && '🥈 '}
+                        {index === 2 && '🥉 '}
+                        ขนาด {item.size}
+                      </Text>
+                      <Text>{item.count} คน</Text>
+                    </Space>
+                    <Progress 
+                      percent={Math.round((item.count / stats.confirmedMembers) * 100)} 
+                      size="small"
+                      showInfo={false}
+                      strokeColor={index === 0 ? '#faad14' : '#1890ff'}
+                    />
+                  </div>
+                ))}
+              </Space>
+            ) : (
+              <Text type="secondary">ยังไม่มีข้อมูล</Text>
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={24} md={12}>
+          <Card 
+            title={
+              <Space>
+                <RiseOutlined />
+                <span>สถิติการจ่ายเสื้อ</span>
+              </Space>
+            }
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size="large">
+              <div>
+                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                  <Text>รับด้วยตนเอง:</Text>
+                  <Text strong style={{ color: '#52c41a' }}>
+                    {stats.selfReceived || 0} คน
+                  </Text>
+                </Space>
+                <Progress 
+                  percent={stats.receivedMembers > 0 
+                    ? Math.round((stats.selfReceived / stats.receivedMembers) * 100)
+                    : 0
+                  }
+                  strokeColor="#52c41a"
+                  size="small"
+                />
+              </div>
+
+              <div>
+                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                  <Text>รับแทน:</Text>
+                  <Text strong style={{ color: '#fa8c16' }}>
+                    {stats.proxyReceived || 0} คน
+                  </Text>
+                </Space>
+                <Progress 
+                  percent={stats.receivedMembers > 0 
+                    ? Math.round((stats.proxyReceived / stats.receivedMembers) * 100)
+                    : 0
+                  }
+                  strokeColor="#fa8c16"
+                  size="small"
+                />
+              </div>
+
+              <div style={{ 
+                padding: '12px', 
+                backgroundColor: '#f0f5ff', 
+                borderRadius: 4,
+                marginTop: 8
+              }}>
+                <Space direction="vertical" size={0}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    อัตราการจ่าย
+                  </Text>
+                  <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+                    {receivedPercent}%
+                  </Title>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    จากทั้งหมด {stats.totalMembers} คน
+                  </Text>
+                </Space>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Survey Method Stats */}
+      {stats.surveyMethods && (
+        <Card title="สถิติช่องทางการสำรวจ">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Statistic
+                title="สำรวจออนไลน์"
+                value={stats.surveyMethods.online || 0}
+                suffix="คน"
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Col>
+            <Col span={12}>
+              <Statistic
+                title="บันทึกด้วยตนเอง (Manual)"
+                value={stats.surveyMethods.manual || 0}
+                suffix="คน"
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      {/* Last Updated */}
+      <div style={{ textAlign: 'right' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          📊 อัพเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+        </Text>
+      </div>
+    </Space>
   );
 };
 

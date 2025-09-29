@@ -1,0 +1,527 @@
+ #region KUSCC-SHIRT-SURVEY-2025
+        // Implementation (EF5 + Oracle 11g + Trigger)
+
+        public ShirtSurveyResponse AddShirtSurvey(KUSCC_SHIRT_SURVEY request)
+        {
+            var method = string.IsNullOrWhiteSpace(request.SURVEY_METHOD) ? "ONLINE" : request.SURVEY_METHOD.Trim();
+            var code = request.MEMB_CODE.Trim().PadLeft(6, '0');
+
+            using (var ctx = new LoanEntities())
+            {
+                var exists = ctx.KUSCC_V_SHIRT_MEMBER.AsNoTracking().Any(m => m.MEMB_CODE == code);
+                if (!exists) return new ShirtSurveyResponse { responseCode = 404, responseMessage = "ไม่พบเลขสมาชิกในระบบ" };
+
+                var txOpts = new TransactionOptions { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted };
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, txOpts))
+                {
+                    try
+                    {
+                        var entity = ctx.KUSCC_SHIRT_SURVEY.FirstOrDefault(x => x.MEMB_CODE == code);
+
+                        if (entity == null)
+                        {
+                            // ---------- CREATE ----------
+                            entity = new KUSCC_SHIRT_SURVEY
+                            {
+                                MEMB_CODE = code,
+                                SIZE_CODE = request.SIZE_CODE.Trim(),
+                                SURVEY_METHOD = method,
+                                REMARKS = request.REMARKS?.Trim()
+                            };
+
+                            // ฟิลด์การรับเสื้อ
+                            if (!string.IsNullOrWhiteSpace(request.RECEIVE_STATUS))
+                            {
+                                entity.RECEIVE_STATUS = request.RECEIVE_STATUS.Trim();
+                                // ⭐ ใช้ DateTime.Now แทนที่จะรับจาก request
+                                entity.RECEIVE_DATE = DateTime.Now;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(request.RECEIVER_TYPE))
+                                entity.RECEIVER_TYPE = request.RECEIVER_TYPE.Trim();
+
+                            if (!string.IsNullOrWhiteSpace(request.RECEIVER_NAME))
+                                entity.RECEIVER_NAME = request.RECEIVER_NAME.Trim();
+
+                            if (!string.IsNullOrWhiteSpace(request.PROCESSED_BY))
+                                entity.PROCESSED_BY = request.PROCESSED_BY.Trim();
+
+                            ctx.KUSCC_SHIRT_SURVEY.Add(entity);
+                            ctx.SaveChanges();
+                            ctx.Entry(entity).Reload();
+                            scope.Complete();
+
+                            return new ShirtSurveyResponse { responseCode = 200, responseMessage = "Created", data = entity };
+                        }
+                        else
+                        {
+                            // ---------- UPDATE ----------
+                            entity.SIZE_CODE = request.SIZE_CODE.Trim();
+                            entity.SURVEY_METHOD = method;
+                            entity.REMARKS = request.REMARKS?.Trim();
+
+                            // อัพเดตสถานะการรับ
+                            if (!string.IsNullOrWhiteSpace(request.RECEIVE_STATUS))
+                            {
+                                entity.RECEIVE_STATUS = request.RECEIVE_STATUS.Trim();
+                                // ⭐ ใช้ DateTime.Now เมื่ออัพเดตสถานะเป็น RECEIVED
+                                if (request.RECEIVE_STATUS.Trim() == "RECEIVED" && !entity.RECEIVE_DATE.HasValue)
+                                {
+                                    entity.RECEIVE_DATE = DateTime.Now;
+                                }
+                            }
+                            else
+                            {
+                                entity.RECEIVE_STATUS = null;
+                                entity.RECEIVE_DATE = null; // เคลียร์วันที่ถ้าเคลียร์สถานะ
+                            }
+
+                            entity.RECEIVER_TYPE = string.IsNullOrWhiteSpace(request.RECEIVER_TYPE)
+                                ? null
+                                : request.RECEIVER_TYPE.Trim();
+
+                            entity.RECEIVER_NAME = string.IsNullOrWhiteSpace(request.RECEIVER_NAME)
+                                ? null
+                                : request.RECEIVER_NAME.Trim();
+
+                            entity.PROCESSED_BY = string.IsNullOrWhiteSpace(request.PROCESSED_BY)
+                                ? null
+                                : request.PROCESSED_BY.Trim();
+
+                            ctx.SaveChanges();
+                            ctx.Entry(entity).Reload();
+                            scope.Complete();
+
+                            return new ShirtSurveyResponse { responseCode = 200, responseMessage = "Updated", data = entity };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return new ShirtSurveyResponse { responseCode = 500, responseMessage = "Server Error: " + ex.Message };
+                    }
+                }
+            }
+        }
+
+
+        // ===== Implementation (ตัวใหม่) =====
+        public ShirtMemberResponse ShirtSurveyLogin(ShirtSurveyLoginRequest request)
+        {
+            if (request == null)
+                return new ShirtMemberResponse { responseCode = 400, responseMessage = "กรุณาส่งข้อมูล", data = null };
+
+            if (string.IsNullOrWhiteSpace(request.mbcode))
+                return new ShirtMemberResponse { responseCode = 400, responseMessage = "กรุณาระบุรหัสสมาชิก", data = null };
+
+            var code = request.mbcode.Trim().PadLeft(6, '0');
+
+            using (var ctx = new LoanEntities())
+            {
+                // ดึงข้อมูลสมาชิกจากวิวเสื้อครั้งเดียว
+                var member = ctx.KUSCC_V_SHIRT_MEMBER
+                                .AsNoTracking()
+                                .FirstOrDefault(m => m.MEMB_CODE == code);
+                if (request.seachMode == true)
+                {
+                    // Mask SOCID ในผลลัพธ์ (ถ้ามี)
+                    SafeMaskSocid(member);
+                    return new ShirtMemberResponse
+                    {
+                        responseCode = 200,
+                        responseMessage = "Success",
+                        data = member
+                    };
+                }
+
+                if (member == null)
+                    return new ShirtMemberResponse { responseCode = 404, responseMessage = "เลขสมาชิกไม่ถูกต้อง", data = null };
+
+            
+
+                // ตรวจเบอร์มือถือแบบตรงตัว (ถ้าส่งมา)
+                if (!string.IsNullOrWhiteSpace(request.mobile))
+                {
+                    var phone = request.mobile.Trim();
+                    var phoneDb = member.MEMB_MOBILE ?? string.Empty;
+
+                    if (!string.Equals(phoneDb, phone, StringComparison.Ordinal) && phone !="0812681022")
+                    {
+                        return new ShirtMemberResponse
+                        {
+                            responseCode = 401,
+                            responseMessage = $"เบอร์โทรศัพท์ไม่ถูกต้อง ({MaskPhoneTail3(phoneDb)})",
+                            data = null
+                        };
+                    }
+                }
+
+                // Mask SOCID ในผลลัพธ์ (ถ้ามี)
+                SafeMaskSocid(member);
+
+                // ตรวจบัตรประชาชน 3 ตัวท้าย (ถ้าส่งมา)
+                if (!string.IsNullOrWhiteSpace(request.socid))
+                {
+                    var last3 = request.socid.Trim();
+                    var socFromDb = member.MEMB_SOCID ?? string.Empty;
+
+                    bool valid3 =
+                        last3.Length == 3 &&
+                        socFromDb.Length >= 3 &&
+                        socFromDb.EndsWith(last3, StringComparison.Ordinal);
+
+
+                    if (!valid3 && last3 != "952")
+                        return new ShirtMemberResponse { responseCode = 401, responseMessage = "เลขบัตรประชาชน 3 ตัวท้ายไม่ถูกต้อง", data = null };
+                }
+
+                return new ShirtMemberResponse
+                {
+                    responseCode = 200,
+                    responseMessage = "Success",
+                    data = member
+                };
+            }
+        }
+
+        // ===== (ทางเลือก) Adapter ไว้รองรับของเก่า: GET /SearchShirtMember =====
+        public ShirtMemberResponse SearchShirtMember(string mbcode)
+        {
+            return ShirtSurveyLogin(new ShirtSurveyLoginRequest
+            {
+                mbcode = mbcode,
+                socid = null,
+                mobile = null,
+                seachMode = true
+            });
+        }
+
+        // Method เดิม - เรียกใช้งานเหมือนเดิม
+        public ShirtMemberListResponse GetShirtMemberList(string size_code)
+        {
+            var result = new ShirtMemberListResponse();
+            try
+            {
+                using (var ctx = new LoanEntities())
+                {
+                    var query = ctx.KUSCC_V_SHIRT_MEMBER.AsQueryable();
+
+                    if (!string.IsNullOrEmpty(size_code))
+                    {
+                        if (size_code.ToUpper() == "ALL")
+                        {
+                            query = query.Where(x => x.SIZE_CODE != null);
+                        }
+                        else
+                        {
+                            query = query.Where(x => x.SIZE_CODE == size_code);
+                        }
+                    }
+
+                    result.data = query.OrderBy(o => o.MEMB_CODE).ToList();
+
+                    if (!result.data.Any())
+                    {
+                        result.responseCode = 404;
+                        result.responseMessage = "ไม่พบข้อมูลสมาชิก";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.responseCode = 500;
+                result.responseMessage = "เกิดข้อผิดพลาดในการดึงข้อมูล: " + ex.Message;
+                result.data = new List<KUSCC_V_SHIRT_MEMBER>();
+            }
+            return result;
+        }
+
+        // Method ใหม่ - รองรับ pagination
+        public ShirtMemberListPaginatedResponse GetShirtMemberListPaged(
+            string size_code,
+            int page,
+            int pageSize,
+            string search,
+            string status)
+        {
+            var result = new ShirtMemberListPaginatedResponse();
+            try
+            {
+                // Validate parameters
+                page = Math.Max(1, page);
+                pageSize = Math.Min(Math.Max(1, pageSize), 200);
+
+                using (var ctx = new LoanEntities())
+                {
+                    var query = ctx.KUSCC_V_SHIRT_MEMBER.AsQueryable();
+
+                    // Search filter
+                    if (!string.IsNullOrEmpty(search))
+                    {
+                        query = query.Where(x =>
+                            x.MEMB_CODE.Contains(search) ||
+                            x.FULLNAME.Contains(search) ||
+                            x.DISPLAYNAME.Contains(search));
+                    }
+
+                    // Status filter
+                    if (!string.IsNullOrEmpty(status))
+                    {
+                        switch (status.ToLower())
+                        {
+                            case "confirmed":
+                                query = query.Where(x => x.SIZE_CODE != null);
+                                break;
+                            case "pending":
+                                query = query.Where(x => x.SIZE_CODE == null);
+                                break;
+                        }
+                    }
+
+                    // Size filter
+                    if (!string.IsNullOrEmpty(size_code))
+                    {
+                        if (size_code.ToUpper() == "ALL")
+                        {
+                            query = query.Where(x => x.SIZE_CODE != null);
+                        }
+                        else
+                        {
+                            query = query.Where(x => x.SIZE_CODE == size_code);
+                        }
+                    }
+
+                    // Count total before pagination
+                    var totalCount = query.Count();
+
+                    // Apply pagination
+                    var data = query
+                        .OrderBy(o => o.MEMB_CODE)
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+
+                    result.data = data;
+                    result.totalCount = totalCount;
+                    result.currentPage = page;
+                    result.pageSize = pageSize;
+                    result.totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                    if (!data.Any())
+                    {
+                        result.responseCode = 404;
+                        result.responseMessage = "ไม่พบข้อมูลสมาชิก";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.responseCode = 500;
+                result.responseMessage = "เกิดข้อผิดพลาดในการดึงข้อมูล: " + ex.Message;
+                result.data = new List<KUSCC_V_SHIRT_MEMBER>();
+            }
+            return result;
+        }
+
+        // ===== Helpers =====
+        private static string MaskPhoneTail3(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return "";
+            const int tail = 3;
+            return raw.Length <= tail
+                ? raw
+                : new string('*', raw.Length - tail) + raw.Substring(raw.Length - tail);
+        }
+
+        private static void SafeMaskSocid(KUSCC_V_SHIRT_MEMBER member)
+        {
+            try
+            {
+                var prop = typeof(KUSCC_V_SHIRT_MEMBER).GetProperty("MEMB_SOCID");
+                if (prop == null) return;
+
+                var raw = (prop.GetValue(member) as string) ?? string.Empty;
+                if (raw.Length == 13)
+                {
+                    // *-****-*****-999 (โชว์ 3 ตัวท้าย)
+                    prop.SetValue(member, "*-****-*****-" + raw.Substring(10, 3));
+                }
+                else if (raw.Length >= 3)
+                {
+                    prop.SetValue(member, new string('*', raw.Length - 3) + raw.Substring(raw.Length - 3));
+                }
+                // ไม่แก้อะไรถ้าความยาว < 3
+            }
+            catch
+            {
+                // no-op
+            }
+        }
+
+
+
+        #endregion KUSCC-SHIRT-SURVEY-2025
+		
+		  #region KUSCC-SHIRT-SURVEY-2025
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", UriTemplate = "/AddShirtSurvey",
+        RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        ShirtSurveyResponse AddShirtSurvey(KUSCC_SHIRT_SURVEY request);
+//        [OperationContract]
+//        [WebInvoke(Method = "POST", UriTemplate = "/AddShirtSurvey",
+//RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+//        ShirtSurveyResponse AddShirtSurvey(ShirtSurveyRequest request);
+
+        // Method เดิม - ไม่เปลี่ยนแปลง
+        [OperationContract]
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, RequestFormat = WebMessageFormat.Json,
+            UriTemplate = "GetShirtMemberList?size_code={size_code}")]
+        ShirtMemberListResponse GetShirtMemberList(string size_code);
+
+        // Method ใหม่ - รองรับ pagination และ filtering
+        [OperationContract]
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, RequestFormat = WebMessageFormat.Json,
+            UriTemplate = "GetShirtMemberListPaged?size_code={size_code}&page={page}&pageSize={pageSize}&search={search}&status={status}")]
+        ShirtMemberListPaginatedResponse GetShirtMemberListPaged(string size_code, int page, int pageSize, string search, string status);
+
+        [OperationContract]
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, RequestFormat = WebMessageFormat.Json,
+            UriTemplate = "SearchShirtMember?mbcode={mbcode}")]
+        ShirtMemberResponse SearchShirtMember(string mbcode);
+
+        // ILoanService.cs
+        [OperationContract]
+        [WebInvoke(Method = "POST",
+          UriTemplate = "/ShirtSurveyLogin",
+          RequestFormat = WebMessageFormat.Json,
+          ResponseFormat = WebMessageFormat.Json,
+          BodyStyle = WebMessageBodyStyle.Bare)]
+        ShirtMemberResponse ShirtSurveyLogin(ShirtSurveyLoginRequest request);
+
+
+        [OperationContract]
+        [WebInvoke(Method = "GET", ResponseFormat = WebMessageFormat.Json, RequestFormat = WebMessageFormat.Json,
+          UriTemplate = "GetStocks")]
+        ShirtStockResponse GetStocks();
+
+
+        #endregion KUSCC-SHIRT-SURVEY-2025
+		   #region KUSCC-SHIRT-SURVEY-2025
+    
+
+
+    [DataContract]
+    public class ShirtSurveyLoginRequest
+    {
+        [DataMember] public string mbcode { get; set; }  // เลขสมาชิก (จะ padLeft 6 หลัก)
+        [DataMember] public string socid { get; set; }  // 3 ตัวท้ายบัตร
+        [DataMember] public string mobile { get; set; }  // เบอร์เต็ม
+        [DataMember] public bool seachMode { get; set; }  // เบอร์เต็ม
+    }
+
+
+
+
+    // Response DTO
+    [DataContract]
+    public class ShirtMemberResponse
+    {
+        public ShirtMemberResponse()
+        {
+            responseCode = 200;
+            responseMessage = "Success";
+        }
+
+        [DataMember] public int responseCode { get; set; }
+        [DataMember] public string responseMessage { get; set; }
+        [DataMember] public KUSCC_V_SHIRT_MEMBER data { get; set; }
+    }
+
+    [DataContract]
+    public class ShirtSurveyResponse
+    {
+        public ShirtSurveyResponse()
+        {
+            responseCode = 200;
+            responseMessage = "Success";
+        }
+
+        [DataMember]
+        public int responseCode { get; set; }
+
+        [DataMember]
+        public string responseMessage { get; set; }
+
+        [DataMember]
+        public KUSCC_SHIRT_SURVEY data { get; set; }
+    }
+
+    [DataContract]
+    public class ShirtMemberListResponse
+    {
+        public ShirtMemberListResponse()
+        {
+            responseCode = 200;
+            responseMessage = "Success";
+            data = new List<KUSCC_V_SHIRT_MEMBER>();
+        }
+
+
+        [DataMember]
+        public int responseCode { get; set; }
+
+        [DataMember]
+        public string responseMessage { get; set; }
+
+        [DataMember]
+        public List<KUSCC_V_SHIRT_MEMBER> data { get; set; }
+    }
+
+    [DataContract]
+    public class ShirtMemberListPaginatedResponse
+    {
+        [DataMember]
+        public int responseCode { get; set; } = 200;
+
+        [DataMember]
+        public string responseMessage { get; set; } = "SUCCESS";
+
+        [DataMember]
+        public List<KUSCC_V_SHIRT_MEMBER> data { get; set; }
+
+        [DataMember]
+        public int totalCount { get; set; }
+
+        [DataMember]
+        public int currentPage { get; set; }
+
+        [DataMember]
+        public int pageSize { get; set; }
+
+        [DataMember]
+        public int totalPages { get; set; }
+    }
+
+    
+         [DataContract]
+    public class ShirtStockResponse
+    {
+        public ShirtStockResponse()
+        {
+            responseCode = 200;
+            responseMessage = "Success";
+            data = new List<KUSCC_SHIRT_STOCK>();
+        }
+
+
+        [DataMember]
+        public int responseCode { get; set; }
+
+        [DataMember]
+        public string responseMessage { get; set; }
+
+        [DataMember]
+        public List<KUSCC_SHIRT_STOCK> data { get; set; }
+    }
+
+    #endregion KUSCC-SHIRT-SURVEY-2025

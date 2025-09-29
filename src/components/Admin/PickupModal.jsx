@@ -1,261 +1,355 @@
 // src/components/Admin/PickupModal.jsx
-import React, { useState, useEffect } from 'react';
-import { Modal, Form, Radio, Input, Space, Button, Row, Col, Card } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
-import { SHIRT_SIZES } from '../../utils/constants';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Modal, Form, Select, Input, Button, Space, Typography, 
+  Card, Tag, Alert, message, Row, Col 
+} from 'antd';
+import { 
+  UserOutlined, EditOutlined, CheckCircleOutlined,
+  SaveOutlined 
+} from '@ant-design/icons';
+import SignatureCanvas from 'react-signature-canvas';
+import { submitPickup } from '../../services/shirtApi';
+import { useAppContext } from '../../App';
 
-const PickupModal = ({ visible, onCancel, onSubmit, selectedMember, form }) => {
-  const [sizeChangeModalVisible, setSizeChangeModalVisible] = useState(false);
-  const [selectedSize, setSelectedSize] = useState("");
+const { Option } = Select;
+const { TextArea } = Input;
+const { Text, Title } = Typography;
 
-  // Initialize form values when modal opens
+const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+
+const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
+  const [form] = Form.useForm();
+  const { user } = useAppContext();
+  const signatureRef = useRef(null);
+  
+  const [loading, setLoading] = useState(false);
+  const [receiverType, setReceiverType] = useState('SELF');
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [hasSignature, setHasSignature] = useState(false);
+
+  // Reset form when modal opens/closes or member changes
   useEffect(() => {
     if (visible && selectedMember) {
       form.setFieldsValue({
-        selectedSize: selectedMember.SIZE_CODE || "",
-        pickupType: "self",
-        proxyMemberCode: "",
-        proxyName: ""
+        sizeCode: selectedMember.sizeCode || '',
+        receiverType: 'SELF',
+        receiverName: '',
+        remarks: '',
       });
-      setSelectedSize(selectedMember.SIZE_CODE || "");
+      setSelectedSize(selectedMember.sizeCode);
+      setReceiverType('SELF');
+      setHasSignature(false);
+      
+      // Clear signature
+      if (signatureRef.current) {
+        signatureRef.current.clear();
+      }
     }
   }, [visible, selectedMember, form]);
 
-  const handleSizeChange = (size) => {
-    setSelectedSize(size);
-    form.setFieldValue("selectedSize", size);
-    setSizeChangeModalVisible(false);
+  // Handle signature drawing
+  const handleSignatureEnd = () => {
+    setHasSignature(!signatureRef.current.isEmpty());
   };
 
-  const handleFormSubmit = (values) => {
-    // ส่งข้อมูลกลับไปพร้อม memberCode
-    onSubmit({
-      ...values,
-      memberCode: selectedMember?.MEMB_CODE
-    });
+  // Clear signature
+  const handleClearSignature = () => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setHasSignature(false);
+    }
   };
+
+  // Handle form submit
+  const handleSubmit = async () => {
+    try {
+      // Validate form
+      const values = await form.validateFields();
+      
+      // Validate signature
+      if (!hasSignature) {
+        message.warning('กรุณาเซ็นชื่อก่อนบันทึก');
+        return;
+      }
+
+      // Validate size
+      if (!values.sizeCode) {
+        message.warning('กรุณาเลือกขนาดเสื้อ');
+        return;
+      }
+
+      setLoading(true);
+
+      // Get signature data
+      const signatureData = signatureRef.current
+        .getTrimmedCanvas()
+        .toDataURL('image/png');
+
+      // Prepare pickup data
+      const pickupData = {
+        memberCode: selectedMember.memberCode,
+        sizeCode: values.sizeCode,
+        processedBy: user.memberCode, // เจ้าหน้าที่ที่บันทึก
+        receiverType: values.receiverType,
+        receiverName: values.receiverType === 'OTHER' ? values.receiverName : null,
+        signatureData,
+        remarks: values.remarks || '',
+      };
+
+      console.log('📦 Submit Pickup Data:', pickupData);
+
+      // Submit to API
+      await submitPickup(pickupData);
+
+      message.success('บันทึกการรับเสื้อเรียบร้อยแล้ว');
+      
+      // Reset and close
+      form.resetFields();
+      handleClearSignature();
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      onCancel();
+    } catch (error) {
+      console.error('Submit pickup error:', error);
+      message.error(error.message || 'เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!selectedMember) return null;
 
   return (
-    <>
-      {/* Main Pickup Modal */}
-      <Modal
-        title="บันทึกการรับเสื้อ"
-        open={visible}
-        onCancel={onCancel}
-        footer={null}
-        width={600}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleFormSubmit}
+    <Modal
+      title={
+        <Space>
+          <UserOutlined />
+          <span>บันทึกการรับเสื้อ</span>
+        </Space>
+      }
+      open={visible}
+      onCancel={onCancel}
+      width={700}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          ยกเลิก
+        </Button>,
+        <Button
+          key="submit"
+          type="primary"
+          icon={<SaveOutlined />}
+          onClick={handleSubmit}
+          loading={loading}
         >
-          {/* Member Info Section */}
-          <div style={{
-            background: '#f0f5ff',
-            padding: '16px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            border: '1px solid #d6e4ff'
-          }}>
-            <Row gutter={16}>
-              <Col span={12}>
-                <div style={{ marginBottom: '8px' }}>
-                  <span style={{ color: '#666', fontSize: '13px' }}>รหัสสมาชิก</span>
-                </div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#333' }}>
-                  {selectedMember?.MEMB_CODE || '-'}
-                </div>
-              </Col>
-              <Col span={12}>
-                <div style={{ marginBottom: '8px' }}>
-                  <span style={{ color: '#666', fontSize: '13px' }}>ชื่อ-นามสกุล</span>
-                </div>
-                <div style={{ fontSize: '16px', fontWeight: '600', color: '#333' }}>
-                  {selectedMember?.FULLNAME || '-'}
-                </div>
-              </Col>
-            </Row>
-          </div>
-
-          {/* Size Selection */}
-          <Form.Item
-            name="selectedSize"
-            label={
-              <Space>
-                <span>ขนาดที่เลือก</span>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => setSizeChangeModalVisible(true)}
-                  style={{ padding: '0 4px' }}
-                >
-                  เปลี่ยนขนาด
-                </Button>
-              </Space>
-            }
-            rules={[{ required: true, message: 'กรุณาเลือกขนาดเสื้อ' }]}
-          >
-            <div style={{
-              padding: '8px 16px',
-              background: '#e6f7ff',
-              border: '1px solid #91d5ff',
-              borderRadius: '6px',
-              display: 'inline-block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#1890ff'
-            }}>
-              {selectedSize || 'ยังไม่เลือก'}
-            </div>
-          </Form.Item>
-
-          {/* Pickup Type */}
-          <Form.Item 
-            name="pickupType" 
-            label="ผู้รับเสื้อ"
-            rules={[{ required: true, message: 'กรุณาเลือกผู้รับเสื้อ' }]}
-          >
-            <Radio.Group>
-              <Radio value="self">รับด้วยตนเอง</Radio>
-              <Radio value="proxy">รับแทน</Radio>
-            </Radio.Group>
-          </Form.Item>
-
-          {/* Proxy Information (conditional) */}
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) => 
-              prevValues.pickupType !== currentValues.pickupType
-            }
-          >
-            {({ getFieldValue }) =>
-              getFieldValue('pickupType') === 'proxy' ? (
-                <>
-                  <Form.Item
-                    name="proxyMemberCode"
-                    label="รหัสสมาชิกผู้รับแทน"
-                    rules={[
-                      { required: true, message: 'กรุณากรอกรหัสสมาชิก' },
-                      { len: 6, message: 'รหัสสมาชิกต้องเป็น 6 หลัก' }
-                    ]}
-                  >
-                    <Input 
-                      placeholder="กรอกรหัสสมาชิก 6 หลัก" 
-                      maxLength={6}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="proxyName"
-                    label="ชื่อ-สกุล ผู้รับแทน"
-                    rules={[{ required: true, message: 'กรุณากรอกชื่อผู้รับแทน' }]}
-                  >
-                    <Input placeholder="กรอกชื่อ-นามสกุล ผู้รับแทน" />
-                  </Form.Item>
-                </>
-              ) : null
-            }
-          </Form.Item>
-
-          {/* Form Actions */}
-          <Form.Item style={{ marginTop: 24, marginBottom: 0, textAlign: 'right' }}>
-            <Space>
-              <Button onClick={onCancel}>
-                ยกเลิก
-              </Button>
-              <Button type="primary" htmlType="submit">
-                บันทึกการรับเสื้อ
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Size Change Modal */}
-      <Modal
-        title="เลือกขนาดเสื้อใหม่"
-        open={sizeChangeModalVisible}
-        onCancel={() => setSizeChangeModalVisible(false)}
-        footer={null}
-        width={900}
-        destroyOnClose
-      >
-        <div style={{ 
-          marginBottom: 20, 
-          padding: '12px 16px',
-          background: '#f0f5ff',
-          borderRadius: '6px',
-          border: '1px solid #adc6ff'
-        }}>
-          <span style={{ color: '#1d39c4', fontSize: '14px' }}>
-            📏 <a 
-              href="https://apps2.coop.ku.ac.th/asset/images/png/sizewidth.png" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{ color: '#1890ff', textDecoration: 'underline' }}
-            >
-              วิธีวัดขนาดเสื้อ (คลิกเพื่อดู)
-            </a>
-          </span>
-        </div>
-        
-        <Row gutter={[12, 12]}>
-          {SHIRT_SIZES.map(size => (
-            <Col xs={12} sm={8} md={6} lg={4} key={size.code}>
-              <Card
-                hoverable
-                size="small"
-                onClick={() => handleSizeChange(size.code)}
-                style={{
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  border: selectedSize === size.code 
-                    ? '2px solid #1890ff' 
-                    : '1px solid #d9d9d9',
-                  background: selectedSize === size.code 
-                    ? '#e6f7ff' 
-                    : 'white',
-                  transition: 'all 0.3s'
-                }}
-                bodyStyle={{ padding: '12px 8px' }}
-              >
-                <div style={{ 
-                  fontSize: '20px', 
-                  fontWeight: 'bold', 
-                  marginBottom: 8,
-                  color: selectedSize === size.code ? '#1890ff' : '#333'
-                }}>
-                  {size.code}
-                </div>
-                <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.5' }}>
-                  อก {size.chest}"<br />
-                  ยาว {size.length}"
-                </div>
-              </Card>
-            </Col>
-          ))}
+          บันทึก
+        </Button>,
+      ]}
+    >
+      {/* Member Info Card */}
+      <Card size="small" style={{ marginBottom: 16, backgroundColor: '#f5f5f5' }}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Text type="secondary">รหัสสมาชิก:</Text>
+            <div><Text strong>{selectedMember.memberCode}</Text></div>
+          </Col>
+          <Col span={12}>
+            <Text type="secondary">ชื่อ-สกุล:</Text>
+            <div><Text strong>{selectedMember.fullName}</Text></div>
+          </Col>
         </Row>
-        
-        <div style={{ 
-          marginTop: 20, 
-          padding: 16, 
-          background: '#fffbe6', 
-          borderRadius: 6,
-          border: '1px solid #ffe58f'
-        }}>
-          <div style={{ fontSize: '14px', color: '#ad6800', lineHeight: '1.6' }}>
-            <strong>💡 คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ 2" 
-            เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น
-            <br />
-            <span style={{ fontSize: '13px' }}>
-              ตัวอย่าง: วัดได้ 40" → เลือกขนาดเสื้อ 42" (S)
-            </span>
-          </div>
-        </div>
-      </Modal>
-    </>
+        <Row gutter={16} style={{ marginTop: 8 }}>
+          <Col span={12}>
+            <Text type="secondary">เบอร์โทร:</Text>
+            <div><Text>{selectedMember.phone}</Text></div>
+          </Col>
+          <Col span={12}>
+            <Text type="secondary">ขนาดที่จอง:</Text>
+            <div>
+              {selectedMember.sizeCode ? (
+                <Tag color="blue">{selectedMember.sizeCode}</Tag>
+              ) : (
+                <Tag color="default">ยังไม่ได้เลือก</Tag>
+              )}
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Alert if member hasn't confirmed size */}
+      {!selectedMember.sizeCode && (
+        <Alert
+          message="สมาชิกยังไม่ได้ยืนยันขนาด"
+          description="กรุณาเลือกขนาดเสื้อที่เหมาะสมให้กับสมาชิก"
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{
+          sizeCode: selectedMember.sizeCode || '',
+          receiverType: 'SELF',
+          receiverName: '',
+          remarks: '',
+        }}
+      >
+        {/* Size Selection */}
+        <Form.Item
+          label={
+            <Space>
+              <span>ขนาดเสื้อที่จ่าย</span>
+              {selectedSize && selectedSize !== selectedMember.sizeCode && (
+                <Tag color="orange">เปลี่ยนจาก {selectedMember.sizeCode}</Tag>
+              )}
+            </Space>
+          }
+          name="sizeCode"
+          rules={[{ required: true, message: 'กรุณาเลือกขนาดเสื้อ' }]}
+        >
+          <Select
+            size="large"
+            placeholder="เลือกขนาดเสื้อ"
+            onChange={setSelectedSize}
+          >
+            {ALL_SIZES.map(size => (
+              <Option key={size} value={size}>
+                <Tag color={size === selectedMember.sizeCode ? 'blue' : 'default'}>
+                  {size}
+                </Tag>
+                {size === selectedMember.sizeCode && ' (ขนาดที่จอง)'}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        {/* Receiver Type */}
+        <Form.Item
+          label="ผู้รับเสื้อ"
+          name="receiverType"
+          rules={[{ required: true, message: 'กรุณาระบุผู้รับเสื้อ' }]}
+        >
+          <Select
+            size="large"
+            onChange={setReceiverType}
+          >
+            <Option value="SELF">
+              <Space>
+                <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                <span>รับด้วยตนเอง</span>
+              </Space>
+            </Option>
+            <Option value="OTHER">
+              <Space>
+                <UserOutlined style={{ color: '#fa8c16' }} />
+                <span>รับแทน</span>
+              </Space>
+            </Option>
+          </Select>
+        </Form.Item>
+
+        {/* Receiver Name (if OTHER) */}
+        {receiverType === 'OTHER' && (
+          <Form.Item
+            label="ชื่อผู้รับแทน"
+            name="receiverName"
+            rules={[
+              { required: true, message: 'กรุณากรอกชื่อผู้รับแทน' },
+              { min: 2, message: 'กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร' }
+            ]}
+          >
+            <Input
+              size="large"
+              placeholder="กรอกชื่อ-สกุล ผู้รับแทน"
+              prefix={<UserOutlined />}
+            />
+          </Form.Item>
+        )}
+
+        {/* Signature */}
+        <Form.Item
+          label={
+            <Space>
+              <span>ลายเซ็นผู้รับ</span>
+              {hasSignature && (
+                <Tag color="success" icon={<CheckCircleOutlined />}>
+                  เซ็นแล้ว
+                </Tag>
+              )}
+            </Space>
+          }
+          required
+        >
+          <Card size="small">
+            <div style={{ 
+              border: '2px dashed #d9d9d9', 
+              borderRadius: 4,
+              backgroundColor: '#fafafa',
+              marginBottom: 8
+            }}>
+              <SignatureCanvas
+                ref={signatureRef}
+                canvasProps={{
+                  width: 620,
+                  height: 200,
+                  className: 'signature-canvas',
+                  style: { width: '100%', height: '200px' }
+                }}
+                onEnd={handleSignatureEnd}
+                backgroundColor="#ffffff"
+              />
+            </div>
+            <Space>
+              <Button 
+                size="small" 
+                onClick={handleClearSignature}
+                icon={<EditOutlined />}
+              >
+                ล้างลายเซ็น
+              </Button>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                💡 เซ็นชื่อในกรอบด้วยนิ้วมือ หรือ เมาส์
+              </Text>
+            </Space>
+          </Card>
+        </Form.Item>
+
+        {/* Remarks */}
+        <Form.Item
+          label="หมายเหตุ (ถ้ามี)"
+          name="remarks"
+        >
+          <TextArea
+            rows={3}
+            placeholder="ระบุข้อมูลเพิ่มเติม เช่น สภาพเสื้อ, ข้อสังเกต"
+            maxLength={500}
+            showCount
+          />
+        </Form.Item>
+      </Form>
+
+      {/* Footer Info */}
+      <Alert
+        message={
+          <Space direction="vertical" size={0}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              📝 บันทึกโดย: {user.displayName || user.name} ({user.memberCode})
+            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              ⏰ เวลา: {new Date().toLocaleString('th-TH')}
+            </Text>
+          </Space>
+        }
+        type="info"
+        style={{ marginTop: 16 }}
+      />
+    </Modal>
   );
 };
 
