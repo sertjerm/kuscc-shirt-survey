@@ -17,8 +17,16 @@ const { Title, Paragraph } = Typography;
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAppContext();
+  // เพิ่ม initialValues สำหรับ default ค่า
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  // กำหนดค่า default
+  const initialValues = {
+    memberCode: "012938",
+    phone: "0812681022",
+    idCard: "952",
+  };
 
   const handleLogin = async (values) => {
     setLoading(true);
@@ -28,7 +36,7 @@ const LoginForm = () => {
       const memberData = await loginMember({
         memberCode: values.memberCode || "012938",
         phone: values.phone || "0812681022",
-        idCard: values.idCard || "952"  // ใช้ 3 ตัวท้ายของบัตรประชาชน,
+        idCard: values.idCard || "952", // ใช้ 3 ตัวท้ายของบัตรประชาชน,
       });
 
       console.log("ได้รับข้อมูลสมาชิก:", memberData);
@@ -145,7 +153,13 @@ const LoginForm = () => {
         </div>
 
         {/* Form */}
-        <Form form={form} layout="vertical" onFinish={handleLogin} size="large">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleLogin}
+          size="large"
+          initialValues={initialValues} // ✅ กำหนดค่า default
+        >
           <Form.Item
             name="memberCode"
             label="เลขสมาชิก"

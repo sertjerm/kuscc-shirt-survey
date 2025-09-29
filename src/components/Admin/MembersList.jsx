@@ -1,293 +1,392 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Input, Select, Row, Col, Space, Typography, message } from 'antd';
-import { SearchOutlined, ReloadOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { getShirtMemberListPaged } from '../../services/shirtApi';
+// src/components/Admin/MembersList.jsx
+import { useState, useEffect, useCallback } from "react";
+import { Form } from "antd";
+import { getShirtMemberListPaged } from "../../services/shirtApi";
+import PickupModal from "./PickupModal";
+import {
+  SHIRT_SIZES,
+  MEMBER_STATUS,
+} from "../../utils/constants";
+import "../../styles/MembersList.css";
 
-const { Text } = Typography;
-const { Option } = Select;
-const { Search } = Input;
+const MembersList = () => {
+  const [pickupForm] = Form.useForm();
 
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
-
-const MembersList = ({ onPickupClick }) => {
-  const [loading, setLoading] = useState(false);
+  // States
   const [members, setMembers] = useState([]);
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 20,
-    total: 0,
-  });
-  const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    size: '',
-  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadMembers(1, pagination.pageSize, filters);
-  }, []);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize] = useState(20);
 
-  const formatThaiDate = (dateString) => {
-    try {
-      if (dateString && dateString.includes('/Date(')) {
-        const match = dateString.match(/\/Date\((\d+)\+/);
-        if (match) {
-          const timestamp = parseInt(match[1]);
-          return new Date(timestamp).toLocaleDateString('th-TH', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          });
-        }
-      }
-      if (dateString && dateString !== '-') {
-        return new Date(dateString).toLocaleDateString('th-TH', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        });
-      }
-      return '-';
-    } catch (error) {
-      return '-';
-    }
-  };
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
 
-  const loadMembers = async (page = 1, pageSize = 20, currentFilters = filters) => {
+  // Search input state (สำหรับ debounce)
+  const [searchInput, setSearchInput] = useState("");
+
+  // Modal state
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showPickupModal, setShowPickupModal] = useState(false);
+
+  // ฟังก์ชันโหลดข้อมูล
+  const loadMembers = useCallback(async () => {
     setLoading(true);
+    setError(null);
+
     try {
-      const response = await getShirtMemberListPaged(
-        page, 
-        pageSize, 
-        currentFilters.search || '', 
-        currentFilters.status || ''
-      );
-      
-      const membersData = response.data || response;
-      const formattedMembers = Array.isArray(membersData) ? membersData.map(member => ({
-        key: member.MEMB_CODE,
-        memberCode: member.MEMB_CODE,
-        name: member.FULLNAME || member.DISPLAYNAME,
-        selectedSize: member.SIZE_CODE,
-        status: member.SIZE_CODE ? "ยืนยันขนาดแล้ว" : "ยังไม่ยืนยันขนาด",
-        remarks: member.REMARKS,
-        pickedUp: member.PICKED_UP || false,
-        surveyDate: member.SURVEY_DATE ? formatThaiDate(member.SURVEY_DATE) : '-',
-        surveyMethod: member.SURVEY_METHOD,
-      })) : [];
-
-      let filteredMembers = formattedMembers;
-      if (currentFilters.size) {
-        filteredMembers = formattedMembers.filter(member => 
-          member.selectedSize === currentFilters.size
-        );
-      }
-
-      setMembers(filteredMembers);
-      setPagination({
-        current: page,
-        pageSize: pageSize,
-        total: response.total || filteredMembers.length,
+      const result = await getShirtMemberListPaged({
+        page: currentPage,
+        pageSize,
+        search: searchTerm,
+        status: statusFilter,
+        size_code: sizeFilter,
       });
-    } catch (error) {
-      message.error("ไม่สามารถโหลดข้อมูลสมาชิกได้");
-      console.error("Load members error:", error);
+
+      setMembers(result.data || []);
+      setTotalPages(result.totalPages || 1);
+      setTotalCount(result.totalCount || 0);
+    } catch (err) {
+      setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      setMembers([]);
     } finally {
       setLoading(false);
     }
+  }, [currentPage, pageSize, searchTerm, statusFilter, sizeFilter]);
+
+  // Load ข้อมูลเมื่อ dependencies เปลี่ยน
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  // Debounce สำหรับ search (รอ 500ms หลังพิมพ์เสร็จ)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Handler: Clear search
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+    setCurrentPage(1);
   };
 
-  const handleTableChange = (paginationInfo, tableFilters, sorter) => {
-    const newFilters = {
-      ...filters,
-      status: getServerStatusFilter(tableFilters.status),
-      size: tableFilters.selectedSize && tableFilters.selectedSize[0] ? tableFilters.selectedSize[0] : '',
+  // Handler: เปลี่ยนหน้า
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Handler: เปลี่ยน filter
+  const handleFilterChange = (filterType, value) => {
+    setCurrentPage(1);
+
+    switch (filterType) {
+      case "status":
+        setStatusFilter(value);
+        break;
+      case "size":
+        setSizeFilter(value);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handler: เปิด Modal บันทึกการรับเสื้อ
+  const handleOpenPickupModal = (member) => {
+    setSelectedMember(member);
+    setShowPickupModal(true);
+  };
+
+  // Handler: ปิด Modal
+  const handleClosePickupModal = () => {
+    setShowPickupModal(false);
+    setSelectedMember(null);
+  };
+
+  // Handler: หลังบันทึกการรับเสื้อสำเร็จ
+  const handlePickupSuccess = () => {
+    handleClosePickupModal();
+    loadMembers(); // Reload data
+  };
+
+  // Helper: กำหนด status ของสมาชิก
+  const getMemberStatus = (member) => {
+    if (member.RECEIVED_DATE) {
+      return MEMBER_STATUS.RECEIVED;
+    }
+    if (member.SIZE_CODE) {
+      return MEMBER_STATUS.CONFIRMED;
+    }
+    return MEMBER_STATUS.NOT_CONFIRMED;
+  };
+
+  // Helper: Format วันที่เป็น dd/mm/yyyy HH:mm (บรรทัดเดียว)
+  const formatDateTime = (dateString) => {
+    try {
+      let date;
+      // Check if it's WCF format /Date(...)/
+      if (dateString && dateString.includes('/Date(')) {
+        const timestamp = parseInt(dateString.match(/\d+/)[0]);
+        date = new Date(timestamp);
+      } else {
+        date = new Date(dateString);
+      }
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      return '-';
+    }
+  };
+
+  // Helper: สถานะสมาชิก (แบบ Tag)
+  const getStatusTag = (member) => {
+    const status = getMemberStatus(member);
+
+    const statusConfig = {
+      [MEMBER_STATUS.NOT_CONFIRMED]: {
+        className: "status-tag status-tag-pending",
+        text: "ยังไม่ยืนยัน",
+      },
+      [MEMBER_STATUS.CONFIRMED]: {
+        className: "status-tag status-tag-confirmed",
+        text: "ยืนยันแล้ว",
+      },
+      [MEMBER_STATUS.RECEIVED]: {
+        className: "status-tag status-tag-received",
+        text: "รับแล้ว",
+      },
     };
-    
-    setFilters(newFilters);
-    loadMembers(paginationInfo.current, paginationInfo.pageSize, newFilters);
+
+    const config = statusConfig[status];
+    return <span className={config.className}>{config.text}</span>;
   };
 
-  const getServerStatusFilter = (clientStatuses) => {
-    if (!clientStatuses || clientStatuses.length === 0) return '';
-    if (clientStatuses.includes('confirmed')) return 'confirmed';
-    if (clientStatuses.includes('pending')) return 'pending'; 
-    if (clientStatuses.includes('picked_up')) return 'picked_up';
-    return '';
-  };
+  // Helper: แสดงปุ่มตามสถานะ
+  const getActionButton = (member) => {
+    // ถ้ารับเสื้อแล้ว ไม่แสดงปุ่ม
+    if (member.RECEIVED_DATE) {
+      return <span className="text-muted">-</span>;
+    }
 
-  const handleFilterChange = (type, value) => {
-    const newFilters = { ...filters, [type]: value };
-    setFilters(newFilters);
-    loadMembers(1, pagination.pageSize, newFilters);
+    // แสดงปุ่มบันทึกการรับเสื้อ
+    return (
+      <button
+        className="btn-pickup"
+        onClick={() => handleOpenPickupModal(member)}
+      >
+        บันทึกการรับ
+      </button>
+    );
   };
-
-  const handleRefresh = () => {
-    const resetFilters = { search: '', status: '', size: '' };
-    setFilters(resetFilters);
-    loadMembers(1, pagination.pageSize, resetFilters);
-  };
-
-  const columns = [
-    {
-      title: "รหัสสมาชิก",
-      dataIndex: "memberCode",
-      key: "memberCode",
-      width: 120,
-      sorter: (a, b) => a.memberCode.localeCompare(b.memberCode),
-    },
-    {
-      title: "ชื่อ-นามสกุล",
-      dataIndex: "name",
-      key: "name",
-      width: 220,
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "ขนาดที่เลือก",
-      dataIndex: "selectedSize",
-      key: "selectedSize",
-      width: 120,
-      render: (size) => size ? <Tag color="blue">{size}</Tag> : <Tag color="orange">ยังไม่เลือก</Tag>,
-      filters: ALL_SIZES.map(size => ({ text: size, value: size })),
-      filteredValue: filters.size ? [filters.size] : null,
-    },
-    {
-      title: "วันที่จอง",
-      dataIndex: "surveyDate",
-      key: "surveyDate",
-      width: 120,
-      sorter: (a, b) => {
-        if (a.surveyDate === '-' && b.surveyDate === '-') return 0;
-        if (a.surveyDate === '-') return 1;
-        if (b.surveyDate === '-') return -1;
-        return new Date(a.surveyDate.split('/').reverse().join('-')) - new Date(b.surveyDate.split('/').reverse().join('-'));
-      },
-      render: (date) => date === '-' ? <Text type="secondary">-</Text> : <Text>{date}</Text>,
-    },
-    {
-      title: "สถานะ",
-      dataIndex: "status",
-      key: "status",
-      width: 140,
-      render: (status, record) => {
-        if (record.pickedUp) {
-          return <Tag color="green" icon={<CheckCircleOutlined />}>รับแล้ว</Tag>;
-        } else if (record.selectedSize) {
-          return <Tag color="blue" icon={<ClockCircleOutlined />}>ยืนยันแล้ว</Tag>;
-        } else {
-          return <Tag color="orange" icon={<ExclamationCircleOutlined />}>ยังไม่ยืนยัน</Tag>;
-        }
-      },
-      filters: [
-        { text: 'ยืนยันแล้ว', value: 'confirmed' },
-        { text: 'ยังไม่ยืนยัน', value: 'pending' },
-        { text: 'รับแล้ว', value: 'picked_up' },
-      ],
-      filteredValue: filters.status ? [filters.status] : null,
-    },
-    {
-      title: "หมายเหตุ",
-      dataIndex: "remarks",
-      key: "remarks",
-      width: 150,
-      ellipsis: true,
-      render: (text) => text || <Text type="secondary">-</Text>,
-    },
-    {
-      title: "การดำเนินการ",
-      key: "actions",
-      width: 120,
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          onClick={() => onPickupClick(record)}
-          disabled={record.pickedUp}
-        >
-          {record.pickedUp ? "รับแล้ว" : "บันทึกการรับ"}
-        </Button>
-      ),
-    },
-  ];
 
   return (
-    <Card title="ค้นหาและรับเสื้อ - รายชื่อสมาชิกทั้งหมด" bordered={false}>
-      <Space direction="vertical" style={{ width: "100%", marginBottom: 16 }}>
-        <Row gutter={16} align="middle">
-          <Col flex="auto">
-            <Search
+    <div className="members-list-container">
+      <h2>ค้นหาและรับเสื้อ - รายชื่อสมาชิกทั้งหมด</h2>
+
+      {/* Search & Filters */}
+      <div className="filters-section">
+        <div className="filter-row">
+          <div className="search-box">
+            <input
+              type="text"
               placeholder="ค้นหาด้วยรหัสสมาชิก หรือ ชื่อ-นามสกุล"
-              enterButton="ค้นหา"
-              size="large"
-              value={filters.search}
-              onChange={(e) => setFilters({...filters, search: e.target.value})}
-              onSearch={(value) => handleFilterChange('search', value)}
-              allowClear
-              onClear={() => handleFilterChange('search', '')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="search-input"
             />
-          </Col>
-          <Col>
-            <Select
-              placeholder="สถานะ"
-              style={{ width: 140 }}
-              value={filters.status}
-              onChange={(value) => handleFilterChange('status', value)}
-              allowClear
+            {searchInput && (
+              <button
+                className="clear-search-btn"
+                onClick={handleClearSearch}
+                title="ล้างการค้นหา"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="filter-group">
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className="filter-select"
             >
-              <Option value="">ทั้งหมด</Option>
-              <Option value="confirmed">ยืนยันแล้ว</Option>
-              <Option value="pending">ยังไม่ยืนยัน</Option>
-              <Option value="picked_up">รับแล้ว</Option>
-            </Select>
-          </Col>
-          <Col>
-            <Select
-              placeholder="ขนาด"
-              style={{ width: 100 }}
-              value={filters.size}
-              onChange={(value) => handleFilterChange('size', value)}
-              allowClear
+              <option value="">สถานะทั้งหมด</option>
+              <option value="pending">ยังไม่ยืนยัน</option>
+              <option value="confirmed">ยืนยันแล้ว</option>
+              <option value="received">รับแล้ว</option>
+            </select>
+
+            {/* Size Filter */}
+            <select
+              value={sizeFilter}
+              onChange={(e) => handleFilterChange("size", e.target.value)}
+              className="filter-select"
             >
-              {ALL_SIZES.map(size => (
-                <Option key={size} value={size}>{size}</Option>
+              <option value="">ขนาดทั้งหมด</option>
+              {SHIRT_SIZES.map((size) => (
+                <option key={size.code} value={size.code}>
+                  {size.code}
+                </option>
               ))}
-            </Select>
-          </Col>
-          <Col>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              loading={loading}
+            </select>
+
+            <button
+              className="btn-refresh"
+              onClick={loadMembers}
+              disabled={loading}
             >
-              รีเฟรช
-            </Button>
-          </Col>
-        </Row>
-        
-        <Space>
-          <Text type="secondary">
-            แสดง {members.length} จาก {pagination.total} รายการ
-          </Text>
-        </Space>
-      </Space>
-      
-      <Table
-        dataSource={members}
-        columns={columns}
-        loading={loading}
-        pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} จาก ${total} รายการ`,
-          pageSizeOptions: ['10', '20', '50', '100'],
-        }}
-        onChange={handleTableChange}
-        scroll={{ x: true }}
-        size="small"
-      />
-    </Card>
+              🔄 รีเฟรช
+            </button>
+          </div>
+        </div>
+
+        <div className="results-info">
+          แสดง {members.length} จาก {totalCount.toLocaleString()} รายการ
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && <div className="error-message">{error}</div>}
+
+      {/* Members Table */}
+      {loading ? (
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>กำลังโหลดข้อมูล...</p>
+        </div>
+      ) : members.length === 0 ? (
+        <div className="no-data">ไม่พบข้อมูลสมาชิก</div>
+      ) : (
+        <>
+          <div className="table-responsive">
+            <table className="members-table">
+              <thead>
+                <tr>
+                  <th>รหัสสมาชิก</th>
+                  <th>ชื่อ-นามสกุล</th>
+                  <th>ขนาดที่เลือก</th>
+                  <th>วันที่จอง/รับ</th>
+                  <th>สถานะ</th>
+                  <th>หมายเหตุ</th>
+                  <th>การดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((member) => (
+                  <tr key={member.MEMB_CODE}>
+                    <td data-label="รหัสสมาชิก">
+                      <strong>{member.MEMB_CODE}</strong>
+                    </td>
+                    <td data-label="ชื่อ-นามสกุล">{member.FULLNAME}</td>
+                    <td data-label="ขนาดที่เลือก">
+                      {member.SIZE_CODE ? (
+                        <span className="size-display">{member.SIZE_CODE}</span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td data-label="วันที่จอง/รับ">
+                      <span className="date-value">
+                        {member.RECEIVED_DATE 
+                          ? formatDateTime(member.RECEIVED_DATE)
+                          : member.SURVEY_DATE 
+                            ? formatDateTime(member.SURVEY_DATE)
+                            : '-'
+                        }
+                      </span>
+                    </td>
+                    <td data-label="สถานะ">{getStatusTag(member)}</td>
+                    <td data-label="หมายเหตุ">
+                      {member.REMARKS ? (
+                        <span className="remarks-text" title={member.REMARKS}>
+                          {member.REMARKS}
+                        </span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td data-label="การดำเนินการ">{getActionButton(member)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="pagination">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="btn-page"
+            >
+              ⏮️ หน้าแรก
+            </button>
+
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="btn-page"
+            >
+              ◀️ ก่อนหน้า
+            </button>
+
+            <span className="page-info">
+              หน้า {currentPage} / {totalPages}
+            </span>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="btn-page"
+            >
+              ถัดไป ▶️
+            </button>
+
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="btn-page"
+            >
+              หน้าสุดท้าย ⏭️
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Pickup Modal */}
+      {showPickupModal && selectedMember && (
+        <PickupModal
+          visible={showPickupModal}
+          onCancel={handleClosePickupModal}
+          onSubmit={handlePickupSuccess}
+          selectedMember={selectedMember}
+          form={pickupForm}
+        />
+      )}
+    </div>
   );
 };
 

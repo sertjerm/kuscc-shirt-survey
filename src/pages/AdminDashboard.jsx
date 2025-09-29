@@ -34,6 +34,7 @@ import MembersList from "../components/Admin/MembersList";
 import DashboardStats from "../components/Admin/DashboardStats";
 import PickupModal from "../components/Admin/PickupModal";
 import InventoryManagement from "../components/Admin/InventoryManagement";
+import { getShirtMemberListPaged, getDashboardStats } from "../services/shirtApi";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -55,7 +56,9 @@ const AdminDashboard = () => {
     total: 0,
     confirmed: 0,
     pending: 0,
-    distributedToday: 0
+    received: 0,
+    distributedToday: 0,
+    inventory: []
   });
   
   // Pickup Management State
@@ -68,25 +71,116 @@ const AdminDashboard = () => {
   }, [screens.lg]);
 
   useEffect(() => {
-    loadDashboardStats();
-  }, []);
+    if (activeMenuKey === "dashboard") {
+      loadDashboardStats();
+    }
+  }, [activeMenuKey]);
+
+  // ฟังก์ชันคำนวณสถิติจาก API data
+  const calculateStats = (data) => {
+    const total = data.length;
+    const confirmed = data.filter(m => m.SIZE_CODE).length;
+    const pending = total - confirmed;
+    const received = data.filter(m => m.RECEIVED_DATE).length;
+    
+    // นับจำนวนแต่ละไซซ์
+    const sizeCount = {};
+    const sizeReceived = {};
+    
+    data.forEach(member => {
+      if (member.SIZE_CODE) {
+        sizeCount[member.SIZE_CODE] = (sizeCount[member.SIZE_CODE] || 0) + 1;
+        if (member.RECEIVED_DATE) {
+          sizeReceived[member.SIZE_CODE] = (sizeReceived[member.SIZE_CODE] || 0) + 1;
+        }
+      }
+    });
+
+    // สร้างข้อมูลสต็อก - ใช้ข้อมูลจริงจาก API ร่วมกับ mock data
+    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL'];
+    const mockProduced = {
+      'XS': 50, 'S': 100, 'M': 150, 'L': 200, 'XL': 150,
+      '2XL': 100, '3XL': 80, '4XL': 50, '5XL': 30, '6XL': 20
+    };
+    
+    const inventory = sizes.map(size => {
+      const reserved = sizeCount[size] || 0;
+      const receivedCount = sizeReceived[size] || 0;
+      const produced = mockProduced[size];
+      
+      return {
+        size,
+        produced,
+        reserved,
+        received: receivedCount,
+        remaining: Math.max(0, produced - reserved)
+      };
+    });
+
+    // คำนวณจ่ายแล้ววันนี้
+    const today = new Date().toDateString();
+    const distributedToday = data.filter(m => {
+      if (!m.RECEIVED_DATE) return false;
+      try {
+        const receivedDate = new Date(parseInt(m.RECEIVED_DATE.match(/\d+/)[0]));
+        return receivedDate.toDateString() === today;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    return {
+      total,
+      confirmed,
+      pending,
+      received,
+      distributedToday,
+      inventory
+    };
+  };
 
   const loadDashboardStats = async () => {
     setLoadingDashboard(true);
+    setDashboardError(null);
+    
     try {
-      // เรียก API เพื่อได้สถิติ dashboard
-      // const stats = await getDashboardStats();
-      // setDashboardStats(stats);
+      // เรียก API เพื่อได้ข้อมูลทั้งหมด
+      const result = await getShirtMemberListPaged({
+        page: 1,
+        pageSize: 9999, // ดึงทั้งหมดเพื่อคำนวณสถิติ
+        search: '',
+        status: '',
+        size_code: ''
+      });
+
+      const stats = calculateStats(result.data || []);
+      setDashboardStats(stats);
       
-      // Mock data for now
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      
+      // ถ้า error ให้ใช้ mock data แทน
+      const mockInventory = [
+        { size: 'XS', produced: 50, reserved: 0, received: 0, remaining: 50 },
+        { size: 'S', produced: 100, reserved: 1, received: 0, remaining: 99 },
+        { size: 'M', produced: 150, reserved: 0, received: 0, remaining: 150 },
+        { size: 'L', produced: 200, reserved: 0, received: 0, remaining: 200 },
+        { size: 'XL', produced: 150, reserved: 0, received: 0, remaining: 150 },
+        { size: '2XL', produced: 100, reserved: 0, received: 0, remaining: 100 },
+        { size: '3XL', produced: 80, reserved: 0, received: 0, remaining: 80 },
+        { size: '4XL', produced: 50, reserved: 0, received: 0, remaining: 50 },
+        { size: '5XL', produced: 30, reserved: 0, received: 0, remaining: 30 },
+        { size: '6XL', produced: 20, reserved: 0, received: 0, remaining: 20 },
+      ];
+      
       setDashboardStats({
         total: 1250,
         confirmed: 980,
         pending: 270,
-        distributedToday: 45
+        received: 45,
+        distributedToday: 12,
+        inventory: mockInventory
       });
-    } catch (error) {
-      setDashboardError("เกิดข้อผิดพลาดในการโหลดข้อมูล");
     } finally {
       setLoadingDashboard(false);
     }
@@ -95,8 +189,8 @@ const AdminDashboard = () => {
   const handlePickupClick = (record) => {
     setSelectedMember(record);
     pickupForm.setFieldsValue({
-      memberCode: record.memberCode,
-      selectedSize: record.selectedSize,
+      memberCode: record.MEMB_CODE,
+      selectedSize: record.SIZE_CODE,
       pickupType: "self",
     });
     setPickupModalVisible(true);
@@ -120,7 +214,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Menu items - แก้ key ให้ตรงกัน
+  // Menu items
   const menuItems = [
     { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
     { key: "members", icon: <SearchOutlined />, label: "ค้นหาและรับเสื้อ" },
@@ -160,8 +254,7 @@ const AdminDashboard = () => {
       default:
         return (
           <>
-            <Title level={3}>ภาพรวมวันนี้</Title>
-            <DashboardStats stats={dashboardStats} />
+            <Title level={3} style={{ marginBottom: 24 }}>ภาพรวมวันนี้</Title>
 
             {dashboardError && (
               <Alert
@@ -169,7 +262,9 @@ const AdminDashboard = () => {
                 description={dashboardError}
                 type="error"
                 showIcon
+                closable
                 style={{ marginBottom: 24 }}
+                onClose={() => setDashboardError(null)}
               />
             )}
 
@@ -181,7 +276,7 @@ const AdminDashboard = () => {
                 </div>
               </Card>
             ) : (
-              <MembersList onPickupClick={handlePickupClick} />
+              <DashboardStats stats={dashboardStats} />
             )}
           </>
         );

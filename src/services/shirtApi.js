@@ -16,7 +16,7 @@ export const api = axios.create({
 
 // ---- API FUNCTIONS ----
 
-// ---- GET SHIRT MEMBER LIST ----
+// ---- GET SHIRT MEMBER LIST (เก่า - เก็บไว้ backward compatible) ----
 export async function getShirtMemberList(sizeCode) {
   const res = await api.get(
     `/GetShirtMemberList?size_code=${encodeURIComponent(sizeCode)}`
@@ -28,22 +28,40 @@ export async function getShirtMemberList(sizeCode) {
 }
 
 // ---- NEW PAGED API ----
-export const getShirtMemberListPaged = async (page = 1, pageSize = 20, search = '', status = '') => {
+export const getShirtMemberListPaged = async ({
+  page = 1,
+  pageSize = 20,
+  search = '',
+  status = '',
+  size_code = ''
+}) => {
   try {
-    const params = {
+    const params = new URLSearchParams({
       page: page.toString(),
-      pageSize: pageSize.toString(),
-      search,
-      status
-    };
+      pageSize: pageSize.toString()
+    });
     
-    const res = await api.get('/GetShirtMemberListPaged', { params });
+    // เพิ่ม parameter เฉพาะที่มีค่า
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    if (size_code) params.append('size_code', size_code);
     
-    if (res.data?.responseCode !== 200) {
+    const res = await api.get(`/GetShirtMemberListPaged?${params.toString()}`);
+    
+    if (res.data?.responseCode !== 200 && res.data?.responseCode !== 404) {
       throw new Error(res.data?.responseMessage || "API error");
     }
     
-    return res.data.data;
+    // Return ทั้ง response เพื่อให้ได้ pagination info
+    return {
+      data: res.data.data || [],
+      totalCount: res.data.totalCount || 0,
+      currentPage: res.data.currentPage || page,
+      pageSize: res.data.pageSize || pageSize,
+      totalPages: res.data.totalPages || 1,
+      responseCode: res.data.responseCode,
+      responseMessage: res.data.responseMessage
+    };
   } catch (error) {
     console.error('API Error:', error);
     throw error;
