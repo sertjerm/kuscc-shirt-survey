@@ -427,11 +427,17 @@ const MemberPortal = () => {
           message={
             <Row gutter={[16, 16]}>
               <Col xs={24} lg={12}>
-                <div>
-                  <Text strong style={{ fontSize: "16px", display: "block" }}>
+                <div    style={{
+                    // backgroundColor: "rgba(255, 136, 0, 0.1)",
+                    // padding: "12px",
+                    // borderRadius: "8px",
+                    // border: "1px solid rgba(255, 136, 0, 0.3)",
+                    textAlign: "center",
+                  }}>
+                  <Text strong style={{ fontSize: "14px", display: "block" }}>
                     📅 จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568
                   </Text>
-                  <Text style={{ color: "#666", fontSize: "14px" }}>
+                  <Text style={{ color: "#666", fontSize: "12px" }}>
                     จะได้รับเสื้อประมาณต้นเดือน ธันวาคม 2568
                   </Text>
                 </div>
@@ -446,10 +452,17 @@ const MemberPortal = () => {
                     textAlign: "center",
                   }}
                 >
-                  <Text strong style={{ color: "#d46b08", display: "block" }}>
+                  <Text
+                    strong
+                    style={{
+                      color: "#d46b08",
+                      fontSize: "14px",
+                      display: "block",
+                    }}
+                  >
                     🏢 หากไม่มั่นใจขนาดเสื้อ
                   </Text>
-                  <Text style={{ color: "#d46b08", fontSize: "14px" }}>
+                  <Text style={{ color: "#d46b08", fontSize: "12px" }}>
                     ทดสอบขนาดเสื้อตัวอย่างได้ที่สำนักงาน สอ.มก
                   </Text>
                 </div>
