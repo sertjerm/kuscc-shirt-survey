@@ -2,21 +2,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
 import PickupModal from "./PickupModal";
-import { formatDateTime } from "../../utils/js_functions"; // นำเข้าฟังก์ชันที่สร้างไว้
 import "../../styles/MembersList.css";
 
 // Constants
 const SHIRT_SIZES = [
-  { code: "XS" },
-  { code: "S" },
-  { code: "M" },
-  { code: "L" },
-  { code: "XL" },
-  { code: "2XL" },
-  { code: "3XL" },
-  { code: "4XL" },
-  { code: "5XL" },
-  { code: "6XL" },
+  { code: "XS" }, { code: "S" }, { code: "M" }, { code: "L" },
+  { code: "XL" }, { code: "2XL" }, { code: "3XL" }, { code: "4XL" },
+  { code: "5XL" }, { code: "6XL" }
 ];
 
 const MEMBER_STATUS = {
@@ -136,7 +128,7 @@ const MembersList = ({ onPickupClick }) => {
     console.log("📦 Opening pickup modal for:", member);
     setSelectedMember(member);
     setShowPickupModal(true);
-
+    
     // ถ้ามี callback จาก parent (AdminDashboard)
     if (onPickupClick) {
       onPickupClick(member);
@@ -158,18 +150,39 @@ const MembersList = ({ onPickupClick }) => {
   // Helper: กำหนด status ของสมาชิก
   const getMemberStatus = (member) => {
     // ตรวจสอบจากฟิลด์ใหม่
-    if (
-      member.hasReceived ||
-      member.receiveStatus === "RECEIVED" ||
-      member.RECEIVE_STATUS === "RECEIVED" ||
-      member.RECEIVE_DATE
-    ) {
+    if (member.hasReceived || member.receiveStatus === "RECEIVED" || member.RECEIVE_STATUS === "RECEIVED" || member.RECEIVE_DATE) {
       return MEMBER_STATUS.RECEIVED;
     }
     if (member.sizeCode || member.SIZE_CODE) {
       return MEMBER_STATUS.CONFIRMED;
     }
     return MEMBER_STATUS.NOT_CONFIRMED;
+  };
+
+  // Helper: Format วันที่เป็น dd/mm/yyyy HH:mm (บรรทัดเดียว)
+  const formatDateTime = (dateString) => {
+    try {
+      if (!dateString) return '-';
+      
+      let date;
+      // Check if it's WCF format /Date(...)/
+      if (dateString.includes('/Date(')) {
+        const timestamp = parseInt(dateString.match(/\d+/)[0]);
+        date = new Date(timestamp);
+      } else {
+        date = new Date(dateString);
+      }
+      
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      return '-';
+    }
   };
 
   // Helper: สถานะสมาชิก (แบบ Tag)
@@ -198,7 +211,7 @@ const MembersList = ({ onPickupClick }) => {
   // Helper: แสดงปุ่มตามสถานะ
   const getActionButton = (member) => {
     const status = getMemberStatus(member);
-
+    
     // ถ้ารับเสื้อแล้ว ไม่แสดงปุ่ม
     if (status === MEMBER_STATUS.RECEIVED) {
       return <span className="text-muted">-</span>;
@@ -319,18 +332,6 @@ const MembersList = ({ onPickupClick }) => {
                   const surveyDate = member.surveyDate || member.SURVEY_DATE;
                   const remarks = member.remarks || member.REMARKS;
 
-                  // Log วันที่เพื่อ debug
-                  console.log(`Date debug for ${memberCode}:`, {
-                    receiveDate,
-                    surveyDate,
-                    formattedReceiveDate: receiveDate
-                      ? formatDateTime(receiveDate)
-                      : "-",
-                    formattedSurveyDate: surveyDate
-                      ? formatDateTime(surveyDate)
-                      : "-",
-                  });
-
                   return (
                     <tr key={memberCode}>
                       <td data-label="รหัสสมาชิก">
@@ -339,18 +340,19 @@ const MembersList = ({ onPickupClick }) => {
                       <td data-label="ชื่อ-นามสกุล">{fullName}</td>
                       <td data-label="ขนาดที่เลือก">
                         {sizeCode ? (
-                          <span className="size-badge">{sizeCode}</span>
+                          <span className="size-display">{sizeCode}</span>
                         ) : (
                           <span className="text-muted">-</span>
                         )}
                       </td>
                       <td data-label="วันที่จอง/รับ">
                         <span className="date-value">
-                          {receiveDate
+                          {receiveDate 
                             ? formatDateTime(receiveDate)
-                            : surveyDate
-                            ? formatDateTime(surveyDate)
-                            : "-"}
+                            : surveyDate 
+                              ? formatDateTime(surveyDate)
+                              : '-'
+                          }
                         </span>
                       </td>
                       <td data-label="สถานะ">{getStatusTag(member)}</td>
@@ -363,9 +365,7 @@ const MembersList = ({ onPickupClick }) => {
                           <span className="text-muted">-</span>
                         )}
                       </td>
-                      <td data-label="การดำเนินการ">
-                        {getActionButton(member)}
-                      </td>
+                      <td data-label="การดำเนินการ">{getActionButton(member)}</td>
                     </tr>
                   );
                 })}

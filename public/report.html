@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลสำรวจสมาชิกโครงการเงินร่วมทำบุญ</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jQuery via CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom style for active filter button */
+        .filter-btn.active {
+            background-color: #1d4ed8; /* blue-800 */
+            color: white;
+        }
+        body {
+            font-family: 'Kanit', sans-serif; /* Using a nice Thai font */
+        }
+    </style>
+    <!-- Google Fonts for Kanit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+    </div>
+
+    <!-- Main content is hidden by default -->
+    <div id="main-content" class="container mx-auto p-4 sm:p-6 lg:p-8 hidden">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">
+            ผลสำรวจสมาชิกโครงการเงินร่วมทำบุญ
+        </h1>
+        <p class="text-sm text-gray-500 mb-8">
+            *ข้อมูล ณ วันที่ 8 กันยายน 2568 มีสมาชิกจำนวน 11,072 คน
+        </p>
+
+        <!-- Summary Cards -->
+        <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                <p class="text-sm font-medium text-gray-500">สมาชิกทั้งหมด</p>
+                <p id="total-members" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                <p class="text-sm font-medium text-gray-500">เป็นสมาชิกต่อ</p>
+                <p id="continuing-members" class="text-3xl font-bold text-green-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                <p class="text-sm font-medium text-gray-500">ไม่เป็นสมาชิกต่อ</p>
+                <p id="discontinuing-members" class="text-3xl font-bold text-red-600 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div id="charts-section" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">สถานะการตอบแบบสอบถาม</h2>
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">สรุปยอดสมาชิกสุดท้าย</h2>
+                <canvas id="finalDecisionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Table Section (Hidden) -->
+        <div class="bg-white p-6 rounded-lg shadow-md hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                <div class="flex items-center space-x-2">
+                    <button data-filter="all" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">ทั้งหมด</button>
+                    <button data-filter="continue" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">ต่ออายุ</button>
+                    <button data-filter="discontinue" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">ไม่ต่ออายุ</button>
+                    <button data-filter="default" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">ยังไม่ตอบ</button>
+                </div>
+                <div class="w-full sm:w-auto">
+                    <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือรหัสสมาชิก..." class="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ-สกุล</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสสมาชิก</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่ตอบ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Rows will be injected by jQuery -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+$(document).ready(function () {
+    const apiUrl = "https://apps4.coop.ku.ac.th/KusccToolService2Dev/Service1.svc/GetAidDashboard";
+
+    $.ajax({
+        url: apiUrl,
+        method: "GET",
+        dataType: "json",
+        success: function (apiData) {
+            if (!apiData || !apiData.data) {
+                console.error("API response is valid but data is missing or malformed.", apiData);
+                $('#main-content').removeClass('hidden'); // Show content to display error
+                $('#summary-cards, #charts-section').html('<p class="text-red-500">ไม่สามารถแสดงผลได้เนื่องจากข้อมูลที่ได้รับผิดพลาด</p>');
+                return;
+            }
+            
+            let members = apiData.data;
+            let statusChartInstance = null;
+            let finalDecisionChartInstance = null;
+
+            // --- HELPER FUNCTIONS ---
+            function formatNumber(num) {
+                return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+            }
+
+            // --- CHART FUNCTIONS ---
+            function createStatusChart(counts, totalMembers) {
+                const ctx = document.getElementById("statusChart").getContext("2d");
+                if (statusChartInstance) statusChartInstance.destroy();
+                
+                const chartTooltipCallback = {
+                    label: function(context) {
+                        let label = context.label || '';
+                        if (label) label += ': ';
+                        if (context.parsed !== null) {
+                            const total = totalMembers; // Use the fixed total for percentage calculation
+                            const value = context.raw;
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            label += `${formatNumber(value)} (${percentage}%)`;
+                        }
+                        return label;
+                    }
+                };
+
+                statusChartInstance = new Chart(ctx, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["ตอบแล้ว(เป็นสมาชิกต่อ)", "ตอบแล้ว(ไม่เป็นสมาชิกต่อ)", "ไม่ตอบ(เป็นสมาชิกต่อ)"],
+                        datasets: [{
+                            data: [counts.continue, counts.discontinue, counts.default],
+                            backgroundColor: ["#10B981", "#EF4444", "#3B82F6"],
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { 
+                            legend: { position: "bottom" },
+                            tooltip: { callbacks: chartTooltipCallback }
+                        },
+                    },
+                });
+            }
+
+            function createFinalDecisionChart(counts, totalMembers) {
+                const ctx = document.getElementById("finalDecisionChart").getContext("2d");
+                if (finalDecisionChartInstance) finalDecisionChartInstance.destroy();
+
+                const finalTooltipCallback = {
+                    label: function(context) {
+                        let label = context.label || '';
+                        if (label) label += ': ';
+                        if (context.parsed !== null) {
+                            const total = totalMembers; // Use the fixed total for percentage calculation
+                            const value = context.raw;
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            label += `${formatNumber(value)} (${percentage}%)`;
+                        }
+                        return label;
+                    }
+                };
+
+                const totalContinuing = totalMembers - counts.discontinue;
+                finalDecisionChartInstance = new Chart(ctx, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["เป็นสมาชิกต่อ", "ไม่เป็นสมาชิกต่อ"],
+                        datasets: [{
+                            data: [totalContinuing, counts.discontinue],
+                            backgroundColor: ["#10B981", "#EF4444"], 
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { 
+                            legend: { position: "bottom" },
+                            tooltip: { callbacks: finalTooltipCallback }
+                        },
+                    },
+                });
+            }
+
+            function calculateAndRenderStats(allMembers) {
+                const total = 11072; // Use fixed total as requested
+                const counts = { continue: 0, discontinue: 0, default: 0 };
+                
+                for (let i = 0; i < allMembers.length; i++) {
+                    const purpose = allMembers[i].PURPOSE;
+                    if (counts[purpose] !== undefined) {
+                        counts[purpose]++;
+                    }
+                }
+
+                const totalContinuing = total - counts.discontinue;
+                const continuingPercent = total > 0 ? (totalContinuing / total * 100).toFixed(1) : 0;
+                const discontinuingPercent = total > 0 ? (counts.discontinue / total * 100).toFixed(1) : 0;
+
+                $("#total-members").text(formatNumber(total));
+                $("#continuing-members").text(`${formatNumber(totalContinuing)} (${continuingPercent}%)`);
+                $("#discontinuing-members").text(`${formatNumber(counts.discontinue)} (${discontinuingPercent}%)`);
+                
+                $("#continuing-members").removeClass("text-blue-600").addClass("text-green-600");
+
+                createStatusChart(counts, total); // Pass the fixed total to the chart function
+                createFinalDecisionChart(counts, total); // Pass the fixed total to the chart function
+            }
+
+            // --- INITIAL LOAD ---
+            calculateAndRenderStats(members);
+            $('#main-content').removeClass('hidden');
+        },
+        error: function (xhr, status, error) {
+            console.error("API request failed:", status, error);
+            $('#main-content').removeClass('hidden');
+            $('#summary-cards, #charts-section').html('<p class="text-center text-red-500 text-lg">เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง</p>');
+        },
+        complete: function () {
+            $('#loading-spinner').addClass('hidden');
+        }
+    });
+});
+</script>
+</body>
+</html>
+

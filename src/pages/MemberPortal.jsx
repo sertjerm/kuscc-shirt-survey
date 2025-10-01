@@ -370,48 +370,46 @@ const MemberPortal = () => {
                 รหัสสมาชิก: {memberData.memberCode || "ไม่ระบุ"}
               </Text>
             </span>
-            {memberData.sizeCode && (
-              <Text
-                style={{
-                  color: "#007AFF",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  display: "block",
-                }}
-              >
-                ขนาดที่เลือก: {memberData.sizeCode}
-              </Text>
-            )}
           </div>
         </div>
 
-        {/* Status - Enhanced */}
+        {/* Status - Enhanced - ปรับใหม่ตามภาพ */}
         <div
           style={{
             textAlign: "center",
             paddingBottom: 20,
             borderTop: "1px solid rgba(0, 122, 255, 0.1)",
             marginTop: 16,
-            paddingTop: 20,
+            paddingTop: 0,
           }}
         >
-          <Tag
-            color={getStatusColor(memberData.status)}
+          <div
             style={{
-              padding: "12px 24px",
-              borderRadius: "25px",
+              display: "inline-block",
+              padding: "12px 32px",
+              borderRadius: "8px",
               fontSize: "16px",
               fontWeight: 600,
-              border: "none",
-              display: "inline-block",
-              minWidth: 160,
-              boxShadow: `0 4px 12px ${getStatusColor(memberData.status)}33`,
-              textTransform: "none",
+              background: memberData.sizeCode
+                ? "linear-gradient(135deg, #32D74B, #30B84E)"
+                : "linear-gradient(135deg, #FF9500, #FF6B00)",
+              color: "white",
+              boxShadow: memberData.sizeCode
+                ? "0 4px 12px rgba(0, 122, 255, 0.3)"
+                : "0 4px 12px rgba(255, 149, 0, 0.3)",
+              minWidth: 200,
             }}
           >
-            สถานะ: {memberData.status}
-          </Tag>
+            {memberData.sizeCode ? (
+              <>
+                สถานะ: ยืนยันขนาด "{memberData.sizeCode}" แล้ว
+              </>
+            ) : (
+              <>สถานะ: ยังไม่ยืนยันขนาด</>
+            )}
+          </div>
         </div>
+        
         {/* แจ้งเตือนตัดรอบ */}
         <Alert
           type="warning"
@@ -427,13 +425,7 @@ const MemberPortal = () => {
           message={
             <Row gutter={[16, 16]}>
               <Col xs={24} lg={12}>
-                <div    style={{
-                    // backgroundColor: "rgba(255, 136, 0, 0.1)",
-                    // padding: "12px",
-                    // borderRadius: "8px",
-                    // border: "1px solid rgba(255, 136, 0, 0.3)",
-                    textAlign: "center",
-                  }}>
+                <div style={{ textAlign: "center" }}>
                   <Text strong style={{ fontSize: "14px", display: "block" }}>
                     📅 จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568
                   </Text>
@@ -666,24 +658,6 @@ const MemberPortal = () => {
             ))}
           </Row>
         </div>
-        {/* <div
-          style={{ width: "100%", maxWidth: 700, margin: "0 auto 16px auto" }}
-        >
-          <Alert
-            message="หากไม่มั่นใจขนาดเสื้อหรือไม่มีขนาดที่เหมาะสม"
-            description="ทดสอบขนาดเสื้อตัวอย่างได้ที่สำนักงาน สอ.มก"
-            type="danger"
-            // showIcon={true}
-            style={{
-              marginTop: "16px",
-              marginBottom: "0px",
-              borderRadius: "12px",
-         
-              textAlign: "center",
-              fontWeight: 500,
-            }}
-          />
-        </div> */}
 
         {/* Confirm Button */}
         <div style={{ textAlign: "center" }}>
@@ -715,23 +689,6 @@ const MemberPortal = () => {
         </div>
 
         {/* Info Notes */}
-        {/* <div
-          style={{
-            background: "rgba(255, 149, 0, 0.08)",
-            border: "1px solid rgba(255, 149, 0, 0.2)",
-            borderRadius: 12,
-            padding: 16,
-            marginTop: 24,
-            textAlign: "center",
-          }}
-        >
-          <InfoCircleOutlined style={{ color: "#FF9500", marginRight: 8 }} />
-          <Text style={{ color: "#000", fontSize: 14 }}>
-            สามารถเปลี่ยนแปลงขนาดได้ตลอดจนกว่าจะถึงวันสิ้นสุดการจอง
-            หรือเปลี่ยนขนาดตอนมารับเสื้อที่หน้างาน
-          </Text>
-        </div> */}
-
         <div
           style={{
             background: "rgba(0, 122, 255, 0.05)",
@@ -746,7 +703,6 @@ const MemberPortal = () => {
             style={{
               color: "#000",
               fontSize: 13,
-              // backgroundColor: "#ffffff85",
             }}
           >
             <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
@@ -798,7 +754,6 @@ const MemberPortal = () => {
           )}
           <div style={{ marginTop: 16 }}>
             <Text style={{ color: "#8e8e93", fontSize: 14 }}>
-              {/* หลังจากยืนยันแล้ว คุณยังสามารถเปลี่ยนขนาดได้ในภายหลัง */}
               สามารถเปลี่ยนแปลงขนาดได้ถึง 15 ตุลาคม 2568
             </Text>
           </div>

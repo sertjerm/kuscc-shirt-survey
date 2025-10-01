@@ -1,0 +1,244 @@
+let config = {
+  method: 'get',
+  maxBodyLength: Infinity,
+  url: 'https://apps4.coop.ku.ac.th/KusccToolService2Dev/Service1.svc/GetStockSummary',
+  headers: { 
+    'Cookie': 'ASP.NET_SessionId=q2koasvt1ohwxjg3ivuo0lsj'
+  }
+};
+{
+    "data": [
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 60,
+            "PRODUCED_QTY": 600,
+            "REMAINING_QTY": 600,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "2XL",
+            "STOCK_ID": 6,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620428000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 40,
+            "PRODUCED_QTY": 400,
+            "REMAINING_QTY": 400,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "3XL",
+            "STOCK_ID": 7,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620428000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 30,
+            "PRODUCED_QTY": 300,
+            "REMAINING_QTY": 300,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "4XL",
+            "STOCK_ID": 8,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620428000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 20,
+            "PRODUCED_QTY": 200,
+            "REMAINING_QTY": 200,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "5XL",
+            "STOCK_ID": 9,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620428000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 10,
+            "PRODUCED_QTY": 100,
+            "REMAINING_QTY": 100,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "6XL",
+            "STOCK_ID": 10,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620428000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620427000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 100,
+            "PRODUCED_QTY": 1000,
+            "REMAINING_QTY": 1000,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "L",
+            "STOCK_ID": 4,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620427000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620427000+0700)/",
+            "DISTRIBUTED_QTY": 15,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 80,
+            "PRODUCED_QTY": 920,
+            "REMAINING_QTY": 905,
+            "REMARKS": "รอบเดียวทั้งรับและจ่าย",
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "M",
+            "STOCK_ID": 3,
+            "UPDATED_BY": "000001",
+            "UPDATED_DATE": "/Date(1759141476000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620427000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 50,
+            "PRODUCED_QTY": 500,
+            "REMAINING_QTY": 500,
+            "REMARKS": null,
+            "RESERVED_QTY": 1,
+            "SIZE_CODE": "S",
+            "STOCK_ID": 2,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620427000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620428000+0700)/",
+            "DISTRIBUTED_QTY": 25,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 80,
+            "PRODUCED_QTY": 900,
+            "REMAINING_QTY": 875,
+            "REMARKS": "แจกพนักงานรอบ ก.ย.",
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "XL",
+            "STOCK_ID": 5,
+            "UPDATED_BY": "012938",
+            "UPDATED_DATE": "/Date(1759141471000+0700)/"
+        },
+        {
+            "CREATED_DATE": "/Date(1758620427000+0700)/",
+            "DISTRIBUTED_QTY": 0,
+            "IS_LOW_STOCK": "N",
+            "LOW_STOCK_THRESHOLD": 30,
+            "PRODUCED_QTY": 300,
+            "REMAINING_QTY": 300,
+            "REMARKS": null,
+            "RESERVED_QTY": 0,
+            "SIZE_CODE": "XS",
+            "STOCK_ID": 1,
+            "UPDATED_BY": "SYSTEM",
+            "UPDATED_DATE": "/Date(1758620427000+0700)/"
+        }
+    ],
+    "responseCode": 200,
+    "responseMessage": "Success"
+}
+let config = {
+  method: 'get',
+  maxBodyLength: Infinity,
+  url: 'https://apps4.coop.ku.ac.th/KusccToolService2Dev/Service1.svc/GetShirtMemberListPaged?page=1&pageSize=2&search=&status=',
+  headers: { 
+    'Cookie': 'ASP.NET_SessionId=q2koasvt1ohwxjg3ivuo0lsj'
+  }
+};
+{
+    "currentPage": 1,
+    "data": [
+        {
+            "DISPLAYNAME": "คุณทองพันธุ์",
+            "FULLNAME": "นายทองพันธุ์ พูนสุวรรณ",
+            "MEMB_CODE": "000049",
+            "MEMB_MOBILE": "0867523330",
+            "MEMB_SOCID": "386",
+            "PROCESSED_BY": null,
+            "RECEIVER_NAME": null,
+            "RECEIVER_TYPE": null,
+            "RECEIVE_DATE": null,
+            "RECEIVE_STATUS": null,
+            "REMARKS": null,
+            "SIZE_CODE": null,
+            "SURVEY_DATE": null,
+            "SURVEY_METHOD": null,
+            "UPDATED_DATE": null,
+            "USER_ROLE": "member"
+        },
+        {
+            "DISPLAYNAME": "คุณกฤษณา",
+            "FULLNAME": "นางกฤษณา ชุติมา",
+            "MEMB_CODE": "000055",
+            "MEMB_MOBILE": null,
+            "MEMB_SOCID": "681",
+            "PROCESSED_BY": null,
+            "RECEIVER_NAME": null,
+            "RECEIVER_TYPE": null,
+            "RECEIVE_DATE": null,
+            "RECEIVE_STATUS": null,
+            "REMARKS": null,
+            "SIZE_CODE": null,
+            "SURVEY_DATE": null,
+            "SURVEY_METHOD": null,
+            "UPDATED_DATE": null,
+            "USER_ROLE": "member"
+        }
+    ],
+    "pageSize": 2,
+    "responseCode": 200,
+    "responseMessage": "SUCCESS",
+    "totalCount": 11927,
+    "totalPages": 5964
+}
+--เติม stock 
+let data = JSON.stringify({
+  "size_code": "XL",
+  "produced_delta": 100,
+  "remarks": "รับเข้า ก.ย.",
+  "updated_by": "012938"
+});
+
+let config = {
+  method: 'post',
+  maxBodyLength: Infinity,
+  url: 'https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc/UpdateStock',
+  headers: { 
+    'Content-Type': 'application/json', 
+    'Cookie': 'ASP.NET_SessionId=q2koasvt1ohwxjg3ivuo0lsj'
+  },
+  data : data
+};
+--เบิก stock
+let data = JSON.stringify({
+  "size_code": "XL",
+  "distributed_delta": 25,
+  "remarks": "แจกพนักงานรอบ ก.ย.",
+  "updated_by": "012938"
+});
+
+let config = {
+  method: 'post',
+  maxBodyLength: Infinity,
+  url: 'https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc/UpdateStock',
+  headers: { 
+    'Content-Type': 'application/json', 
+    'Cookie': 'ASP.NET_SessionId=q2koasvt1ohwxjg3ivuo0lsj'
+  },
+  data : data
+};

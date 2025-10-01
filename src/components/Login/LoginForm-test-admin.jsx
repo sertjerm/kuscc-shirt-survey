@@ -23,9 +23,9 @@ const LoginForm = () => {
 
   // กำหนดค่า default สำหรับทดสอบ
   const initialValues = {
-    memberCode: "",
-    phone: "",
-    idCard: "",
+    memberCode: "012938",
+     phone: "9999999999",
+     idCard: "999",
   };
 
   const handleLogin = async (values) => {
@@ -34,9 +34,9 @@ const LoginForm = () => {
     try {
       console.log("🔐 เรียกใช้ API เข้าสู่ระบบ...");
       const memberData = await loginMember({
-        memberCode: values.memberCode || "012938",
-        phone: values.phone || "0812681022",
-        idCard: values.idCard || "952",
+        memberCode: values.memberCode ,//|| "012938",
+        phone: "0812681022",//values.phone || 
+        idCard:  "952",//values.idCard ||
       });
 
       console.log("✅ ได้รับข้อมูลสมาชิก:", memberData);
