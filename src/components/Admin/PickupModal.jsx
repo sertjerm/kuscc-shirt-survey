@@ -1,4 +1,4 @@
-// src/components/Admin/PickupModal.jsx
+// src/components/Admin/PickupModal.jsx - FIXED VERSION
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Radio, Row, Col, Card, message } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
@@ -7,16 +7,7 @@ import { useAppContext } from "../../App";
 import "../../styles/PickupModal.css";
 
 const ALL_SIZES = [
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "2XL",
-  "3XL",
-  "4XL",
-  "5XL",
-  "6XL",
+  "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL",
 ];
 
 const SIZE_INFO = {
@@ -38,27 +29,41 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [receiverType, setReceiverType] = useState("SELF");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
-  const [actionType, setActionType] = useState("pickup");
+  const [memberData, setMemberData] = useState(null);
 
   useEffect(() => {
     if (visible && selectedMember) {
-      setSelectedSize(selectedMember.sizeCode || selectedMember.SIZE_CODE);
+      console.log("Modal opened with member:", selectedMember);
+      
+      setMemberData({
+        memberCode: selectedMember.memberCode || selectedMember.MEMB_CODE,
+        fullName: selectedMember.fullName || selectedMember.FULLNAME || "",
+        sizeCode: selectedMember.sizeCode || selectedMember.SIZE_CODE || null,
+        rawData: selectedMember
+      });
+      
+      setSelectedSize(selectedMember.sizeCode || selectedMember.SIZE_CODE || null);
       setReceiverType("SELF");
-      setActionType("pickup");
+    } else if (!visible) {
+      // Reset state เมื่อปิด modal
+      setMemberData(null);
+      setSelectedSize(null);
+      setReceiverType("SELF");
+      setLoading(false);
     }
   }, [visible, selectedMember]);
 
-  // ดึง memberCode จาก user object
   const getAdminCode = () => {
-    if (!user) {
-      console.warn("⚠️ User object is undefined");
-      return "ADMIN";
-    }
+    if (!user) return "ADMIN";
     return user.memberCode || user.MEMB_CODE || user.mbcode || "ADMIN";
   };
 
-  // บันทึกเฉพาะขนาด (ยังไม่รับเสื้อ)
   const handleSaveSizeOnly = async () => {
+    if (!memberData || !memberData.memberCode) {
+      message.error("ไม่พบข้อมูลสมาชิก");
+      return;
+    }
+
     if (!selectedSize) {
       message.warning("กรุณาเลือกขนาดเสื้อ");
       return;
@@ -67,37 +72,40 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     setLoading(true);
     try {
       const adminCode = getAdminCode();
-      const memberCode = selectedMember.memberCode || selectedMember.MEMB_CODE;
-
-      console.log("💾 Saving size only:", {
-        memberCode,
-        sizeCode: selectedSize,
-        adminCode,
-      });
 
       await saveMemberSize({
-        memberCode: memberCode,
+        memberCode: memberData.memberCode,
         sizeCode: selectedSize,
         remarks: `แก้ไขโดย ${adminCode}`,
         surveyMethod: "MANUAL",
       });
 
-      message.success("บันทึกขนาดเสื้อสำเร็จ");
-
-      if (onSuccess) {
-        onSuccess();
-      }
+      message.success("บันทึกขนาดสำเร็จ");
+      
+      // ปิด modal
       onCancel();
+      
+      // รอให้ modal ปิดสนิทก่อน refresh ข้อมูล
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        }
+      }, 300);
+      
     } catch (error) {
-      console.error("❌ Save size error:", error);
-      message.error(error.message || "เกิดข้อผิดพลาดในการบันทึก");
+      console.error("Save size error:", error);
+      message.error(error.message || "บันทึกขนาดไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
   };
 
-  // บันทึกการรับเสื้อ
   const handleSubmitPickup = async () => {
+    if (!memberData || !memberData.memberCode) {
+      message.error("ไม่พบข้อมูลสมาชิก");
+      return;
+    }
+
     if (!selectedSize) {
       message.warning("กรุณาเลือกขนาดเสื้อ");
       return;
@@ -106,17 +114,9 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     setLoading(true);
     try {
       const adminCode = getAdminCode();
-      const memberCode = selectedMember.memberCode || selectedMember.MEMB_CODE;
-
-      console.log("📦 Submitting pickup:", {
-        memberCode,
-        sizeCode: selectedSize,
-        processedBy: adminCode,
-        receiverType,
-      });
 
       await submitPickup({
-        memberCode: memberCode,
+        memberCode: memberData.memberCode,
         sizeCode: selectedSize,
         processedBy: adminCode,
         receiverType: receiverType,
@@ -125,23 +125,28 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       });
 
       message.success("บันทึกการรับเสื้อสำเร็จ");
-
-      if (onSuccess) {
-        onSuccess();
-      }
+      
+      // ปิด modal
       onCancel();
+      
+      // รอให้ modal ปิดสนิทก่อน refresh ข้อมูล
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        }
+      }, 300);
+      
     } catch (error) {
-      console.error("❌ Pickup submit error:", error);
-      message.error(error.message || "เกิดข้อผิดพลาดในการบันทึก");
+      console.error("Pickup submit error:", error);
+      message.error(error.message || "บันทึกการรับเสื้อไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!selectedMember) return null;
-
-  const memberCode = selectedMember.memberCode || selectedMember.MEMB_CODE;
-  const fullName = selectedMember.fullName || selectedMember.FULLNAME;
+  if (!memberData) {
+    return null;
+  }
 
   return (
     <>
@@ -152,23 +157,24 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         width={500}
         closeIcon={<CloseOutlined />}
         className="pickup-modal-minimal"
+        destroyOnClose={true}
+        maskClosable={false}
+        getContainer={false} // ป้องกัน layout shift
       >
         <div className="pickup-modal-content">
           <h2 className="modal-title">บันทึกการรับเสื้อ</h2>
 
-          {/* ข้อมูลสมาชิก */}
           <div className="member-info-grid">
             <div className="info-item">
               <span className="info-label">รหัสสมาชิก</span>
-              <span className="info-value">{memberCode}</span>
+              <span className="info-value">{memberData.memberCode}</span>
             </div>
             <div className="info-item">
               <span className="info-label">ชื่อ-นามสกุล</span>
-              <span className="info-value">{fullName}</span>
+              <span className="info-value">{memberData.fullName || "-"}</span>
             </div>
           </div>
 
-          {/* เลือกขนาด */}
           <div className="section">
             <div className="section-header">
               <span className="section-label">ขนาดที่เลือก</span>
@@ -177,7 +183,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
                 size="small"
                 onClick={() => setShowSizeGuide(true)}
               >
-                📏 เปลี่ยนขนาด
+                เปลี่ยนขนาด
               </Button>
             </div>
 
@@ -188,7 +194,6 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             )}
           </div>
 
-          {/* เลือกผู้รับ */}
           <div className="section">
             <span className="section-label">ผู้รับเสื้อ</span>
             <Radio.Group
@@ -201,19 +206,20 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             </Radio.Group>
           </div>
 
-          {/* ปุ่มด้านล่าง */}
           <div className="modal-footer">
-            <Button onClick={onCancel} size="large">
+            <Button 
+              onClick={onCancel} 
+              size="large"
+              disabled={loading}
+            >
               ยกเลิก
             </Button>
 
             <Button
               size="large"
-              onClick={() => {
-                setActionType("size-only");
-                handleSaveSizeOnly();
-              }}
-              loading={loading && actionType === "size-only"}
+              onClick={handleSaveSizeOnly}
+              loading={loading}
+              disabled={!selectedSize || loading}
             >
               บันทึกขนาดอย่างเดียว
             </Button>
@@ -221,11 +227,10 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             <Button
               type="primary"
               size="large"
-              onClick={() => {
-                setActionType("pickup");
-                handleSubmitPickup();
-              }}
-              loading={loading && actionType === "pickup"}
+              onClick={handleSubmitPickup}
+              loading={loading}
+              disabled={true}
+              // disabled={!selectedSize || loading}
             >
               บันทึกการรับเสื้อ
             </Button>
@@ -233,7 +238,6 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         </div>
       </Modal>
 
-      {/* Modal แสดงไซด์ชาร์ต */}
       <Modal
         open={showSizeGuide}
         onCancel={() => setShowSizeGuide(false)}
@@ -241,12 +245,13 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         width={900}
         closeIcon={<CloseOutlined />}
         className="size-guide-modal"
+        destroyOnClose={true}
+        getContainer={false} // ป้องกัน layout shift
       >
         <div className="size-guide-content">
           <h2 className="modal-title">เลือกขนาดเสื้อใหม่</h2>
 
           <div style={{ marginBottom: 16, fontSize: 14, color: "#666" }}>
-            📏{" "}
             <a
               href="https://apps2.coop.ku.ac.th/asset/images/png/sizewidth.png"
               target="_blank"
@@ -280,7 +285,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
           </Row>
 
           <div className="size-guide-note">
-            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขั้นอีกประมาณ
+            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาด
             2" เนื่องจากเสื้อแจ็คเก็ตต้องมีพื้นที่เก็บอุ่น เช่น วัดได้ 40"
             ให้เลือกขนาดเสื้อ 42" แทน
           </div>

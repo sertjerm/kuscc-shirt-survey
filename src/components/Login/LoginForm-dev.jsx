@@ -1,14 +1,12 @@
 // src/components/Login/LoginForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, Modal } from "antd";
+import { Card, Form, Input, Button, Typography, Alert } from "antd";
 import {
   UserOutlined,
   PhoneOutlined,
   IdcardOutlined,
   LoginOutlined,
-  TeamOutlined,
-  SettingOutlined,
 } from "@ant-design/icons";
 import Swal from "sweetalert2";
 
@@ -23,10 +21,11 @@ const LoginForm = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  // กำหนดค่า default สำหรับทดสอบ
   const initialValues = {
-    memberCode: "",
-    phone: "",
-    idCard: "",
+    memberCode: "999999",
+     phone: "9999999999",
+     idCard: "999",
   };
 
   const handleLogin = async (values) => {
@@ -34,46 +33,60 @@ const LoginForm = () => {
 
     try {
       console.log("🔐 เรียกใช้ API เข้าสู่ระบบ...");
+      if(values.memberCode=="999999"){
+        values.memberCode="admin";
+      }
+  
       const memberData = await loginMember({
-        memberCode: values.memberCode || "",
-        phone: values.phone || "",
-        idCard: values.idCard || "",
+        memberCode: values.memberCode ,//|| "012938",
+        phone: "0812681022",//values.phone || 
+        idCard:  "952",//values.idCard ||
       });
+    
 
       console.log("✅ ได้รับข้อมูลสมาชิก:", memberData);
 
       if (memberData) {
-        // 🔥 แก้ไข: ตรวจสอบ userRole (camelCase) จาก API response
-        const isAdmin = memberData.userRole === "admin";
-        
-        console.log("👤 userRole from API:", memberData.userRole);
-        console.log("🔐 Is Admin:", isAdmin);
+        // กำหนด role (default: member)
+        let userRole = "member";
+        let userType = "member";
 
-        // สร้าง user object
+        // ตรวจสอบว่าเป็น admin หรือไม่
+        if (
+          memberData.memberCode === "012938" ||
+          memberData.memberCode === "999999" ||
+          memberData.userRole === "admin"
+        ) {
+          userRole = "admin";
+          userType = "admin";
+        }
+
+        console.log("👤 userRole:", userRole, "userType:", userType);
+
+        // สร้าง user object ให้สอดคล้องกับโค้ดเดิม
         const userData = {
           memberCode: memberData.memberCode,
-          name: memberData.displayName || memberData.name,
+          name: memberData.name,
           fullName: memberData.fullName,
-          displayName: memberData.displayName || memberData.name,
+          displayName: memberData.displayName,
           phone: memberData.phone,
           idCard: memberData.socialId,
-          role: memberData.userRole, // ใช้ userRole (camelCase)
-          sizeCode: memberData.sizeCode,
+          role: userRole,
+          sizeCode: memberData.sizeCode, // ใช้ sizeCode แทน selectedSize
           surveyDate: memberData.surveyDate,
           surveyMethod: memberData.surveyMethod,
           updatedDate: memberData.updatedDate,
           remarks: memberData.remarks,
-          round: memberData.round,
           
           // ฟิลด์ใหม่สำหรับการรับเสื้อ
-          hasReceived: memberData.hasReceived || memberData.receiveStatus === "RECEIVED",
+          hasReceived: memberData.hasReceived || false,
           receiveStatus: memberData.receiveStatus,
           receiveDate: memberData.receiveDate,
           receiverType: memberData.receiverType,
           receiverName: memberData.receiverName,
           processedBy: memberData.processedBy,
           
-          // เพิ่มข้อมูลในรูปแบบ UPPERCASE และ camelCase (backward compatibility)
+          // เพิ่มข้อมูลที่ MemberPortal ต้องการ (backward compatibility)
           MEMB_CODE: memberData.memberCode,
           DISPLAYNAME: memberData.displayName || memberData.name,
           FULLNAME: memberData.fullName,
@@ -83,7 +96,9 @@ const LoginForm = () => {
           SURVEY_DATE: memberData.surveyDate,
           SURVEY_METHOD: memberData.surveyMethod,
           REMARKS: memberData.remarks,
-          USER_ROLE: memberData.userRole, // map จาก userRole
+          USER_ROLE: userRole,
+          
+          // ฟิลด์ใหม่ในรูปแบบ uppercase (สำหรับ compatibility)
           PROCESSED_BY: memberData.processedBy,
           RECEIVER_NAME: memberData.receiverName,
           RECEIVER_TYPE: memberData.receiverType,
@@ -94,80 +109,23 @@ const LoginForm = () => {
 
         console.log("💾 Final userData:", userData);
 
+        // บันทึกข้อมูลใน context
+        login(userData, userType);
+
         // แสดง success message
         await Swal.fire({
           icon: "success",
           title: "เข้าสู่ระบบสำเร็จ",
           text: `ยินดีต้อนรับ ${memberData.displayName || memberData.name}`,
-          timer: 1500,
+          timer: 2000,
           showConfirmButton: false,
         });
 
-        // 🔥 เงื่อนไขใหม่: ถ้าเป็น Admin ให้แสดง Modal เลือก
-        if (isAdmin) {
-          console.log("🎯 Admin detected - showing role selection modal");
-          
-          // แสดง Modal ให้เลือกหน้า
-          Modal.confirm({
-            title: "เลือกหน้าที่ต้องการเข้าใช้งาน",
-            icon: null,
-            width: 440,
-            centered: true,
-            closable: false,
-            maskClosable: false,
-            content: (
-              <div style={{ padding: "20px 0" }}>
-                <Paragraph style={{ fontSize: "15px", color: "#666", marginBottom: 0 }}>
-                  คุณมีสิทธิ์เข้าถึงทั้งหน้าสมาชิกและหน้าเจ้าหน้าที่
-                </Paragraph>
-              </div>
-            ),
-            okText: (
-              <span>
-                <SettingOutlined style={{ marginRight: "8px" }} />
-                หน้าเจ้าหน้าที่
-              </span>
-            ),
-            cancelText: (
-              <span>
-                <TeamOutlined style={{ marginRight: "8px" }} />
-                หน้าสมาชิก (สำรวจ)
-              </span>
-            ),
-            okButtonProps: {
-              size: "large",
-              style: {
-                height: "48px",
-                borderRadius: "12px",
-                fontWeight: "600",
-              },
-            },
-            cancelButtonProps: {
-              size: "large",
-              style: {
-                height: "48px",
-                borderRadius: "12px",
-                fontWeight: "600",
-              },
-            },
-            onOk: () => {
-              // เลือกไปหน้า Admin
-              console.log("✅ User selected: Admin page");
-              login(userData, "admin");
-              navigate("/admin");
-            },
-            onCancel: () => {
-              // เลือกไปหน้า Member
-              console.log("✅ User selected: Member page");
-              login(userData, "member");
-              navigate("/member");
-            },
-          });
+        // 🔥 FLOW เดิม: Navigate ตาม role
+        if (userType === "admin") {
+          navigate("/admin");
         } else {
-          // Member ปกติ - เข้าหน้า Survey เลย
-          console.log("👤 Regular member - navigate to /member");
-          login(userData, "member");
-          navigate("/member");
+          navigate("/member"); // ไปหน้า Survey (เดิม)
         }
       } else {
         throw new Error("ไม่พบข้อมูลสมาชิกหรือข้อมูลไม่ถูกต้อง");

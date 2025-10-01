@@ -1,28 +1,44 @@
-/* src/styles/PickupModal.css */
+/* src/styles/PickupModal.css - Fixed Layout */
 
-.pickup-modal-minimal .ant-modal-content {
-  padding: 0;
-  border-radius: 12px;
+/* Modal Overlay */
+.pickup-modal-minimal .ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.45);
 }
 
+/* Modal Container */
+.pickup-modal-minimal .ant-modal-wrap {
+  z-index: 1000;
+}
+
+.pickup-modal-minimal .ant-modal {
+  top: 50px;
+}
+
+.pickup-modal-minimal .ant-modal-content {
+  border-radius: 8px;
+  padding: 24px;
+}
+
+/* Modal Content */
 .pickup-modal-content {
-  padding: 32px;
+  max-width: 100%;
 }
 
 .modal-title {
   font-size: 20px;
   font-weight: 600;
-  margin: 0 0 24px 0;
-  color: #262626;
+  margin-bottom: 20px;
+  color: #1d1d1f;
 }
 
+/* Member Info Grid */
 .member-info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
-  background: #fafafa;
+  background: #f5f5f5;
   border-radius: 8px;
 }
 
@@ -34,15 +50,17 @@
 
 .info-label {
   font-size: 12px;
-  color: #8c8c8c;
+  color: #666;
+  font-weight: 500;
 }
 
 .info-value {
   font-size: 14px;
-  font-weight: 500;
-  color: #262626;
+  color: #1d1d1f;
+  font-weight: 600;
 }
 
+/* Section */
 .section {
   margin-bottom: 24px;
 }
@@ -56,101 +74,118 @@
 
 .section-label {
   font-size: 14px;
-  font-weight: 500;
-  color: #262626;
+  font-weight: 600;
+  color: #1d1d1f;
 }
 
+/* Size Display */
 .selected-size-display {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 48px;
-  background: #e6f7ff;
-  border: 2px solid #1890ff;
+  padding: 12px 24px;
+  background: #e8f4fd;
+  border: 2px solid #0071e3;
   border-radius: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1890ff;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0071e3;
+  min-width: 80px;
 }
 
 .no-size-warning {
   padding: 12px;
-  background: #fff1b8;
-  border: 1px solid #ffe58f;
-  border-radius: 8px;
-  color: #d46b08;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  color: #856404;
   font-size: 14px;
 }
 
+/* Radio Group */
 .receiver-radio-group {
   display: flex;
-  gap: 24px;
+  gap: 16px;
 }
 
+.receiver-radio-group .ant-radio-wrapper {
+  font-size: 14px;
+}
+
+/* Modal Footer */
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
   gap: 12px;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.modal-footer .ant-btn {
+  min-width: 100px;
 }
 
 /* Size Guide Modal */
+.size-guide-modal .ant-modal {
+  top: 50px;
+}
+
 .size-guide-modal .ant-modal-content {
-  padding: 32px;
+  border-radius: 12px;
 }
 
 .size-guide-content {
-  max-width: 100%;
+  padding: 8px;
 }
 
+/* Size Cards */
 .size-card {
-  padding: 20px 12px;
-  background: #fafafa;
-  border: 2px solid #e8e8e8;
-  border-radius: 12px;
   text-align: center;
+  padding: 16px 8px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
+  border: 2px solid #e5e5e5;
 }
 
 .size-card:hover {
-  border-color: #1890ff;
-  background: #e6f7ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+  border-color: #0071e3;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
 }
 
 .size-card.selected {
-  border-color: #1890ff;
-  background: #e6f7ff;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  border-color: #0071e3;
+  background: #e8f4fd;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
 }
 
 .size-label {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  color: #262626;
-  margin-bottom: 12px;
+  color: #1d1d1f;
+  margin-bottom: 8px;
 }
 
 .size-measurements {
   font-size: 13px;
-  color: #595959;
+  color: #666;
   line-height: 1.6;
 }
 
 .size-guide-note {
+  margin-top: 24px;
   padding: 16px;
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  border-radius: 8px;
+  background: #f8f9fa;
+  border-left: 4px solid #0071e3;
+  border-radius: 4px;
   font-size: 14px;
-  color: #d46b08;
   line-height: 1.6;
-  margin-top: 20px;
+  color: #495057;
+}
+
+.size-guide-note strong {
+  color: #1d1d1f;
 }
 
 /* Responsive */
@@ -158,12 +193,20 @@
   .member-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }
-  
-  .modal-footer button {
+
+  .modal-footer .ant-btn {
     width: 100%;
+  }
+
+  .size-card {
+    padding: 12px 8px;
+  }
+
+  .size-label {
+    font-size: 16px;
   }
 }
