@@ -48,6 +48,9 @@ const formatMemberData = (apiData) => {
 
 export const loginMember = async ({ memberCode, phone, idCard }) => {
   const payload = { mbcode: memberCode, socid: idCard, mobile: phone };
+  
+  console.log("Login payload:", payload);
+  
   const res = await api.post("/ShirtSurveyLogin", payload);
 
   if (res.data?.responseCode !== 200) {
@@ -55,28 +58,40 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   }
 
   const memberData = formatMemberData(res.data.data);
-  return {
+  
+  const loginResult = {
     ...memberData,
     round: memberData.socialId ? memberData.socialId.split("-").pop() : idCard,
-    name:
-      memberData.displayName || memberData.fullName || memberData.memberCode,
+    name: memberData.displayName || memberData.fullName || memberData.memberCode,
   };
+  
+  console.log("Login successful, member data:", loginResult);
+  
+  return loginResult;
 };
 
-// แก้ไขฟังก์ชัน saveMemberSize สำหรับการจองขนาดเสื้อ (แก้ไขขนาด)
+// ฟังก์ชัน saveMemberSize สำหรับการจองขนาดเสื้อ
 export const saveMemberSize = async ({
   memberCode,
   sizeCode,
   remarks = "",
   surveyMethod = "ONLINE",
+  processedBy = null,
 }) => {
+  const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+  
   const payload = {
-    MEMB_CODE: (memberCode ?? "").toString().padStart(6, "0"),
+    MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
     SURVEY_METHOD: surveyMethod,
     REMARKS: remarks,
-    // ไม่ระบุ RECEIVE_STATUS เพื่อให้เป็นการจองขนาดเท่านั้น
   };
+  
+  // เพิ่ม PROCESSED_BY ถ้ามีค่า (กรณี admin แก้ไขให้)
+  if (processedBy) {
+    const paddedProcessedBy = processedBy.toString().padStart(6, "0");
+    payload.PROCESSED_BY = paddedProcessedBy;
+  }
 
   console.log("Saving size payload:", payload);
 
@@ -86,6 +101,8 @@ export const saveMemberSize = async ({
     throw new Error(res.data?.responseMessage || "บันทึกขนาดไม่สำเร็จ");
   }
 
+  console.log("Save size response:", res.data);
+  
   return res.data;
 };
 
@@ -135,33 +152,38 @@ export const getShirtMemberListPaged = async ({
   };
 };
 
-// แก้ไขฟังก์ชัน submitPickup สำหรับบันทึกการรับเสื้อ
+// ฟังก์ชัน submitPickup สำหรับบันทึกการรับเสื้อ
 export const submitPickup = async ({
   memberCode,
   sizeCode,
   processedBy,
-  receiverType = "SELF", // SELF หรือ OTHER
+  receiverType = "SELF",
   receiverName = null,
   remarks = "",
 }) => {
+  const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+  const paddedProcessedBy = (processedBy ?? "").toString().padStart(6, "0");
+  
   const payload = {
-    MEMB_CODE: (memberCode ?? "").toString().padStart(6, "0"),
+    MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
-    SURVEY_METHOD: "MANUAL", // เมื่อรับเสื้อให้เป็น MANUAL
-    RECEIVE_STATUS: "RECEIVED", // ระบุสถานะเป็น RECEIVED
+    SURVEY_METHOD: "MANUAL",
+    RECEIVE_STATUS: "RECEIVED",
     RECEIVER_TYPE: receiverType,
-    PROCESSED_BY: processedBy,
+    PROCESSED_BY: paddedProcessedBy,
     RECEIVER_NAME: receiverName,
     REMARKS: remarks || "",
   };
 
   console.log("Submit pickup payload:", payload);
 
-  const res = await api.post("/AddShirtSurvey", payload); // เปลี่ยนเป็นใช้ AddShirtSurvey
+  const res = await api.post("/AddShirtSurvey", payload);
 
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "บันทึกการรับเสื้อไม่สำเร็จ");
   }
+
+  console.log("Submit pickup response:", res.data);
 
   return res.data;
 };

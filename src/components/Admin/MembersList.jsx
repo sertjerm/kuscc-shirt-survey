@@ -1,16 +1,23 @@
-// src/components/Admin/MembersList.jsx
+// src/components/Admin/MembersList.jsx - UPDATED VERSION
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
+import { message, Tag } from "antd";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
-import { formatDateTime } from "../../utils/js_functions"; // Added import for formatDateTime
+import { formatDateTime } from "../../utils/js_functions";
 import PickupModal from "./PickupModal";
 import "../../styles/MembersList.css";
 
 const SHIRT_SIZES = [
-  { code: "XS" }, { code: "S" }, { code: "M" }, { code: "L" },
-  { code: "XL" }, { code: "2XL" }, { code: "3XL" }, { code: "4XL" },
-  { code: "5XL" }, { code: "6XL" }
+  { code: "XS" },
+  { code: "S" },
+  { code: "M" },
+  { code: "L" },
+  { code: "XL" },
+  { code: "2XL" },
+  { code: "3XL" },
+  { code: "4XL" },
+  { code: "5XL" },
+  { code: "6XL" },
 ];
 
 const MEMBER_STATUS = {
@@ -21,7 +28,12 @@ const MEMBER_STATUS = {
 
 const MembersList = ({ onDataChange }) => {
   const { user } = useAppContext();
-  
+
+  // Log current user for debugging
+  useEffect(() => {
+    console.log("MembersList - Current admin user:", user);
+  }, [user]);
+
   // Data States
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +51,7 @@ const MembersList = ({ onDataChange }) => {
   const [sizeFilter, setSizeFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  // Modal (จัดการเองทั้งหมด)
+  // Modal
   const [selectedMember, setSelectedMember] = useState(null);
   const [showPickupModal, setShowPickupModal] = useState(false);
 
@@ -103,11 +115,13 @@ const MembersList = ({ onDataChange }) => {
   };
 
   const handleOpenPickupModal = (member) => {
+    console.log("Opening pickup modal for member:", member);
     setSelectedMember(member);
     setShowPickupModal(true);
   };
 
   const handleClosePickupModal = () => {
+    console.log("Closing pickup modal");
     setShowPickupModal(false);
     setSelectedMember(null);
   };
@@ -115,8 +129,10 @@ const MembersList = ({ onDataChange }) => {
   const handlePickupSuccess = () => {
     message.success("บันทึกการรับเสื้อสำเร็จ");
     handleClosePickupModal();
+
+    // Reload data
     loadMembers();
-    
+
     // Notify parent ถ้ามี callback
     if (onDataChange) {
       onDataChange();
@@ -125,21 +141,51 @@ const MembersList = ({ onDataChange }) => {
 
   // Helpers
   const getMemberStatus = (m) => {
-    if (m.hasReceived || m.receiveStatus === "RECEIVED" || m.RECEIVE_STATUS === "RECEIVED") 
+    if (
+      m.hasReceived ||
+      m.receiveStatus === "RECEIVED" ||
+      m.RECEIVE_STATUS === "RECEIVED"
+    )
       return MEMBER_STATUS.RECEIVED;
-    if (m.sizeCode || m.SIZE_CODE) 
-      return MEMBER_STATUS.CONFIRMED;
+    if (m.sizeCode || m.SIZE_CODE) return MEMBER_STATUS.CONFIRMED;
     return MEMBER_STATUS.NOT_CONFIRMED;
   };
 
-  // Local formatDateTime function has been removed - using imported function instead
+  // ฟังก์ชันเลือกสีตาม Size (ใช้ Ant Design Tag)
+  const getSizeTag = (sizeCode) => {
+    if (!sizeCode) return <span className="text-muted">-</span>;
+
+    const colorMap = {
+      XS: "purple",
+      S: "green",
+      M: "blue",
+      L: "cyan",
+      XL: "orange",
+      "2XL": "magenta",
+      "3XL": "geekblue",
+      "4XL": "volcano",
+      "5XL": "gold",
+      "6XL": "red",
+    };
+
+    return <Tag color={colorMap[sizeCode] || "default"}>{sizeCode}</Tag>;
+  };
 
   const getStatusTag = (member) => {
     const status = getMemberStatus(member);
     const config = {
-      [MEMBER_STATUS.NOT_CONFIRMED]: { className: "status-tag status-tag-pending", text: "ยังไม่ยืนยัน" },
-      [MEMBER_STATUS.CONFIRMED]: { className: "status-tag status-tag-confirmed", text: "ยืนยันแล้ว" },
-      [MEMBER_STATUS.RECEIVED]: { className: "status-tag status-tag-received", text: "รับแล้ว" },
+      [MEMBER_STATUS.NOT_CONFIRMED]: {
+        className: "status-tag status-tag-pending",
+        text: "ยังไม่ยืนยัน",
+      },
+      [MEMBER_STATUS.CONFIRMED]: {
+        className: "status-tag status-tag-confirmed",
+        text: "ยืนยันแล้ว",
+      },
+      [MEMBER_STATUS.RECEIVED]: {
+        className: "status-tag status-tag-received",
+        text: "รับแล้ว",
+      },
     };
     const c = config[status];
     return <span className={c.className}>{c.text}</span>;
@@ -151,7 +197,10 @@ const MembersList = ({ onDataChange }) => {
       return <span className="text-muted">-</span>;
     }
     return (
-      <button className="btn-pickup" onClick={() => handleOpenPickupModal(member)}>
+      <button
+        className="btn-pickup"
+        onClick={() => handleOpenPickupModal(member)}
+      >
         บันทึกการรับ
       </button>
     );
@@ -173,26 +222,42 @@ const MembersList = ({ onDataChange }) => {
               className="search-input"
             />
             {searchInput && (
-              <button className="clear-search-btn" onClick={handleClearSearch}>✕</button>
+              <button className="clear-search-btn" onClick={handleClearSearch}>
+                ✕
+              </button>
             )}
           </div>
 
           <div className="filter-group">
-            <select value={statusFilter} onChange={(e) => handleFilterChange("status", e.target.value)} className="filter-select">
+            <select
+              value={statusFilter}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className="filter-select"
+            >
               <option value="">สถานะทั้งหมด</option>
               <option value="PENDING">ยังไม่ยืนยัน</option>
               <option value="CONFIRMED">ยืนยันแล้ว</option>
               <option value="RECEIVED">รับแล้ว</option>
             </select>
 
-            <select value={sizeFilter} onChange={(e) => handleFilterChange("size", e.target.value)} className="filter-select">
+            <select
+              value={sizeFilter}
+              onChange={(e) => handleFilterChange("size", e.target.value)}
+              className="filter-select"
+            >
               <option value="">ขนาดทั้งหมด</option>
               {SHIRT_SIZES.map((size) => (
-                <option key={size.code} value={size.code}>{size.code}</option>
+                <option key={size.code} value={size.code}>
+                  {size.code}
+                </option>
               ))}
             </select>
 
-            <button className="btn-refresh" onClick={loadMembers} disabled={loading}>
+            <button
+              className="btn-refresh"
+              onClick={loadMembers}
+              disabled={loading}
+            >
               🔄 รีเฟรช
             </button>
           </div>
@@ -224,6 +289,7 @@ const MembersList = ({ onDataChange }) => {
                   <th>ขนาดที่เลือก</th>
                   <th>วันที่จอง/รับ</th>
                   <th>สถานะ</th>
+                  <th>ผู้ดำเนินการ</th>
                   <th>หมายเหตุ</th>
                   <th>การดำเนินการ</th>
                 </tr>
@@ -236,24 +302,46 @@ const MembersList = ({ onDataChange }) => {
                   const receiveDate = member.receiveDate || member.RECEIVE_DATE;
                   const surveyDate = member.surveyDate || member.SURVEY_DATE;
                   const remarks = member.remarks || member.REMARKS;
+                  const processedBy = member.processedBy || member.PROCESSED_BY;
 
                   return (
                     <tr key={memberCode}>
-                      <td data-label="รหัสสมาชิก"><strong>{memberCode}</strong></td>
-                      <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      <td data-label="ขนาดที่เลือก">
-                        {sizeCode ? <span className="size-display">{sizeCode}</span> : <span className="text-muted">-</span>}
+                      <td data-label="รหัสสมาชิก">
+                        <strong>{memberCode}</strong>
                       </td>
+                      <td data-label="ชื่อ-นามสกุล">{fullName}</td>
+                      <td data-label="ขนาดที่เลือก">{getSizeTag(sizeCode)}</td>
                       <td data-label="วันที่จอง/รับ">
                         <span className="date-value">
-                          {receiveDate ? formatDateTime(receiveDate) : surveyDate ? formatDateTime(surveyDate) : '-'}
+                          {receiveDate
+                            ? formatDateTime(receiveDate)
+                            : surveyDate
+                            ? formatDateTime(surveyDate)
+                            : "-"}
                         </span>
                       </td>
                       <td data-label="สถานะ">{getStatusTag(member)}</td>
-                      <td data-label="หมายเหตุ">
-                        {remarks ? <span className="remarks-text" title={remarks}>{remarks}</span> : <span className="text-muted">-</span>}
+                      <td data-label="ผู้ดำเนินการ">
+                        {processedBy ? (
+                          <span className="processed-by-value">
+                            {processedBy}
+                          </span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
                       </td>
-                      <td data-label="การดำเนินการ">{getActionButton(member)}</td>
+                      <td data-label="หมายเหตุ">
+                        {remarks ? (
+                          <span className="remarks-text" title={remarks}>
+                            {remarks}
+                          </span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      <td data-label="การดำเนินการ">
+                        {getActionButton(member)}
+                      </td>
                     </tr>
                   );
                 })}
@@ -263,17 +351,35 @@ const MembersList = ({ onDataChange }) => {
 
           {/* Pagination */}
           <div className="pagination">
-            <button onClick={() => handlePageChange(1)} disabled={currentPage === 1} className="btn-page">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="btn-page"
+            >
               ⏮️ หน้าแรก
             </button>
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="btn-page">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="btn-page"
+            >
               ◀️ ก่อนหน้า
             </button>
-            <span className="page-info">หน้า {currentPage} / {totalPages}</span>
-            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="btn-page">
+            <span className="page-info">
+              หน้า {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="btn-page"
+            >
               ถัดไป ▶️
             </button>
-            <button onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} className="btn-page">
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="btn-page"
+            >
               หน้าสุดท้าย ⏭️
             </button>
           </div>
