@@ -331,7 +331,7 @@ const MembersList = ({ onDataChange }) => {
                   <th
                     onClick={() => handleSort("status")}
                     className="sortable-header"
-                    style={{ whiteSpace: 'nowrap', textAlign: 'center' }}
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     สถานะ {getSortIcon("status")}
                   </th>
