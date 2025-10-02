@@ -317,7 +317,7 @@ const MembersList = ({ onDataChange }) => {
                   <th
                     onClick={() => handleSort("sizeCode")}
                     className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
+                    style={{ whiteSpace: 'nowrap',textAlign: 'center' }}
                   >
                     ขนาดที่เลือก {getSortIcon("sizeCode")}
                   </th>
@@ -331,7 +331,7 @@ const MembersList = ({ onDataChange }) => {
                   <th
                     onClick={() => handleSort("status")}
                     className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
+                    style={{ whiteSpace: 'nowrap', textAlign: 'center' }}
                   >
                     สถานะ {getSortIcon("status")}
                   </th>
