@@ -299,28 +299,28 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             </a>
           </div>
 
-          <Row gutter={[16, 16]}>
+          {/* เดิมใช้ <Row><Col>... เปลี่ยนเป็น grid ให้ 2 แถว 5 คอลัมน์ */}
+          <div className="size-grid">
             {ALL_SIZES.map((size) => (
-              <Col xs={12} sm={8} md={6} key={size}>
-                <Card
-                  hoverable
-                  className={`size-card ${
-                    selectedSize === size ? "selected" : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedSize(size);
-                    setShowSizeGuide(false);
-                  }}
-                >
-                  <div className="size-label">{size}</div>
-                  <div className="size-measurements">
-                    <div>อก {SIZE_INFO[size].chest}</div>
-                    <div>ยาว {SIZE_INFO[size].length}</div>
-                  </div>
-                </Card>
-              </Col>
+              <Card
+                key={size}
+                hoverable
+                className={`size-card ${
+                  selectedSize === size ? "selected" : ""
+                }`}
+                onClick={() => {
+                  setSelectedSize(size);
+                  setShowSizeGuide(false);
+                }}
+              >
+                <div className="size-label">{size}</div>
+                <div className="size-measurements">
+                  <div>อก {SIZE_INFO[size].chest}</div>
+                  <div>ยาว {SIZE_INFO[size].length}</div>
+                </div>
+              </Card>
             ))}
-          </Row>
+          </div>
 
           <div className="size-guide-note">
             <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ

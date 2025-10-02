@@ -1,10 +1,10 @@
 // src/services/shirtApi.js
 import axios from "axios";
 
-// const REAL_API_BASE_URL =
-//   "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
-  const REAL_API_BASE_URL =
-  "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
+const REAL_API_BASE_URL =
+  "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
+  // const REAL_API_BASE_URL =
+  // "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -268,45 +268,26 @@ export const adjustInventory = async (adjustmentData) => {
   return res.data;
 };
 
+// ✅ อัพเดตฟังก์ชันนี้ให้เรียก API จริง
 export const getDashboardStats = async () => {
-  const response = await getShirtMemberListPaged({
-    page: 1,
-    pageSize: 10000,
-  });
+  try {
+    console.log("📊 Fetching dashboard stats from API...");
+    
+    const res = await api.get("/GetDashboardStats");
 
-  const allMembers = response.data || [];
-  const totalMembers = allMembers.length;
-  const confirmedMembers = allMembers.filter((m) => m.sizeCode).length;
-  const receivedMembers = allMembers.filter((m) => m.hasReceived).length;
-
-  const sizeCount = {};
-  allMembers.forEach((m) => {
-    if (m.sizeCode) {
-      sizeCount[m.sizeCode] = (sizeCount[m.sizeCode] || 0) + 1;
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดสถิติได้");
     }
-  });
 
-  const popularSizes = Object.entries(sizeCount)
-    .map(([size, count]) => ({ size, count }))
-    .sort((a, b) => b.count - a.count);
+    const stats = res.data.data;
+    
+    console.log("📊 Dashboard Stats received:", stats);
 
-  return {
-    totalMembers,
-    confirmedMembers,
-    receivedMembers,
-    pendingMembers: totalMembers - confirmedMembers,
-    selfReceived: allMembers.filter(
-      (m) => m.hasReceived && m.receiverType === "SELF"
-    ).length,
-    proxyReceived: allMembers.filter(
-      (m) => m.hasReceived && m.receiverType === "OTHER"
-    ).length,
-    popularSizes,
-    surveyMethods: {
-      online: allMembers.filter((m) => m.surveyMethod === "ONLINE").length,
-      manual: allMembers.filter((m) => m.surveyMethod === "MANUAL").length,
-    },
-  };
+    return stats;
+  } catch (error) {
+    console.error("❌ Error fetching dashboard stats:", error);
+    throw error;
+  }
 };
 
 export { formatMemberData, parseWcfDate };
