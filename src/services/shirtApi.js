@@ -3,6 +3,8 @@ import axios from "axios";
 
 const REAL_API_BASE_URL =
   "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
+  // const REAL_API_BASE_URL =
+  // "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -124,15 +126,30 @@ export const getShirtMemberListPaged = async ({
   search = "",
   status = "",
   size_code = "",
+  sort_field = "",
+  sort_order = "asc",
 }) => {
+  // สร้าง URL ตามลำดับที่ Backend UriTemplate ต้องการ
+  // UriTemplate: page → pageSize → search → status → size_code → sort_field → sort_order
   const params = new URLSearchParams({
     page: page.toString(),
     pageSize: pageSize.toString(),
+    search: search || "",
+    status: status || "",
+    size_code: size_code || "",
+    sort_field: sort_field || "",
+    sort_order: sort_order || "asc",
   });
 
-  if (search) params.append("search", search);
-  if (status) params.append("status", status);
-  if (size_code) params.append("size_code", size_code);
+  console.log("API Request params:", {
+    page,
+    pageSize,
+    search,
+    status,
+    size_code,
+    sort_field,
+    sort_order,
+  });
 
   const res = await api.get(`/GetShirtMemberListPaged?${params.toString()}`);
 
@@ -142,6 +159,11 @@ export const getShirtMemberListPaged = async ({
 
   const data = res.data.data || [];
   const formattedData = Array.isArray(data) ? data.map(formatMemberData) : [];
+
+  console.log("API Response:", {
+    totalCount: res.data.totalCount,
+    dataLength: formattedData.length,
+  });
 
   return {
     data: formattedData,

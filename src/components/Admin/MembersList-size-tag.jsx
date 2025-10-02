@@ -1,6 +1,6 @@
-// src/components/Admin/MembersList.jsx - UPDATED VERSION
+// src/components/Admin/MembersList.jsx - WITH SORTABLE COLUMNS
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
+import { message, Tag } from "antd";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import { formatDateTime } from "../../utils/js_functions";
@@ -52,7 +52,7 @@ const MembersList = ({ onDataChange }) => {
 
   // Sorting
   const [sortField, setSortField] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
 
   // Modal
   const [selectedMember, setSelectedMember] = useState(null);
@@ -122,12 +122,14 @@ const MembersList = ({ onDataChange }) => {
   // Sort Handler
   const handleSort = (field) => {
     if (sortField === field) {
+      // Toggle order if clicking same field
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
+      // New field, default to ascending
       setSortField(field);
       setSortOrder("asc");
     }
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when sorting
   };
 
   const getSortIcon = (field) => {
@@ -172,6 +174,25 @@ const MembersList = ({ onDataChange }) => {
       return MEMBER_STATUS.RECEIVED;
     if (m.sizeCode || m.SIZE_CODE) return MEMBER_STATUS.CONFIRMED;
     return MEMBER_STATUS.NOT_CONFIRMED;
+  };
+
+  const getSizeTag = (sizeCode) => {
+    if (!sizeCode) return <span className="text-muted">-</span>;
+
+    const colorMap = {
+      XS: "purple",
+      S: "green",
+      M: "blue",
+      L: "cyan",
+      XL: "orange",
+      "2XL": "magenta",
+      "3XL": "geekblue",
+      "4XL": "volcano",
+      "5XL": "gold",
+      "6XL": "red",
+    };
+
+    return <Tag color={colorMap[sizeCode] || "default"}>{sizeCode}</Tag>;
   };
 
   const getStatusTag = (member) => {
@@ -278,8 +299,10 @@ const MembersList = ({ onDataChange }) => {
                 ? "ชื่อ-นามสกุล"
                 : sortField === "sizeCode"
                 ? "ขนาดเสื้อ"
-                : sortField === "updatedDate"
-                ? "วันที่อัปเดต"
+                : sortField === "receiveDate"
+                ? "วันที่รับ"
+                : sortField === "surveyDate"
+                ? "วันที่จอง"
                 : sortField === "status"
                 ? "สถานะ"
                 : sortField}{" "}
@@ -324,10 +347,10 @@ const MembersList = ({ onDataChange }) => {
                     ขนาดที่เลือก {getSortIcon("sizeCode")}
                   </th>
                   <th
-                    onClick={() => handleSort("updatedDate")}
+                    onClick={() => handleSort("receiveDate")}
                     className="sortable-header"
                   >
-                    วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
+                    วันที่จอง/รับ {getSortIcon("receiveDate")}
                   </th>
                   <th
                     onClick={() => handleSort("status")}
@@ -350,7 +373,8 @@ const MembersList = ({ onDataChange }) => {
                   const memberCode = member.memberCode || member.MEMB_CODE;
                   const fullName = member.fullName || member.FULLNAME;
                   const sizeCode = member.sizeCode || member.SIZE_CODE;
-                  const updatedDate = member.updatedDate || member.UPDATED_DATE;
+                  const receiveDate = member.receiveDate || member.RECEIVE_DATE;
+                  const surveyDate = member.surveyDate || member.SURVEY_DATE;
                   const remarks = member.remarks || member.REMARKS;
                   const processedBy = member.processedBy || member.PROCESSED_BY;
 
@@ -360,16 +384,14 @@ const MembersList = ({ onDataChange }) => {
                         <strong>{memberCode}</strong>
                       </td>
                       <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      <td data-label="ขนาดที่เลือก">
-                        {sizeCode ? (
-                          <strong style={{ color: '#000', fontSize: '15px' }}>{sizeCode}</strong>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      <td data-label="วันที่อัปเดตล่าสุด">
+                      <td data-label="ขนาดที่เลือก">{getSizeTag(sizeCode)}</td>
+                      <td data-label="วันที่จอง/รับ">
                         <span className="date-value">
-                          {updatedDate ? formatDateTime(updatedDate) : "-"}
+                          {receiveDate
+                            ? formatDateTime(receiveDate)
+                            : surveyDate
+                            ? formatDateTime(surveyDate)
+                            : "-"}
                         </span>
                       </td>
                       <td data-label="สถานะ">{getStatusTag(member)}</td>
