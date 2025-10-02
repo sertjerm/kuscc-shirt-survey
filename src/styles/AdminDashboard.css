@@ -1,4 +1,4 @@
-/* src/styles/AdminDashboard.css - FIXED LAYOUT */
+/* src/styles/AdminDashboard.css - RESPONSIVE HEADER FIX */
 
 /* ===== ROOT LAYOUT ===== */
 .admin-dashboard-layout {
@@ -62,10 +62,10 @@
 }
 
 .logo-text {
-  margin: 0;
-  color: #1890ff;
-  font-weight: 600;
-  font-size: 16px;
+  margin: 0 !important;
+  color: #1890ff !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
   white-space: nowrap;
 }
 
@@ -80,20 +80,23 @@
   background: transparent !important;
 }
 
-/* ===== HEADER ===== */
+/* ===== HEADER - ✅ แก้ไขให้ responsive ===== */
 .dashboard-header {
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(20px);
-  padding: 0 24px;
+  -webkit-backdrop-filter: blur(20px);
+  padding: 0 16px !important; /* ลด padding บน mobile */
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   height: 64px;
   line-height: 64px;
+  display: flex;
+  align-items: center;
 }
 
 .mobile-menu-button {
   font-size: 18px;
-  margin-right: 16px;
+  margin-right: 12px;
   cursor: pointer;
 }
 
@@ -102,6 +105,53 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  gap: 12px;
+}
+
+/* Header Title */
+.header-title {
+  margin: 0 !important;
+  color: #1d1d1f !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  flex-shrink: 1;
+  min-width: 0; /* Allow text truncation */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Header Actions */
+.header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon {
+  font-size: 20px;
+  cursor: pointer;
+  color: #48484a;
+  transition: color 0.2s;
+}
+
+.header-icon:hover {
+  color: #1890ff;
+}
+
+.header-username {
+  color: #1d1d1f !important;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.logout-button {
+  white-space: nowrap;
+}
+
+.user-menu-button {
+  font-size: 20px;
 }
 
 /* ===== CONTENT AREA ===== */
@@ -113,6 +163,7 @@
   padding: 24px;
   min-height: 280px;
   background: transparent;
+  overflow-y: auto;
 }
 
 /* ===== CARDS ===== */
@@ -124,161 +175,113 @@
   background: #fff;
 }
 
-.ant-card-head {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: transparent;
-}
+/* ===== RESPONSIVE DESIGN ===== */
 
-.ant-card-head-title {
-  color: #1d1d1f;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-/* ===== STAT CARDS ===== */
-.stat-card {
-  border-radius: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.stat-card .ant-card-body {
-  padding: 24px;
-}
-
-.stat-card .ant-statistic-title {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.stat-card .ant-statistic-content {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1d1d1f;
-}
-
-.stat-card-icon {
-  font-size: 28px;
-  padding: 16px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  margin-bottom: 12px;
-}
-
-/* ===== TABLES ===== */
-.ant-table {
-  background: transparent;
-}
-
-.ant-table-thead > tr > th {
-  background: #fafafa;
-  border-bottom: 2px solid #e9ecef;
-  font-weight: 600;
-  color: #495057;
-}
-
-.ant-table-tbody > tr:hover > td {
-  background: rgba(24, 144, 255, 0.05);
-}
-
-/* ===== BUTTONS ===== */
-.ant-btn {
-  border-radius: 6px;
-  font-weight: 500;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.ant-btn-primary {
-  background: #1890ff;
-  border-color: #1890ff;
-}
-
-.ant-btn-primary:hover {
-  background: #40a9ff;
-  border-color: #40a9ff;
-}
-
-/* ===== FORMS ===== */
-.ant-form-item-label > label {
-  font-weight: 500;
-  color: #1d1d1f;
-}
-
-.ant-input,
-.ant-select-selector,
-.ant-input-number {
-  border-radius: 6px;
-}
-
-.ant-input:focus,
-.ant-select-focused .ant-select-selector {
-  border-color: #1890ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-}
-
-/* ===== MODALS ===== */
-.ant-modal-content {
-  border-radius: 12px;
-}
-
-.ant-modal-header {
-  border-radius: 12px 12px 0 0;
-  background: #fafafa;
-}
-
-.ant-modal-title {
-  font-weight: 600;
-  color: #1d1d1f;
-}
-
-/* ===== LOADING ===== */
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.loading-text {
-  color: #8c8c8c;
-  font-size: 14px;
-}
-
-/* ===== RESPONSIVE ===== */
+/* Tablet Portrait & Below (768px) */
 @media (max-width: 768px) {
   .dashboard-header {
-    padding: 0 16px;
+    padding: 0 12px !important;
+    height: 56px;
+    line-height: 56px;
   }
-  
+
+  .header-title {
+    font-size: 16px !important;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-icon {
+    font-size: 18px;
+  }
+
   .dashboard-content {
     padding: 16px;
-  }
-  
-  .stat-card .ant-card-body {
-    padding: 16px;
-  }
-  
-  .stat-card .ant-statistic-content {
-    font-size: 24px;
   }
 }
 
+/* Mobile (480px and below) */
 @media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0 8px !important;
+  }
+
+  .header-title {
+    font-size: 14px !important;
+    max-width: 150px; /* จำกัดความยาว */
+  }
+
+  .mobile-menu-button {
+    margin-right: 8px;
+    font-size: 16px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
   .dashboard-content {
     padding: 12px;
+  }
+}
+
+/* iPad Mini / Small Tablets (744px - 834px) */
+@media (min-width: 744px) and (max-width: 834px) {
+  .dashboard-header {
+    padding: 0 16px !important;
+  }
+
+  .header-title {
+    font-size: 17px !important;
+  }
+}
+
+/* iPad Pro Portrait (1024px) */
+@media (min-width: 992px) and (max-width: 1024px) and (orientation: portrait) {
+  .header-username {
+    display: inline-block;
+  }
+
+  .logout-button span {
+    display: none; /* แสดงแค่ icon */
+  }
+}
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+  .dashboard-header {
+    padding: 0 32px !important;
+  }
+
+  .header-title {
+    font-size: 20px !important;
+  }
+
+  .dashboard-content {
+    padding: 32px;
+  }
+}
+
+/* ===== UTILITIES ===== */
+.text-muted {
+  color: #999;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .dashboard-header,
+  .desktop-sider,
+  .mobile-drawer {
+    display: none !important;
+  }
+
+  .dashboard-content {
+    padding: 0 !important;
   }
 }

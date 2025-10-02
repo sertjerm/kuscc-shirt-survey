@@ -1,10 +1,10 @@
 // src/services/shirtApi.js
 import axios from "axios";
 
-const REAL_API_BASE_URL =
-  "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
-  // const REAL_API_BASE_URL =
-  // "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
+// const REAL_API_BASE_URL =
+//   "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
+  const REAL_API_BASE_URL =
+  "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,

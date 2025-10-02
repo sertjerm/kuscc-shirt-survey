@@ -1,4 +1,4 @@
-// src/components/Admin/MembersList.jsx - UPDATED VERSION
+// src/components/Admin/MembersList.jsx - IMPROVED VERSION
 import { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
@@ -8,16 +8,8 @@ import PickupModal from "./PickupModal";
 import "../../styles/MembersList.css";
 
 const SHIRT_SIZES = [
-  { code: "XS" },
-  { code: "S" },
-  { code: "M" },
-  { code: "L" },
-  { code: "XL" },
-  { code: "2XL" },
-  { code: "3XL" },
-  { code: "4XL" },
-  { code: "5XL" },
-  { code: "6XL" },
+  { code: "XS" }, { code: "S" }, { code: "M" }, { code: "L" }, { code: "XL" },
+  { code: "2XL" }, { code: "3XL" }, { code: "4XL" }, { code: "5XL" }, { code: "6XL" },
 ];
 
 const MEMBER_STATUS = {
@@ -130,6 +122,7 @@ const MembersList = ({ onDataChange }) => {
     setCurrentPage(1);
   };
 
+  // ✅ จุดที่ 2: ปรับ Icon Sort ให้แสดงในบรรทัดเดียวกับหัวตาราง
   const getSortIcon = (field) => {
     if (sortField !== field) {
       return <span className="sort-icon">⇅</span>;
@@ -174,6 +167,7 @@ const MembersList = ({ onDataChange }) => {
     return MEMBER_STATUS.NOT_CONFIRMED;
   };
 
+  // ✅ จุดที่ 4: ปรับ Status Tag ให้อยู่บรรทัดเดียว
   const getStatusTag = (member) => {
     const status = getMemberStatus(member);
     const config = {
@@ -305,44 +299,51 @@ const MembersList = ({ onDataChange }) => {
             <table className="members-table">
               <thead>
                 <tr>
+                  {/* ✅ จุดที่ 2: ใช้ white-space: nowrap เพื่อให้อยู่บรรทัดเดียว */}
                   <th
                     onClick={() => handleSort("memberCode")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     รหัสสมาชิก {getSortIcon("memberCode")}
                   </th>
                   <th
                     onClick={() => handleSort("fullName")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     ชื่อ-นามสกุล {getSortIcon("fullName")}
                   </th>
                   <th
                     onClick={() => handleSort("sizeCode")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     ขนาดที่เลือก {getSortIcon("sizeCode")}
                   </th>
                   <th
                     onClick={() => handleSort("updatedDate")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
                   </th>
                   <th
                     onClick={() => handleSort("status")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     สถานะ {getSortIcon("status")}
                   </th>
                   <th
                     onClick={() => handleSort("processedBy")}
                     className="sortable-header"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
                     ผู้ดำเนินการ {getSortIcon("processedBy")}
                   </th>
-                  <th>หมายเหตุ</th>
-                  <th>การดำเนินการ</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>หมายเหตุ</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>การดำเนินการ</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,9 +361,10 @@ const MembersList = ({ onDataChange }) => {
                         <strong>{memberCode}</strong>
                       </td>
                       <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      <td data-label="ขนาดที่เลือก">
+                      {/* ✅ จุดที่ 3: จัดให้ขนาดเสื้อ align center */}
+                      <td data-label="ขนาดที่เลือก" style={{ textAlign: 'center' }}>
                         {sizeCode ? (
-                          <strong style={{ color: '#000', fontSize: '15px' }}>{sizeCode}</strong>
+                          <strong style={{ color: '#000', fontSize: '16px' }}>{sizeCode}</strong>
                         ) : (
                           <span className="text-muted">-</span>
                         )}
@@ -408,7 +410,7 @@ const MembersList = ({ onDataChange }) => {
               disabled={currentPage === 1}
               className="btn-page"
             >
-              ⏮️ หน้าแรก
+              ⮜ หน้าแรก
             </button>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -432,7 +434,7 @@ const MembersList = ({ onDataChange }) => {
               disabled={currentPage === totalPages}
               className="btn-page"
             >
-              หน้าสุดท้าย ⏭️
+              หน้าสุดท้าย ⮞
             </button>
           </div>
         </>
@@ -448,36 +450,7 @@ const MembersList = ({ onDataChange }) => {
         />
       )}
 
-      <style jsx>{`
-        .sortable-header {
-          cursor: pointer;
-          user-select: none;
-          transition: background-color 0.2s;
-        }
 
-        .sortable-header:hover {
-          background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .sort-icon {
-          display: inline-block;
-          margin-left: 4px;
-          opacity: 0.4;
-          font-size: 14px;
-        }
-
-        .sort-icon.active {
-          opacity: 1;
-          color: #1890ff;
-          font-weight: bold;
-        }
-
-        .sort-info {
-          color: #1890ff;
-          font-size: 13px;
-          font-weight: 500;
-        }
-      `}</style>
     </div>
   );
 };

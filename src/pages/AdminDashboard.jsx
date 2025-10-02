@@ -1,15 +1,33 @@
-// src/pages/AdminDashboard.jsx
+// src/pages/AdminDashboard.jsx - IMPROVED VERSION WITH RESPONSIVE HEADER
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
 import {
-  Layout, Menu, Typography, Avatar, Space, Button, 
-  Drawer, Grid, Alert, Modal, message
+  Layout,
+  Menu,
+  Typography,
+  Avatar,
+  Space,
+  Button,
+  Drawer,
+  Grid,
+  Alert,
+  Modal,
+  message,
+  Dropdown,
 } from "antd";
 import {
-  DashboardOutlined, SearchOutlined, BarChartOutlined,
-  SettingOutlined, MenuOutlined, UserOutlined, BellOutlined,
-  LogoutOutlined, HistoryOutlined, ReloadOutlined
+  DashboardOutlined,
+  SearchOutlined,
+  BarChartOutlined,
+  SettingOutlined,
+  MenuOutlined,
+  UserOutlined,
+  BellOutlined,
+  LogoutOutlined,
+  HistoryOutlined,
+  ReloadOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import "../styles/AdminDashboard.css";
 
@@ -28,8 +46,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
 
-  // UI State
-  const [collapsed, setCollapsed] = useState(false);
+  // UI State - ปรับให้ sidebar เริ่มต้นเป็น collapsed=true
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [activeMenuKey, setActiveMenuKey] = useState("dashboard");
 
@@ -38,10 +56,10 @@ const AdminDashboard = () => {
   const [dashboardError, setDashboardError] = useState(null);
   const [dashboardStats, setDashboardStats] = useState(null);
 
-  // Auto-collapse sidebar on mobile
+  // Keep sidebar collapsed on all screen sizes by default
   useEffect(() => {
-    setCollapsed(!screens.lg);
-  }, [screens.lg]);
+    setCollapsed(true);
+  }, []);
 
   // Load dashboard stats when dashboard is active
   useEffect(() => {
@@ -96,6 +114,25 @@ const AdminDashboard = () => {
     { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
   ];
 
+  // User menu for mobile/tablet
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: user?.displayName || user?.name || "Admin",
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "ออกจากระบบ",
+      danger: true,
+      onClick: handleLogout,
+    },
+  ];
+
   // Render content based on active menu
   const renderContent = () => {
     switch (activeMenuKey) {
@@ -108,7 +145,9 @@ const AdminDashboard = () => {
       case "history":
         return (
           <div>
-            <Title level={3} style={{ marginBottom: 24 }}>ประวัติการรับเสื้อ</Title>
+            <Title level={3} style={{ marginBottom: 24 }}>
+              ประวัติการรับเสื้อ
+            </Title>
             <Alert
               message="ฟีเจอร์นี้อยู่ระหว่างการพัฒนา"
               description="ส่วนประวัติการรับเสื้อจะพร้อมใช้งานในเร็วๆ นี้"
@@ -121,7 +160,9 @@ const AdminDashboard = () => {
       case "settings":
         return (
           <div>
-            <Title level={3} style={{ marginBottom: 24 }}>ตั้งค่าระบบ</Title>
+            <Title level={3} style={{ marginBottom: 24 }}>
+              ตั้งค่าระบบ
+            </Title>
             <Alert
               message="ฟีเจอร์นี้อยู่ระหว่างการพัฒนา"
               description="ส่วนการตั้งค่าจะพร้อมใช้งานในเร็วๆ นี้"
@@ -135,9 +176,22 @@ const AdminDashboard = () => {
       default:
         return (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <Title level={3} style={{ margin: 0 }}>ภาพรวมระบบจองเสื้อแจ็คเก็ต</Title>
-              <Button icon={<ReloadOutlined />} onClick={loadDashboardStats} loading={loadingDashboard}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 24,
+              }}
+            >
+              <Title level={3} style={{ margin: 0 }}>
+                ภาพรวมระบบจองเสื้อแจ็คเก็ต
+              </Title>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={loadDashboardStats}
+                loading={loadingDashboard}
+              >
                 รีเฟรช
               </Button>
             </div>
@@ -211,7 +265,7 @@ const AdminDashboard = () => {
 
         {/* Main Layout */}
         <Layout className="site-layout">
-          {/* Header */}
+          {/* Header - แก้ไขให้ responsive */}
           <Header className="dashboard-header">
             {!screens.lg && (
               <Button
@@ -223,27 +277,54 @@ const AdminDashboard = () => {
             )}
 
             <div className="header-content">
-              <Title level={4} style={{ margin: 0, flexGrow: 1, color: "#1d1d1f" }}>
+              <Title level={4} className="header-title">
                 {menuItems.find((item) => item.key === activeMenuKey)?.label}
               </Title>
 
-              <Space size="middle">
-                <BellOutlined style={{ fontSize: "20px", cursor: "pointer", color: "#48484a" }} />
-                <Avatar icon={<UserOutlined />} style={{ backgroundColor: "#1890ff" }} />
-                <Text style={{ color: "#1d1d1f" }}>
-                  {user?.displayName || user?.name || "Admin"}
-                </Text>
-                <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout} danger>
-                  {screens.md && "ออกจากระบบ"}
-                </Button>
+              <Space size="middle" className="header-actions">
+                {/* Bell Icon - ซ่อนบน mobile และ tablet portrait */}
+                {screens.md && (
+                  <BellOutlined className="header-icon" />
+                )}
+
+                {/* Desktop & Large Tablet: แสดงเต็ม */}
+                {screens.md ? (
+                  <>
+                    <Avatar
+                      icon={<UserOutlined />}
+                      style={{ backgroundColor: "#1890ff" }}
+                    />
+                    {screens.lg && (
+                      <Text className="header-username">
+                        {user?.displayName || user?.name || "Admin"}
+                      </Text>
+                    )}
+                    <Button
+                      type="text"
+                      icon={<LogoutOutlined />}
+                      onClick={handleLogout}
+                      danger
+                      className="logout-button"
+                    >
+                      {screens.lg && "ออกจากระบบ"}
+                    </Button>
+                  </>
+                ) : (
+                  /* Mobile & Small Tablet: ใช้ Dropdown */
+                  <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
+                    <Button
+                      type="text"
+                      icon={<MoreOutlined />}
+                      className="user-menu-button"
+                    />
+                  </Dropdown>
+                )}
               </Space>
             </div>
           </Header>
 
           {/* Main Content */}
-          <Content className="dashboard-content">
-            {renderContent()}
-          </Content>
+          <Content className="dashboard-content">{renderContent()}</Content>
         </Layout>
       </Layout>
     </div>

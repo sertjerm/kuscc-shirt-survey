@@ -45,7 +45,7 @@ const LoginForm = () => {
       if (memberData) {
         // 🔥 แก้ไข: ตรวจสอบ userRole (camelCase) จาก API response
         const isAdmin = memberData.userRole === "admin";
-        
+
         console.log("👤 userRole from API:", memberData.userRole);
         console.log("🔐 Is Admin:", isAdmin);
 
@@ -64,15 +64,16 @@ const LoginForm = () => {
           updatedDate: memberData.updatedDate,
           remarks: memberData.remarks,
           round: memberData.round,
-          
+
           // ฟิลด์ใหม่สำหรับการรับเสื้อ
-          hasReceived: memberData.hasReceived || memberData.receiveStatus === "RECEIVED",
+          hasReceived:
+            memberData.hasReceived || memberData.receiveStatus === "RECEIVED",
           receiveStatus: memberData.receiveStatus,
           receiveDate: memberData.receiveDate,
           receiverType: memberData.receiverType,
           receiverName: memberData.receiverName,
           processedBy: memberData.processedBy,
-          
+
           // เพิ่มข้อมูลในรูปแบบ UPPERCASE และ camelCase (backward compatibility)
           MEMB_CODE: memberData.memberCode,
           DISPLAYNAME: memberData.displayName || memberData.name,
@@ -106,32 +107,26 @@ const LoginForm = () => {
         // 🔥 เงื่อนไขใหม่: ถ้าเป็น Admin ให้แสดง Modal เลือก
         if (isAdmin) {
           console.log("🎯 Admin detected - showing role selection modal");
-          
-          // แสดง Modal ให้เลือกหน้า
+
+          // แสดง Modal ให้เลือกหน้า (ไม่มีหัวข้อ มีแค่ 2 ปุ่ม)
           Modal.confirm({
-            title: "เลือกหน้าที่ต้องการเข้าใช้งาน",
+            title: null, // ไม่มีหัวข้อ
             icon: null,
             width: 440,
             centered: true,
             closable: false,
             maskClosable: false,
-            content: (
-              <div style={{ padding: "20px 0" }}>
-                <Paragraph style={{ fontSize: "15px", color: "#666", marginBottom: 0 }}>
-                  คุณมีสิทธิ์เข้าถึงทั้งหน้าสมาชิกและหน้าเจ้าหน้าที่
-                </Paragraph>
-              </div>
-            ),
+            content: null,
             okText: (
               <span>
                 <SettingOutlined style={{ marginRight: "8px" }} />
-                หน้าเจ้าหน้าที่
+                สำหรับเจ้าหน้าที่
               </span>
             ),
             cancelText: (
               <span>
                 <TeamOutlined style={{ marginRight: "8px" }} />
-                หน้าสมาชิก (สำรวจ)
+                สำหรับสมาชิก
               </span>
             ),
             okButtonProps: {
