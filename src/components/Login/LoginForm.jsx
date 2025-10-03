@@ -1,7 +1,7 @@
 // src/components/Login/LoginForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, Modal } from "antd";
+import { Card, Form, Input, Button, Typography, Modal, Tag } from "antd";
 import {
   UserOutlined,
   PhoneOutlined,
@@ -25,6 +25,26 @@ const LoginForm = () => {
 
   // อ่านค่า VITE_BASE_PATH (สำหรับ debug) — แสดงด้านล่างนอก Card
   const basePath = import.meta.env.VITE_BASE_PATH ?? "/";
+
+  // ตัดสินป้ายและสี (ตรวจสอบ dev ก่อน)
+  const bp = String(basePath || "");
+  const isShirtDev = bp.includes("ShirtSurveyDev");
+  const isJacket = !isShirtDev && bp.includes("JacketSurvey");
+  const isShirt = !isShirtDev && bp.includes("ShirtSurvey");
+  const tagLabel = isShirtDev
+    ? "ShirtSurveyDev"
+    : isJacket
+    ? "JacketSurvey"
+    : isShirt
+    ? "ShirtSurvey"
+    : basePath;
+  const tagColor = isShirtDev
+    ? "red"
+    : isJacket
+    ? "green"
+    : isShirt
+    ? "orange"
+    : undefined;
 
   const initialValues = {
     memberCode: "",
@@ -297,11 +317,24 @@ const LoginForm = () => {
         </Form>
       </Card>
 
-      {/* แสดงค่า VITE_BASE_PATH ด้านล่าง Card (ไม่เด่น) */}
+      {/* แสดงค่า VITE_BASE_PATH ด้านล่าง Card */}
       <div style={{ textAlign: "center", marginTop: 12 }}>
-        <span style={{ color: "#fff", fontSize: 12 }}>
-          {basePath}
-        </span>
+        {tagColor ? (
+          <Tag color={tagColor} style={{ fontSize: 12 }}>
+            {tagLabel}
+          </Tag>
+        ) : (
+          <Tag
+            style={{
+              color: "#888",
+              fontSize: 12,
+              background: "transparent",
+              border: "none",
+            }}
+          >
+            {tagLabel}
+          </Tag>
+        )}
       </div>
     </div>
   );
