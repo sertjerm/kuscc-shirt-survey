@@ -15,6 +15,12 @@ import { getDashboardStats } from '../../services/shirtApi';
 
 const { Title, Text } = Typography;
 
+// ฟังก์ชันสำหรับ format ตัวเลขให้มี comma
+const formatNumber = (num) => {
+  if (num === null || num === undefined) return '0';
+  return Number(num).toLocaleString('th-TH');
+};
+
 const DashboardStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,13 +35,9 @@ const DashboardStats = () => {
     setError(null);
     
     try {
-      // เรียกใช้ getDashboardStats จาก shirtApi.js
       const data = await getDashboardStats();
-      
       console.log('📊 Dashboard Stats from API:', data);
-      
       setStats(data);
-
     } catch (err) {
       console.error('Error loading dashboard stats:', err);
       setError(err.message || 'ไม่สามารถโหลดข้อมูลสถิติได้');
@@ -94,13 +96,13 @@ const DashboardStats = () => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      {/* Overview Stats */}
+      {/* Overview Stats - แสดงแบบ x/total */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable style={{ height: '100%' }}>
             <Statistic
               title="สมาชิกทั้งหมด"
-              value={stats.totalMembers}
+              value={formatNumber(stats.totalMembers)}
               prefix={<TeamOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -114,9 +116,8 @@ const DashboardStats = () => {
           <Card hoverable style={{ height: '100%' }}>
             <Statistic
               title="ยืนยันขนาดแล้ว"
-              value={stats.confirmedMembers}
+              value={formatNumber(stats.confirmedMembers)}
               prefix={<CheckCircleOutlined />}
-              suffix={`/ ${stats.totalMembers}`}
               valueStyle={{ color: '#52c41a' }}
             />
             <Progress 
@@ -132,9 +133,8 @@ const DashboardStats = () => {
           <Card hoverable style={{ height: '100%' }}>
             <Statistic
               title="รับเสื้อแล้ว"
-              value={stats.receivedMembers}
+              value={formatNumber(stats.receivedMembers)}
               prefix={<GiftOutlined />}
-              suffix={`/ ${stats.totalMembers}`}
               valueStyle={{ color: '#faad14' }}
             />
             <Progress 
@@ -150,7 +150,7 @@ const DashboardStats = () => {
           <Card hoverable style={{ height: '100%' }}>
             <Statistic
               title="ยังไม่ยืนยัน"
-              value={stats.pendingMembers}
+              value={formatNumber(stats.pendingMembers)}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#ff4d4f' }}
             />
@@ -199,7 +199,9 @@ const DashboardStats = () => {
                           ขนาด {item.size}
                         </Text>
                         <Space>
-                          <Text>{item.count} คน</Text>
+                          <Text strong style={{ fontSize: '16px' }}>
+                            {formatNumber(item.count)} คน
+                          </Text>
                           <Text type="secondary">({percentage}%)</Text>
                         </Space>
                       </Space>
@@ -243,8 +245,8 @@ const DashboardStats = () => {
                     <UserOutlined />
                     <Text>รับด้วยตนเอง</Text>
                   </Space>
-                  <Text strong style={{ color: '#52c41a' }}>
-                    {stats.selfReceived} คน
+                  <Text strong style={{ color: '#52c41a', fontSize: '18px' }}>
+                    {formatNumber(stats.selfReceived)} คน
                   </Text>
                 </Space>
                 <Progress 
@@ -263,8 +265,8 @@ const DashboardStats = () => {
                     <TeamOutlined />
                     <Text>รับแทน</Text>
                   </Space>
-                  <Text strong style={{ color: '#fa8c16' }}>
-                    {stats.proxyReceived} คน
+                  <Text strong style={{ color: '#fa8c16', fontSize: '18px' }}>
+                    {formatNumber(stats.proxyReceived)} คน
                   </Text>
                 </Space>
                 <Progress 
@@ -291,8 +293,8 @@ const DashboardStats = () => {
                   <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
                     {receivedPercent}%
                   </Title>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    จากทั้งหมด {stats.totalMembers} คน
+                  <Text style={{ fontSize: 14 }}>
+                    <strong>{formatNumber(stats.receivedMembers)}</strong> / {formatNumber(stats.totalMembers)} คน
                   </Text>
                   <Progress 
                     percent={receivedPercent} 
@@ -326,8 +328,7 @@ const DashboardStats = () => {
               <Card bordered={false} style={{ backgroundColor: '#f0f5ff' }}>
                 <Statistic
                   title="สำรวจออนไลน์ (สมาชิกกรอกเอง)"
-                  value={stats.surveyMethods.online || 0}
-                  suffix="คน"
+                  value={`${formatNumber(stats.surveyMethods.online || 0)} คน`}
                   prefix={<CheckCircleOutlined />}
                   valueStyle={{ color: '#1890ff' }}
                 />
@@ -346,8 +347,7 @@ const DashboardStats = () => {
               <Card bordered={false} style={{ backgroundColor: '#f6ffed' }}>
                 <Statistic
                   title="บันทึกด้วยตนเอง (เจ้าหน้าที่)"
-                  value={stats.surveyMethods.manual || 0}
-                  suffix="คน"
+                  value={`${formatNumber(stats.surveyMethods.manual || 0)} คน`}
                   prefix={<TeamOutlined />}
                   valueStyle={{ color: '#52c41a' }}
                 />
@@ -366,7 +366,7 @@ const DashboardStats = () => {
         </Card>
       )}
 
-      {/* Summary Section */}
+      {/* Summary Section - แสดงแบบ x/total */}
       <Card style={{ backgroundColor: '#fafafa' }}>
         <Row gutter={16}>
           <Col span={8}>
@@ -375,9 +375,11 @@ const DashboardStats = () => {
               <Title level={3} style={{ margin: '8px 0', color: '#52c41a' }}>
                 {confirmedPercent}%
               </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {stats.confirmedMembers} / {stats.totalMembers} คน
+              <Text strong style={{ fontSize: 14 }}>
+                {formatNumber(stats.confirmedMembers)} / {formatNumber(stats.totalMembers)}
               </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 12 }}>คน</Text>
             </div>
           </Col>
           <Col span={8}>
@@ -386,16 +388,18 @@ const DashboardStats = () => {
               <Title level={3} style={{ margin: '8px 0', color: '#faad14' }}>
                 {receivedPercent}%
               </Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {stats.receivedMembers} / {stats.totalMembers} คน
+              <Text strong style={{ fontSize: 14 }}>
+                {formatNumber(stats.receivedMembers)} / {formatNumber(stats.totalMembers)}
               </Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 12 }}>คน</Text>
             </div>
           </Col>
           <Col span={8}>
             <div style={{ textAlign: 'center' }}>
               <Text type="secondary">คงเหลือที่ต้องจ่าย</Text>
               <Title level={3} style={{ margin: '8px 0', color: '#ff4d4f' }}>
-                {stats.totalMembers - stats.receivedMembers}
+                {formatNumber(stats.totalMembers - stats.receivedMembers)}
               </Title>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 คน
