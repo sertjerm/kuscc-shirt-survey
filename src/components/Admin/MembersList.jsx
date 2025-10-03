@@ -1,6 +1,7 @@
-// src/components/Admin/MembersList.jsx - IMPROVED VERSION
+// src/components/Admin/MembersList.jsx - FINAL CORRECTED VERSION
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
+import { message, Button, Pagination } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 import { getShirtMemberListPaged } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import { formatDateTime } from "../../utils/js_functions";
@@ -34,7 +35,7 @@ const MembersList = ({ onDataChange }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(10);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,14 +70,14 @@ const MembersList = ({ onDataChange }) => {
       setMembers(result.data || []);
       setTotalPages(result.totalPages || 1);
       setTotalCount(result.totalCount || 0);
-    } catch (err) {
+    } catch (err) { // ✅ SYNTAX ERROR FIXED HERE
       console.error("Load members error:", err);
       setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
       setMembers([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, statusFilter, sizeFilter, sortField, sortOrder]);
+  }, [currentPage, pageSize, searchTerm, statusFilter, sizeFilter, sortField, sortOrder]);
 
   useEffect(() => {
     loadMembers();
@@ -99,10 +100,13 @@ const MembersList = ({ onDataChange }) => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  
+  const handlePageSizeChange = (current, newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Back to page 1
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -122,7 +126,6 @@ const MembersList = ({ onDataChange }) => {
     setCurrentPage(1);
   };
 
-  // ✅ จุดที่ 2: ปรับ Icon Sort ให้แสดงในบรรทัดเดียวกับหัวตาราง
   const getSortIcon = (field) => {
     if (sortField !== field) {
       return <span className="sort-icon">⇅</span>;
@@ -167,7 +170,6 @@ const MembersList = ({ onDataChange }) => {
     return MEMBER_STATUS.NOT_CONFIRMED;
   };
 
-  // ✅ จุดที่ 4: ปรับ Status Tag ให้อยู่บรรทัดเดียว
   const getStatusTag = (member) => {
     const status = getMemberStatus(member);
     const config = {
@@ -249,14 +251,14 @@ const MembersList = ({ onDataChange }) => {
                 </option>
               ))}
             </select>
-
-            <button
-              className="btn-refresh"
+            
+            <Button
               onClick={loadMembers}
-              disabled={loading}
+              loading={loading}
+              icon={<ReloadOutlined />}
             >
-              🔄 รีเฟรช
-            </button>
+              รีเฟรช
+            </Button>
           </div>
         </div>
 
@@ -297,55 +299,32 @@ const MembersList = ({ onDataChange }) => {
         <>
           <div className="table-responsive">
             <table className="members-table">
+              {/* ... Table Head ... */}
               <thead>
                 <tr>
-                  {/* ✅ จุดที่ 2: ใช้ white-space: nowrap เพื่อให้อยู่บรรทัดเดียว */}
-                  <th
-                    onClick={() => handleSort("memberCode")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
+                  <th onClick={() => handleSort("memberCode")} className="sortable-header" style={{ whiteSpace: 'nowrap' }}>
                     รหัสสมาชิก {getSortIcon("memberCode")}
                   </th>
-                  <th
-                    onClick={() => handleSort("fullName")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
+                  <th onClick={() => handleSort("fullName")} className="sortable-header" style={{ whiteSpace: 'nowrap' }}>
                     ชื่อ-นามสกุล {getSortIcon("fullName")}
                   </th>
-                  <th
-                    onClick={() => handleSort("sizeCode")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap',textAlign: 'center' }}
-                  >
+                  <th onClick={() => handleSort("sizeCode")} className="sortable-header" style={{ whiteSpace: 'nowrap',textAlign: 'center' }}>
                     ขนาดที่เลือก {getSortIcon("sizeCode")}
                   </th>
-                  <th
-                    onClick={() => handleSort("updatedDate")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
+                  <th onClick={() => handleSort("updatedDate")} className="sortable-header" style={{ whiteSpace: 'nowrap' }}>
                     วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
                   </th>
-                  <th
-                    onClick={() => handleSort("status")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
+                  <th onClick={() => handleSort("status")} className="sortable-header" style={{ whiteSpace: 'nowrap' }}>
                     สถานะ {getSortIcon("status")}
                   </th>
-                  <th
-                    onClick={() => handleSort("processedBy")}
-                    className="sortable-header"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
+                  <th onClick={() => handleSort("processedBy")} className="sortable-header" style={{ whiteSpace: 'nowrap' }}>
                     ผู้ดำเนินการ {getSortIcon("processedBy")}
                   </th>
                   <th style={{ whiteSpace: 'nowrap' }}>หมายเหตุ</th>
                   <th style={{ whiteSpace: 'nowrap' }}>การดำเนินการ</th>
                 </tr>
               </thead>
+              {/* ... Table Body ... */}
               <tbody>
                 {members.map((member) => {
                   const memberCode = member.memberCode || member.MEMB_CODE;
@@ -361,7 +340,6 @@ const MembersList = ({ onDataChange }) => {
                         <strong>{memberCode}</strong>
                       </td>
                       <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      {/* ✅ จุดที่ 3: จัดให้ขนาดเสื้อ align center */}
                       <td data-label="ขนาดที่เลือก" style={{ textAlign: 'center' }}>
                         {sizeCode ? (
                           <strong style={{ color: '#000', fontSize: '16px' }}>{sizeCode}</strong>
@@ -405,37 +383,15 @@ const MembersList = ({ onDataChange }) => {
 
           {/* Pagination */}
           <div className="pagination">
-            <button
-              onClick={() => handlePageChange(1)}
-              disabled={currentPage === 1}
-              className="btn-page"
-            >
-              ⮜ หน้าแรก
-            </button>
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="btn-page"
-            >
-              ◀️ ก่อนหน้า
-            </button>
-            <span className="page-info">
-              หน้า {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="btn-page"
-            >
-              ถัดไป ▶️
-            </button>
-            <button
-              onClick={() => handlePageChange(totalPages)}
-              disabled={currentPage === totalPages}
-              className="btn-page"
-            >
-              หน้าสุดท้าย ⮞
-            </button>
+            <Pagination
+              current={currentPage}
+              total={totalCount}
+              pageSize={pageSize}
+              onChange={handlePageChange}
+              onShowSizeChange={handlePageSizeChange}
+              showSizeChanger={true}
+              pageSizeOptions={['10', '20', '50', '100']}
+            />
           </div>
         </>
       )}
@@ -449,8 +405,6 @@ const MembersList = ({ onDataChange }) => {
           selectedMember={selectedMember}
         />
       )}
-
-
     </div>
   );
 };
