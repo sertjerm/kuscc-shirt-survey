@@ -1,10 +1,6 @@
 // src/services/shirtApi.js
 import axios from "axios";
-
-// const REAL_API_BASE_URL =
-//   "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
-  const REAL_API_BASE_URL =
-  "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
+import { REAL_API_BASE_URL } from "../utils/constants";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -50,9 +46,9 @@ const formatMemberData = (apiData) => {
 
 export const loginMember = async ({ memberCode, phone, idCard }) => {
   const payload = { mbcode: memberCode, socid: idCard, mobile: phone };
-  
+
   console.log("Login payload:", payload);
-  
+
   const res = await api.post("/ShirtSurveyLogin", payload);
 
   if (res.data?.responseCode !== 200) {
@@ -60,15 +56,16 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   }
 
   const memberData = formatMemberData(res.data.data);
-  
+
   const loginResult = {
     ...memberData,
     round: memberData.socialId ? memberData.socialId.split("-").pop() : idCard,
-    name: memberData.displayName || memberData.fullName || memberData.memberCode,
+    name:
+      memberData.displayName || memberData.fullName || memberData.memberCode,
   };
-  
+
   console.log("Login successful, member data:", loginResult);
-  
+
   return loginResult;
 };
 
@@ -81,14 +78,14 @@ export const saveMemberSize = async ({
   processedBy = null,
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
-  
+
   const payload = {
     MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
     SURVEY_METHOD: surveyMethod,
     REMARKS: remarks,
   };
-  
+
   // เพิ่ม PROCESSED_BY ถ้ามีค่า (กรณี admin แก้ไขให้)
   if (processedBy) {
     const paddedProcessedBy = processedBy.toString().padStart(6, "0");
@@ -104,7 +101,7 @@ export const saveMemberSize = async ({
   }
 
   console.log("Save size response:", res.data);
-  
+
   return res.data;
 };
 
@@ -185,7 +182,7 @@ export const submitPickup = async ({
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
   const paddedProcessedBy = (processedBy ?? "").toString().padStart(6, "0");
-  
+
   const payload = {
     MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
@@ -272,7 +269,7 @@ export const adjustInventory = async (adjustmentData) => {
 export const getDashboardStats = async () => {
   try {
     console.log("📊 Fetching dashboard stats from API...");
-    
+
     const res = await api.get("/GetDashboardStats");
 
     if (res.data?.responseCode !== 200) {
@@ -280,7 +277,7 @@ export const getDashboardStats = async () => {
     }
 
     const stats = res.data.data;
-    
+
     console.log("📊 Dashboard Stats received:", stats);
 
     return stats;

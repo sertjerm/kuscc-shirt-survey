@@ -1,5 +1,8 @@
 // src/utils/constants.js
-
+export const REAL_API_BASE_URL =
+  "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc";
+  // const REAL_API_BASE_URL =
+  // "https://apps4.coop.ku.ac.th/KusccToolService/service1.svc";
 // ขนาดเสื้อ (รวม format ทั้งสองแบบ)
 export const SHIRT_SIZES = [
   { 
