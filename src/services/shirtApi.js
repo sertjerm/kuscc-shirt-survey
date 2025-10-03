@@ -1,6 +1,6 @@
 // src/services/shirtApi.js
 import axios from "axios";
-import { REAL_API_BASE_URL } from "../utils/constants";
+import { REAL_API_BASE_URL, SIZE_ORDER } from "../utils/constants";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -228,18 +228,7 @@ export const getInventorySummary = async () => {
     remarks: stock.REMARKS,
   }));
 
-  const sizeOrder = [
-    "XS",
-    "S",
-    "M",
-    "L",
-    "XL",
-    "2XL",
-    "3XL",
-    "4XL",
-    "5XL",
-    "6XL",
-  ];
+  const sizeOrder = SIZE_ORDER;
   inventorySummary.sort(
     (a, b) => sizeOrder.indexOf(a.sizeCode) - sizeOrder.indexOf(b.sizeCode)
   );
@@ -285,6 +274,40 @@ export const getDashboardStats = async () => {
     console.error("❌ Error fetching dashboard stats:", error);
     throw error;
   }
+};
+
+// ✅ NEW: ฟังก์ชันสำหรับล้างข้อมูลสมาชิก (ตาม API spec ที่ถูกต้อง)
+export const clearMemberData = async ({
+  memberCode,
+  clearSize = true,
+  clearReceiveStatus = true,
+  clearRemarks = true,
+  clearedBy
+}) => {
+  const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+  const paddedClearedBy = (clearedBy ?? "").toString().padStart(6, "0");
+
+  // ⚠️ ตาม API spec: ไม่มีฟิลด์ REMARKS ใน payload
+  // API จะเคลียร์ข้อมูลตาม boolean flags เท่านั้น
+  const payload = {
+    MEMB_CODE: paddedMemberCode,
+    ClearSize: clearSize,
+    ClearReceiveStatus: clearReceiveStatus,
+    ClearRemarks: clearRemarks,
+    CLEARED_BY: paddedClearedBy,
+  };
+
+  console.log("Clear member data payload:", payload);
+
+  const res = await api.post("/ClearShirtSurvey", payload);
+
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "ไม่สามารถล้างข้อมูลได้");
+  }
+
+  console.log("Clear member data response:", res.data);
+
+  return res.data;
 };
 
 export { formatMemberData, parseWcfDate };
