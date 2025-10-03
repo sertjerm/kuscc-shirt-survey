@@ -6,12 +6,31 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Card, Table, Button, Modal, Form, InputNumber, Select,
-  Input, Space, Typography, message, Tag, Alert, Spin
+  Card,
+  Table,
+  Button,
+  Modal,
+  Form,
+  InputNumber,
+  Select,
+  Input,
+  Space,
+  Typography,
+  message,
+  Tag,
+  Alert,
+  Spin,
+  Row,
+  Col,
+  Grid,
+  Descriptions,
 } from "antd";
 import {
-  PlusOutlined, MinusOutlined, ReloadOutlined,
-  WarningOutlined, CheckCircleOutlined
+  PlusOutlined,
+  MinusOutlined,
+  ReloadOutlined,
+  WarningOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import { getInventorySummary, adjustInventory } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
@@ -20,11 +39,24 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+const ALL_SIZES = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "2XL",
+  "3XL",
+  "4XL",
+  "5XL",
+  "6XL",
+];
 
 const InventoryManagement = () => {
   const { user } = useAppContext();
   const [form] = Form.useForm();
+  // เรียก useBreakpoint จาก Grid ภายใน component (ป้องกันปัญหา hook เรียกก่อนเวลา)
+  const screens = Grid.useBreakpoint();
 
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +64,7 @@ const InventoryManagement = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [adjustmentType, setAdjustmentType] = useState("ADD");
   const [submitting, setSubmitting] = useState(false);
+  const isMobile = !screens?.md;
 
   useEffect(() => {
     loadInventory();
@@ -119,6 +152,7 @@ const InventoryManagement = () => {
       dataIndex: "produced",
       key: "produced",
       align: "right",
+      responsive: ["md"],
       render: (value) => (
         <Text strong style={{ color: "#1890ff" }}>
           {Number(value).toLocaleString()}
@@ -130,6 +164,7 @@ const InventoryManagement = () => {
       dataIndex: "reserved",
       key: "reserved",
       align: "right",
+      responsive: ["md"],
       render: (value) => (
         <Text style={{ color: "#52c41a" }}>
           {Number(value).toLocaleString()}
@@ -143,7 +178,7 @@ const InventoryManagement = () => {
       align: "right",
       render: (value) => (
         <Text style={{ color: "#faad14" }}>
-          {Number(value).toLocaleString()} {/* ✅ parse เป็น Number */}
+          {Number(value).toLocaleString()}
         </Text>
       ),
     },
@@ -152,6 +187,7 @@ const InventoryManagement = () => {
       dataIndex: "distributed",
       key: "distributed",
       align: "right",
+      responsive: ["md"],
       render: (value) => (
         <Text style={{ color: "#ff4d4f" }}>
           {Number(value).toLocaleString()}
@@ -190,9 +226,17 @@ const InventoryManagement = () => {
           return <Tag color="default">หมดสต็อก</Tag>;
         }
         if (record.isLowStock) {
-          return <Tag color="error" icon={<WarningOutlined />}>ใกล้หมด</Tag>;
+          return (
+            <Tag color="error" icon={<WarningOutlined />}>
+              ใกล้หมด
+            </Tag>
+          );
         }
-        return <Tag color="success" icon={<CheckCircleOutlined />}>ปกติ</Tag>;
+        return (
+          <Tag color="success" icon={<CheckCircleOutlined />}>
+            ปกติ
+          </Tag>
+        );
       },
     },
   ];
@@ -262,39 +306,107 @@ const InventoryManagement = () => {
           </Space>
         }
       >
-        <Table
-          dataSource={inventory}
-          columns={columns}
-          rowKey="sizeCode"
-          pagination={false}
-          bordered
-          summary={() => (
-            <Table.Summary.Row>
-              <Table.Summary.Cell index={0}><b>รวม</b></Table.Summary.Cell>
-              <Table.Summary.Cell index={1} align="right">
-                {totals.produced.toLocaleString()}
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={2} align="right">
-                {totals.reserved.toLocaleString()}
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={3} align="right">
-                {totals.received.toLocaleString()}
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={4} align="right">
-                {totals.distributed.toLocaleString()}
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={5} align="right">
-                {totals.remaining.toLocaleString()}
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={6}></Table.Summary.Cell>
-            </Table.Summary.Row>
-          )}
-        />
+        {isMobile ? (
+          <Row gutter={[12, 12]}>
+            {inventory.map((item) => (
+              <Col xs={24} sm={12} key={item.sizeCode}>
+                <Card
+                  size="small"
+                  style={{
+                    borderRadius: 12,
+                    boxShadow: "0 6px 18px rgba(15,15,15,0.06)",
+                  }}
+                  bodyStyle={{ padding: 12 }}
+                >
+                  <Descriptions
+                    size="small"
+                    column={1}
+                    bordered
+                    labelStyle={{ width: 110, fontWeight: 700 }}
+                    contentStyle={{ paddingLeft: 8 }}
+                  >
+                    <Descriptions.Item label="ขนาด">
+                      <Tag color="blue" style={{ fontWeight: 700 }}>
+                        {item.sizeCode}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="ผลิต">
+                      {Number(item.produced).toLocaleString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="จอง">
+                      {Number(item.reserved).toLocaleString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="รับแล้ว">
+                      {Number(item.received).toLocaleString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="เบิก">
+                      {Number(item.distributed).toLocaleString()}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="คงเหลือ">
+                      <span style={{ fontWeight: 800 }}>
+                        {Number(item.remaining).toLocaleString()}
+                      </span>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="สถานะ">
+                      <Tag
+                        color={
+                          item.remaining === 0
+                            ? "default"
+                            : item.isLowStock
+                            ? "error"
+                            : "success"
+                        }
+                      >
+                        {item.remaining === 0
+                          ? "หมดสต็อก"
+                          : item.isLowStock
+                          ? "ใกล้หมด"
+                          : "ปกติ"}
+                      </Tag>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <Table
+            dataSource={inventory}
+            columns={columns}
+            rowKey="sizeCode"
+            pagination={false}
+            bordered
+            scroll={{ x: "max-content" }}
+            summary={() => (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0}>
+                  <b>รวม</b>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  {totals.produced.toLocaleString()}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={2} align="right">
+                  {totals.reserved.toLocaleString()}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={3} align="right">
+                  {totals.received.toLocaleString()}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="right">
+                  {totals.distributed.toLocaleString()}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="right">
+                  {totals.remaining.toLocaleString()}
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={6}></Table.Summary.Cell>
+              </Table.Summary.Row>
+            )}
+          />
+        )}
       </Card>
 
       <Modal
         title={adjustmentType === "ADD" ? "เติมสต็อก" : "เบิกสต็อก"}
-        visible={modalVisible}
+        open={modalVisible} // antd v5 prop
         onCancel={handleCloseModal}
         onOk={handleSubmitAdjustment}
         confirmLoading={submitting}
@@ -309,7 +421,9 @@ const InventoryManagement = () => {
           >
             <Select placeholder="เลือกขนาด">
               {ALL_SIZES.map((size) => (
-                <Option key={size} value={size}>{size}</Option>
+                <Option key={size} value={size}>
+                  {size}
+                </Option>
               ))}
             </Select>
           </Form.Item>
