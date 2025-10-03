@@ -1,4 +1,8 @@
-// src/services/shirtApi.js
+// ===================================================================
+// File: src/services/shirtApi.js
+// Description: Service layer สำหรับเชื่อมต่อ API เสื้อ + Mapping Data
+// ===================================================================
+
 import axios from "axios";
 import { REAL_API_BASE_URL, SIZE_ORDER } from "../utils/constants";
 
@@ -46,7 +50,6 @@ const formatMemberData = (apiData) => {
 
 export const loginMember = async ({ memberCode, phone, idCard }) => {
   const payload = { mbcode: memberCode, socid: idCard, mobile: phone };
-
   console.log("Login payload:", payload);
 
   const res = await api.post("/ShirtSurveyLogin", payload);
@@ -65,7 +68,6 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   };
 
   console.log("Login successful, member data:", loginResult);
-
   return loginResult;
 };
 
@@ -78,7 +80,6 @@ export const saveMemberSize = async ({
   processedBy = null,
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
-
   const payload = {
     MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
@@ -86,7 +87,6 @@ export const saveMemberSize = async ({
     REMARKS: remarks,
   };
 
-  // เพิ่ม PROCESSED_BY ถ้ามีค่า (กรณี admin แก้ไขให้)
   if (processedBy) {
     const paddedProcessedBy = processedBy.toString().padStart(6, "0");
     payload.PROCESSED_BY = paddedProcessedBy;
@@ -95,13 +95,11 @@ export const saveMemberSize = async ({
   console.log("Saving size payload:", payload);
 
   const res = await api.post("/AddShirtSurvey", payload);
-
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "บันทึกขนาดไม่สำเร็จ");
   }
 
   console.log("Save size response:", res.data);
-
   return res.data;
 };
 
@@ -113,7 +111,6 @@ export const SearchMember = async (mbcode) => {
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่พบข้อมูลสมาชิก");
   }
-
   return formatMemberData(res.data.data);
 };
 
@@ -126,8 +123,6 @@ export const getShirtMemberListPaged = async ({
   sort_field = "",
   sort_order = "asc",
 }) => {
-  // สร้าง URL ตามลำดับที่ Backend UriTemplate ต้องการ
-  // UriTemplate: page → pageSize → search → status → size_code → sort_field → sort_order
   const params = new URLSearchParams({
     page: page.toString(),
     pageSize: pageSize.toString(),
@@ -149,7 +144,6 @@ export const getShirtMemberListPaged = async ({
   });
 
   const res = await api.get(`/GetShirtMemberListPaged?${params.toString()}`);
-
   if (res.data?.responseCode !== 200 && res.data?.responseCode !== 404) {
     throw new Error(res.data?.responseMessage || "เกิดข้อผิดพลาด");
   }
@@ -197,85 +191,95 @@ export const submitPickup = async ({
   console.log("Submit pickup payload:", payload);
 
   const res = await api.post("/AddShirtSurvey", payload);
-
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "บันทึกการรับเสื้อไม่สำเร็จ");
   }
 
   console.log("Submit pickup response:", res.data);
-
   return res.data;
 };
 
-export const getInventorySummary = async () => {
-  const res = await api.get("/GetStocks");
+// ✅ Helper: Normalize inventory items
+export const formatInventoryData = (apiData = []) => {
+  return Array.isArray(apiData)
+    ? apiData.map((item) => ({
+        sizeCode: item.SIZE_CODE,
+        produced: Number(item.PRODUCED_QTY) || 0,
+        reserved: Number(item.RESERVED_QTY) || 0,
+        received: Number(item.RECEIVED_QTY) || 0, // ✅ บังคับเป็น Number
+        distributed: Number(item.DISTRIBUTED_QTY) || 0,
+        remaining: Number(item.REMAINING_QTY) || 0,
+        isLowStock: String(item.IS_LOW_STOCK).toUpperCase() === "Y",
+        remarks: item.REMARKS || "",
+        updatedBy: item.UPDATED_BY || null,
+        updatedDate: parseWcfDate(item.UPDATED_DATE) || null,
+        createdDate: parseWcfDate(item.CREATED_DATE) || null,
+        stockId: item.STOCK_ID || null,
+      }))
+    : [];
+};
 
+// ✅ API: GetStockSummary → ใช้ formatInventoryData
+export const getInventorySummary = async () => {
+  const res = await api.get("/GetStockSummary");
   if (res.data?.responseCode !== 200) {
     throw new Error("ไม่สามารถโหลดข้อมูลสต็อกได้");
   }
 
   const stockData = res.data.data || [];
-  const inventorySummary = stockData.map((stock) => ({
-    sizeCode: stock.SIZE_CODE,
-    produced: stock.PRODUCED_QTY || 0,
-    reserved: (stock.PRODUCED_QTY || 0) - (stock.REMAINING_QTY || 0),
-    received: stock.DISTRIBUTED_QTY || 0,
-    remaining: stock.REMAINING_QTY || 0,
-    lowStockThreshold: stock.LOW_STOCK_THRESHOLD || 50,
-    stockId: stock.STOCK_ID,
-    updatedBy: stock.UPDATED_BY,
-    updatedDate: parseWcfDate(stock.UPDATED_DATE),
-    remarks: stock.REMARKS,
-  }));
+  const inventorySummary = formatInventoryData(stockData);
+  console.log("Raw inventory data:", stockData);
+  console.log("Formatted inventory data:", inventorySummary);
 
-  const sizeOrder = SIZE_ORDER;
   inventorySummary.sort(
-    (a, b) => sizeOrder.indexOf(a.sizeCode) - sizeOrder.indexOf(b.sizeCode)
+    (a, b) => SIZE_ORDER.indexOf(a.sizeCode) - SIZE_ORDER.indexOf(b.sizeCode)
   );
-
   return inventorySummary;
 };
 
-export const adjustInventory = async (adjustmentData) => {
+// ฟังก์ชันเติม/เบิกสต็อก
+export const addStock = async ({ sizeCode, quantity, remarks, processedBy }) => {
   const payload = {
-    SIZE_CODE: adjustmentData.sizeCode,
-    QUANTITY: adjustmentData.quantity,
-    ADJUSTMENT_TYPE: adjustmentData.type,
-    REMARKS: adjustmentData.remarks || "",
-    PROCESSED_BY: adjustmentData.processedBy,
+    size_code: sizeCode,
+    produced_delta: quantity,
+    remarks: remarks || "",
+    updated_by: processedBy,
   };
-
-  const res = await api.post("/AdjustInventory", payload);
-
+  const res = await api.post("/UpdateStock", payload);
   if (res.data?.responseCode !== 200) {
-    throw new Error(res.data?.responseMessage || "ไม่สามารถปรับสต็อกได้");
+    throw new Error(res.data?.responseMessage || "เติมสต็อกไม่สำเร็จ");
   }
-
   return res.data;
 };
 
-// ✅ อัพเดตฟังก์ชันนี้ให้เรียก API จริง
-export const getDashboardStats = async () => {
-  try {
-    console.log("📊 Fetching dashboard stats from API...");
-
-    const res = await api.get("/GetDashboardStats");
-
-    if (res.data?.responseCode !== 200) {
-      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดสถิติได้");
-    }
-
-    const stats = res.data.data;
-
-    console.log("📊 Dashboard Stats received:", stats);
-
-    return stats;
-  } catch (error) {
-    console.error("❌ Error fetching dashboard stats:", error);
-    throw error;
+export const removeStock = async ({
+  sizeCode,
+  quantity,
+  remarks,
+  processedBy,
+}) => {
+  const payload = {
+    size_code: sizeCode,
+    distributed_delta: quantity,
+    remarks: remarks || "",
+    updated_by: processedBy,
+  };
+  const res = await api.post("/UpdateStock", payload);
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "เบิกสต็อกไม่สำเร็จ");
   }
+  return res.data;
 };
 
+export const adjustInventory = async (adjustmentData) => {
+  if (adjustmentData.type === "ADD") {
+    return addStock(adjustmentData);
+  } else if (adjustmentData.type === "REMOVE") {
+    return removeStock(adjustmentData);
+  } else {
+    throw new Error("ADJUSTMENT_TYPE ต้องเป็น 'ADD' หรือ 'REMOVE' เท่านั้น");
+  }
+};
 // ✅ NEW: ฟังก์ชันสำหรับล้างข้อมูลสมาชิก (ตาม API spec ที่ถูกต้อง)
 export const clearMemberData = async ({
   memberCode,
@@ -306,8 +310,28 @@ export const clearMemberData = async ({
   }
 
   console.log("Clear member data response:", res.data);
-
   return res.data;
 };
+// ✅ ฟังก์ชันสำหรับดึงข้อมูล Dashboard Stats
+export const getDashboardStats = async () => {
+  try {
+    console.log("📊 Fetching dashboard stats from API...");
+
+    const res = await api.get("/GetDashboardStats");
+
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดสถิติได้");
+    }
+
+    const stats = res.data.data;
+
+    console.log("📊 Dashboard Stats received:", stats);
+    return stats;
+  } catch (error) {
+    console.error("❌ Error fetching dashboard stats:", error);
+    throw error;
+  }
+};
+
 
 export { formatMemberData, parseWcfDate };

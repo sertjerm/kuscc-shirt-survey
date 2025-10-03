@@ -1,15 +1,20 @@
-// src/components/Admin/InventoryManagement.jsx
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, Table, Button, Modal, Form, InputNumber, Select, 
-  Input, Space, Typography, message, Tag, Alert, Spin 
-} from 'antd';
-import { 
-  PlusOutlined, MinusOutlined, ReloadOutlined, 
-  WarningOutlined, CheckCircleOutlined 
-} from '@ant-design/icons';
-import { getInventorySummary, adjustInventory } from '../../services/shirtApi';
-import { useAppContext } from '../../App';
+// ===================================================================
+// File: src/components/Admin/InventoryManagement.jsx
+// Description: UI จัดการสต็อกเสื้อ (Admin)
+// ปรับปรุง: render ค่า received ให้แน่ใจว่าเป็น Number
+// ===================================================================
+
+import React, { useState, useEffect } from "react";
+import {
+  Card, Table, Button, Modal, Form, InputNumber, Select,
+  Input, Space, Typography, message, Tag, Alert, Spin
+} from "antd";
+import {
+  PlusOutlined, MinusOutlined, ReloadOutlined,
+  WarningOutlined, CheckCircleOutlined
+} from "@ant-design/icons";
+import { getInventorySummary, adjustInventory } from "../../services/shirtApi";
+import { useAppContext } from "../../App";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -20,12 +25,12 @@ const ALL_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"]
 const InventoryManagement = () => {
   const { user } = useAppContext();
   const [form] = Form.useForm();
-  
+
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [adjustmentType, setAdjustmentType] = useState('ADD');
+  const [adjustmentType, setAdjustmentType] = useState("ADD");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -35,13 +40,13 @@ const InventoryManagement = () => {
   const loadInventory = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       const data = await getInventorySummary();
+      console.log("🔥 Inventory Data:", data);
       setInventory(data || []);
     } catch (err) {
-      console.error('Error loading inventory:', err);
-      setError(err.message || 'ไม่สามารถโหลดข้อมูลสต็อกได้');
+      console.error("Error loading inventory:", err);
+      setError(err.message || "ไม่สามารถโหลดข้อมูลสต็อกได้");
     } finally {
       setLoading(false);
     }
@@ -52,7 +57,6 @@ const InventoryManagement = () => {
     setModalVisible(true);
     form.resetFields();
   };
-
   const handleCloseModal = () => {
     setModalVisible(false);
     form.resetFields();
@@ -62,137 +66,130 @@ const InventoryManagement = () => {
     try {
       const values = await form.validateFields();
       setSubmitting(true);
-
       const adjustmentData = {
         sizeCode: values.sizeCode,
         quantity: values.quantity,
-        type: adjustmentType, // 'ADD' or 'REMOVE'
-        remarks: values.remarks || '',
+        type: adjustmentType,
+        remarks: values.remarks || "",
         processedBy: user.memberCode,
       };
-
-      console.log('📊 Adjust Inventory:', adjustmentData);
-
       await adjustInventory(adjustmentData);
-
       message.success(
-        adjustmentType === 'ADD' 
+        adjustmentType === "ADD"
           ? `เติมสต็อกขนาด ${values.sizeCode} จำนวน ${values.quantity} ตัว สำเร็จ`
           : `เบิกสต็อกขนาด ${values.sizeCode} จำนวน ${values.quantity} ตัว สำเร็จ`
       );
-
       handleCloseModal();
-      loadInventory(); // Reload inventory data
+      loadInventory();
     } catch (error) {
-      console.error('Submit adjustment error:', error);
-      if (error.errorFields) {
-        // Form validation error
-        return;
-      }
-      message.error(error.message || 'เกิดข้อผิดพลาดในการปรับสต็อก');
+      if (error.errorFields) return;
+      message.error(error.message || "เกิดข้อผิดพลาดในการปรับสต็อก");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Calculate totals
-  const totals = inventory.reduce((acc, item) => ({
-    produced: acc.produced + (item.produced || 0),
-    reserved: acc.reserved + (item.reserved || 0),
-    received: acc.received + (item.received || 0),
-    remaining: acc.remaining + (item.remaining || 0),
-  }), { produced: 0, reserved: 0, received: 0, remaining: 0 });
+  const totals = inventory.reduce(
+    (acc, item) => ({
+      produced: acc.produced + (item.produced || 0),
+      reserved: acc.reserved + (item.reserved || 0),
+      received: acc.received + (item.received || 0),
+      distributed: acc.distributed + (item.distributed || 0),
+      remaining: acc.remaining + (item.remaining || 0),
+    }),
+    { produced: 0, reserved: 0, received: 0, distributed: 0, remaining: 0 }
+  );
 
-  // Check low stock count (ใช้ lowStockThreshold จาก API แทน hardcode)
-  const lowStockCount = inventory.filter(item => 
-    item.remaining > 0 && item.remaining <= (item.lowStockThreshold || 50)
-  ).length;
+  const lowStockCount = inventory.filter((item) => item.isLowStock).length;
 
   const columns = [
     {
-      title: 'ขนาด',
-      dataIndex: 'sizeCode',
-      key: 'sizeCode',
-      width: 100,
-      align: 'center',
+      title: "ขนาด",
+      dataIndex: "sizeCode",
+      key: "sizeCode",
+      align: "center",
       render: (size) => (
-        <Tag color="blue" style={{ fontSize: 14, fontWeight: 'bold' }}>
+        <Tag color="blue" style={{ fontSize: 14, fontWeight: "bold" }}>
           {size}
         </Tag>
       ),
     },
     {
-      title: 'ผลิต',
-      dataIndex: 'produced',
-      key: 'produced',
-      width: 100,
-      align: 'right',
+      title: "ผลิต",
+      dataIndex: "produced",
+      key: "produced",
+      align: "right",
       render: (value) => (
-        <Text strong style={{ color: '#1890ff' }}>
-          {value?.toLocaleString() || 0}
+        <Text strong style={{ color: "#1890ff" }}>
+          {Number(value).toLocaleString()}
         </Text>
       ),
     },
     {
-      title: 'จอง',
-      dataIndex: 'reserved',
-      key: 'reserved',
-      width: 100,
-      align: 'right',
+      title: "จอง",
+      dataIndex: "reserved",
+      key: "reserved",
+      align: "right",
       render: (value) => (
-        <Text style={{ color: '#52c41a' }}>
-          {value?.toLocaleString() || 0}
+        <Text style={{ color: "#52c41a" }}>
+          {Number(value).toLocaleString()}
         </Text>
       ),
     },
     {
-      title: 'รับแล้ว',
-      dataIndex: 'received',
-      key: 'received',
-      width: 100,
-      align: 'right',
+      title: "รับแล้ว",
+      dataIndex: "received",
+      key: "received",
+      align: "right",
       render: (value) => (
-        <Text style={{ color: '#faad14' }}>
-          {value?.toLocaleString() || 0}
+        <Text style={{ color: "#faad14" }}>
+          {Number(value).toLocaleString()} {/* ✅ parse เป็น Number */}
         </Text>
       ),
     },
     {
-      title: 'คงเหลือ',
-      dataIndex: 'remaining',
-      key: 'remaining',
-      width: 100,
-      align: 'right',
+      title: "เบิก",
+      dataIndex: "distributed",
+      key: "distributed",
+      align: "right",
+      render: (value) => (
+        <Text style={{ color: "#ff4d4f" }}>
+          {Number(value).toLocaleString()}
+        </Text>
+      ),
+    },
+    {
+      title: "คงเหลือ",
+      dataIndex: "remaining",
+      key: "remaining",
+      align: "right",
       render: (value, record) => {
-        const threshold = record.lowStockThreshold || 50;
-        const isLowStock = value > 0 && value <= threshold;
+        const isLowStock = record.isLowStock;
         return (
           <Space>
-            {isLowStock && <WarningOutlined style={{ color: '#ff4d4f' }} />}
-            <Text 
-              strong 
-              style={{ 
-                color: isLowStock ? '#ff4d4f' : value === 0 ? '#999' : '#000',
-                fontSize: 16
+            {isLowStock && <WarningOutlined style={{ color: "#ff4d4f" }} />}
+            <Text
+              strong
+              style={{
+                color: isLowStock ? "#ff4d4f" : value === 0 ? "#999" : "#000",
+                fontSize: 16,
               }}
             >
-              {value?.toLocaleString() || 0}
+              {Number(value).toLocaleString()}
             </Text>
           </Space>
         );
       },
     },
     {
-      title: 'สถานะ',
-      key: 'status',
-      width: 120,
-      align: 'center',
+      title: "สถานะ",
+      key: "status",
+      align: "center",
       render: (_, record) => {
-        const threshold = record.lowStockThreshold || 50;
         if (record.remaining === 0) {
           return <Tag color="default">หมดสต็อก</Tag>;
         }
-        if (record.remaining <= threshold) {
+        if (record.isLowStock) {
           return <Tag color="error" icon={<WarningOutlined />}>ใกล้หมด</Tag>;
         }
         return <Tag color="success" icon={<CheckCircleOutlined />}>ปกติ</Tag>;
@@ -203,7 +200,7 @@ const InventoryManagement = () => {
   if (loading) {
     return (
       <Card>
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
           <Spin size="large" />
           <div style={{ marginTop: 16 }}>
             <Text type="secondary">กำลังโหลดข้อมูลสต็อก...</Text>
@@ -220,26 +217,22 @@ const InventoryManagement = () => {
         description={error}
         type="error"
         showIcon
-        action={
-          <Button onClick={loadInventory}>ลองอีกครั้ง</Button>
-        }
+        action={<Button onClick={loadInventory}>ลองอีกครั้ง</Button>}
       />
     );
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      {/* Low Stock Alert */}
+    <Space direction="vertical" size="large" style={{ width: "100%" }}>
       {lowStockCount > 0 && (
         <Alert
           message="⚠️ แจ้งเตือนสต็อกใกล้หมด"
-          description={`พบสต็อกเสื้อใกล้หมด ${lowStockCount} ขนาด (เหลือน้อยกว่าหรือเท่ากับ threshold ของแต่ละขนาด)`}
+          description={`พบสต็อกเสื้อใกล้หมด ${lowStockCount} ขนาด`}
           type="warning"
           showIcon
         />
       )}
 
-      {/* Main Inventory Card */}
       <Card
         title={
           <Space>
@@ -250,23 +243,20 @@ const InventoryManagement = () => {
         }
         extra={
           <Space>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
-              onClick={() => handleOpenModal('ADD')}
+              onClick={() => handleOpenModal("ADD")}
             >
               เติมสต็อก
             </Button>
-            <Button 
+            <Button
               icon={<MinusOutlined />}
-              onClick={() => handleOpenModal('REMOVE')}
+              onClick={() => handleOpenModal("REMOVE")}
             >
               เบิกสต็อก
             </Button>
-            <Button 
-              icon={<ReloadOutlined />}
-              onClick={loadInventory}
-            >
+            <Button icon={<ReloadOutlined />} onClick={loadInventory}>
               รีเฟรช
             </Button>
           </Space>
@@ -277,138 +267,65 @@ const InventoryManagement = () => {
           columns={columns}
           rowKey="sizeCode"
           pagination={false}
+          bordered
           summary={() => (
-            <Table.Summary fixed>
-              <Table.Summary.Row style={{ backgroundColor: '#fafafa' }}>
-                <Table.Summary.Cell index={0} align="center">
-                  <Text strong>รวม</Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="right">
-                  <Text strong style={{ color: '#1890ff', fontSize: 16 }}>
-                    {totals.produced.toLocaleString()}
-                  </Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="right">
-                  <Text strong style={{ color: '#52c41a', fontSize: 16 }}>
-                    {totals.reserved.toLocaleString()}
-                  </Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={3} align="right">
-                  <Text strong style={{ color: '#faad14', fontSize: 16 }}>
-                    {totals.received.toLocaleString()}
-                  </Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="right">
-                  <Text strong style={{ fontSize: 16 }}>
-                    {totals.remaining.toLocaleString()}
-                  </Text>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={5} />
-              </Table.Summary.Row>
-            </Table.Summary>
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0}><b>รวม</b></Table.Summary.Cell>
+              <Table.Summary.Cell index={1} align="right">
+                {totals.produced.toLocaleString()}
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={2} align="right">
+                {totals.reserved.toLocaleString()}
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={3} align="right">
+                {totals.received.toLocaleString()}
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={4} align="right">
+                {totals.distributed.toLocaleString()}
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={5} align="right">
+                {totals.remaining.toLocaleString()}
+              </Table.Summary.Cell>
+              <Table.Summary.Cell index={6}></Table.Summary.Cell>
+            </Table.Summary.Row>
           )}
         />
-
-        {/* Legend */}
-        <div style={{ marginTop: 16, padding: 16, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
-          <Space direction="vertical" size="small">
-            <Text strong>คำอธิบาย:</Text>
-            <Space split="|">
-              <Text>📦 <Text strong style={{ color: '#1890ff' }}>ผลิต:</Text> จำนวนที่ผลิต/สั่งซื้อ</Text>
-              <Text>📝 <Text strong style={{ color: '#52c41a' }}>จอง:</Text> จำนวนที่สมาชิกยืนยันขนาด</Text>
-              <Text>✅ <Text strong style={{ color: '#faad14' }}>รับแล้ว:</Text> จำนวนที่จ่ายไปแล้ว</Text>
-              <Text>📊 <Text strong>คงเหลือ:</Text> จำนวนคงเหลือในคลัง</Text>
-            </Space>
-            <Alert
-              message={
-                <Text style={{ fontSize: 12 }}>
-                  ⚠️ สต็อกที่เหลือ <Text strong>≤ threshold</Text> ของแต่ละขนาดจะถูกไฮไลท์เป็น<Text strong style={{ color: '#ff4d4f' }}> สีแดง</Text>
-                </Text>
-              }
-              type="info"
-              showIcon
-            />
-          </Space>
-        </div>
       </Card>
 
-      {/* Adjustment Modal */}
       <Modal
-        title={
-          <Space>
-            {adjustmentType === 'ADD' ? <PlusOutlined /> : <MinusOutlined />}
-            <span>{adjustmentType === 'ADD' ? 'เติมสต็อก' : 'เบิกสต็อก'}</span>
-          </Space>
-        }
-        open={modalVisible}
+        title={adjustmentType === "ADD" ? "เติมสต็อก" : "เบิกสต็อก"}
+        visible={modalVisible}
         onCancel={handleCloseModal}
         onOk={handleSubmitAdjustment}
         confirmLoading={submitting}
         okText="บันทึก"
         cancelText="ยกเลิก"
-        width={500}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          style={{ marginTop: 24 }}
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
-            label="ขนาดเสื้อ"
             name="sizeCode"
-            rules={[{ required: true, message: 'กรุณาเลือกขนาดเสื้อ' }]}
+            label="ขนาด"
+            rules={[{ required: true, message: "กรุณาเลือกขนาดเสื้อ" }]}
           >
-            <Select size="large" placeholder="เลือกขนาดเสื้อ">
-              {ALL_SIZES.map(size => (
-                <Option key={size} value={size}>
-                  <Tag color="blue">{size}</Tag>
-                </Option>
+            <Select placeholder="เลือกขนาด">
+              {ALL_SIZES.map((size) => (
+                <Option key={size} value={size}>{size}</Option>
               ))}
             </Select>
           </Form.Item>
-
           <Form.Item
-            label="จำนวน (ตัว)"
             name="quantity"
+            label={adjustmentType === "ADD" ? "จำนวนที่เติม" : "จำนวนที่เบิก"}
             rules={[
-              { required: true, message: 'กรุณากรอกจำนวน' },
-              { type: 'number', min: 1, message: 'จำนวนต้องมากกว่า 0' }
+              { required: true, message: "กรุณาระบุจำนวน" },
+              { type: "number", min: 1, message: "จำนวนต้องมากกว่า 0" },
             ]}
           >
-            <InputNumber
-              size="large"
-              style={{ width: '100%' }}
-              placeholder="กรอกจำนวน"
-              min={1}
-              max={10000}
-            />
+            <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
-
-          <Form.Item
-            label="หมายเหตุ"
-            name="remarks"
-          >
-            <TextArea
-              rows={3}
-              placeholder="ระบุรายละเอียดเพิ่มเติม เช่น เลขที่ใบสั่งซื้อ, ผู้จัดส่ง"
-              maxLength={500}
-              showCount
-            />
+          <Form.Item name="remarks" label="หมายเหตุ (ถ้ามี)">
+            <TextArea rows={3} />
           </Form.Item>
-
-          <Alert
-            message={
-              <Space direction="vertical" size={0}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  📝 ประเภท: {adjustmentType === 'ADD' ? 'เติมสต็อก (+)' : 'เบิกสต็อก (-)'}
-                </Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  👤 ผู้บันทึก: {user.displayName || user.name} ({user.memberCode})
-                </Text>
-              </Space>
-            }
-            type="info"
-          />
         </Form>
       </Modal>
     </Space>
