@@ -189,7 +189,8 @@ const MembersList = ({ onDataChange }) => {
 
     const ClearModalContent = () => {
       const [localClearSize, setLocalClearSize] = useState(false);
-      const [localClearReceiveStatus, setLocalClearReceiveStatus] = useState(false);
+      const [localClearReceiveStatus, setLocalClearReceiveStatus] =
+        useState(false);
       const [localRemarks, setLocalRemarks] = useState("");
 
       const handleSizeChange = (checked) => {
@@ -216,9 +217,9 @@ const MembersList = ({ onDataChange }) => {
         try {
           setClearingMember(memberCode);
 
-          console.log("Clear options:", { 
-            clearSize: localClearSize, 
-            clearReceiveStatus: localClearReceiveStatus 
+          console.log("Clear options:", {
+            clearSize: localClearSize,
+            clearReceiveStatus: localClearReceiveStatus,
           });
 
           await clearMemberData({
@@ -243,7 +244,9 @@ const MembersList = ({ onDataChange }) => {
             second: "2-digit",
           });
 
-          let remarksMessage = `[ล้างข้อมูล: ${clearedItems.join(", ")}] โดย ${clearedBy} เมื่อ ${timestamp}`;
+          let remarksMessage = `[ล้างข้อมูล: ${clearedItems.join(
+            ", "
+          )}] โดย ${clearedBy} เมื่อ ${timestamp}`;
 
           if (localRemarks.trim()) {
             remarksMessage += ` | เหตุผล: ${localRemarks.trim()}`;
@@ -251,7 +254,7 @@ const MembersList = ({ onDataChange }) => {
 
           await saveMemberSize({
             memberCode: memberCode,
-            sizeCode: "",
+            sizeCode: localClearSize ? "" : sizeCode, // ✅ คงค่าเดิมถ้าไม่ได้เลือก clearSize
             remarks: remarksMessage,
             surveyMethod: "MANUAL",
             processedBy: user?.memberCode || "admin",
@@ -284,30 +287,93 @@ const MembersList = ({ onDataChange }) => {
               color: "white",
             }}
           >
-            <h3 style={{ margin: "0 0 12px 0", color: "white", fontSize: "16px" }}>
+            <h3
+              style={{ margin: "0 0 12px 0", color: "white", fontSize: "16px" }}
+            >
               ข้อมูลสมาชิก
             </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "14px" }}>
-              <div><strong>รหัสสมาชิก:</strong> {memberCode}</div>
-              <div><strong>สถานะ:</strong> {STATUS_LABELS[status]}</div>
-              <div style={{ gridColumn: "1 / -1" }}><strong>ชื่อ-นามสกุล:</strong> {fullName}</div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "8px",
+                fontSize: "14px",
+              }}
+            >
+              <div>
+                <strong>รหัสสมาชิก:</strong> {memberCode}
+              </div>
+              <div>
+                <strong>สถานะ:</strong> {STATUS_LABELS[status]}
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <strong>ชื่อ-นามสกุล:</strong> {fullName}
+              </div>
             </div>
           </div>
 
           <div style={{ marginBottom: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "16px", padding: "12px", backgroundColor: "#fff2e8", borderLeft: "4px solid #ff9800", borderRadius: "4px" }}>
-              <ExclamationCircleOutlined style={{ color: "#ff9800", fontSize: "20px", marginRight: "8px" }} />
-              <span style={{ fontWeight: "bold", color: "#d46b08" }}>เลือกข้อมูลที่ต้องการล้าง:</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "16px",
+                padding: "12px",
+                backgroundColor: "#fff2e8",
+                borderLeft: "4px solid #ff9800",
+                borderRadius: "4px",
+              }}
+            >
+              <ExclamationCircleOutlined
+                style={{
+                  color: "#ff9800",
+                  fontSize: "20px",
+                  marginRight: "8px",
+                }}
+              />
+              <span style={{ fontWeight: "bold", color: "#d46b08" }}>
+                เลือกข้อมูลที่ต้องการล้าง:
+              </span>
             </div>
 
             <div style={{ paddingLeft: "8px" }}>
               {sizeCode && (
-                <div style={{ marginBottom: "12px", padding: "12px", border: "1px solid #d9d9d9", borderRadius: "4px", backgroundColor: localClearSize ? "#fff1f0" : "white", transition: "all 0.3s" }}>
-                  <Checkbox checked={localClearSize} onChange={(e) => handleSizeChange(e.target.checked)} style={{ fontSize: "15px" }}>
-                    <strong>ล้างขนาดเสื้อที่เลือก:</strong> <span style={{ color: "#1890ff", fontSize: "16px", fontWeight: "bold", marginLeft: "8px" }}>{sizeCode}</span>
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "12px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "4px",
+                    backgroundColor: localClearSize ? "#fff1f0" : "white",
+                    transition: "all 0.3s",
+                  }}
+                >
+                  <Checkbox
+                    checked={localClearSize}
+                    onChange={(e) => handleSizeChange(e.target.checked)}
+                    style={{ fontSize: "15px" }}
+                  >
+                    <strong>ล้างขนาดเสื้อที่เลือก:</strong>{" "}
+                    <span
+                      style={{
+                        color: "#1890ff",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      {sizeCode}
+                    </span>
                   </Checkbox>
                   {localClearSize && (
-                    <div style={{ marginTop: "8px", marginLeft: "24px", fontSize: "12px", color: "#ff4d4f" }}>
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        marginLeft: "24px",
+                        fontSize: "12px",
+                        color: "#ff4d4f",
+                      }}
+                    >
                       ⚠️ จะล้างสถานะการรับเสื้อด้วยอัตโนมัติ
                     </div>
                   )}
@@ -315,9 +381,37 @@ const MembersList = ({ onDataChange }) => {
               )}
 
               {status === MEMBER_STATUS.RECEIVED && (
-                <div style={{ marginBottom: "12px", padding: "12px", border: "1px solid #d9d9d9", borderRadius: "4px", backgroundColor: localClearReceiveStatus ? "#fff1f0" : "white", transition: "all 0.3s" }}>
-                  <Checkbox checked={localClearReceiveStatus} onChange={(e) => handleReceiveStatusChange(e.target.checked)} disabled={localClearSize} style={{ fontSize: "15px" }}>
-                    <strong>ล้างสถานะการรับเสื้อ:</strong> <span style={{ color: "#52c41a", fontSize: "16px", fontWeight: "bold", marginLeft: "8px" }}>{STATUS_LABELS[MEMBER_STATUS.RECEIVED]}</span>
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "12px",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "4px",
+                    backgroundColor: localClearReceiveStatus
+                      ? "#fff1f0"
+                      : "white",
+                    transition: "all 0.3s",
+                  }}
+                >
+                  <Checkbox
+                    checked={localClearReceiveStatus}
+                    onChange={(e) =>
+                      handleReceiveStatusChange(e.target.checked)
+                    }
+                    disabled={localClearSize}
+                    style={{ fontSize: "15px" }}
+                  >
+                    <strong>ล้างสถานะการรับเสื้อ:</strong>{" "}
+                    <span
+                      style={{
+                        color: "#52c41a",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      {STATUS_LABELS[MEMBER_STATUS.RECEIVED]}
+                    </span>
                   </Checkbox>
                 </div>
               )}
@@ -325,7 +419,14 @@ const MembersList = ({ onDataChange }) => {
           </div>
 
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", fontWeight: "bold", marginBottom: "8px", fontSize: "14px" }}>
+            <label
+              style={{
+                display: "block",
+                fontWeight: "bold",
+                marginBottom: "8px",
+                fontSize: "14px",
+              }}
+            >
               หมายเหตุเพิ่มเติม (ระบุเหตุผลในการล้างข้อมูล):
             </label>
             <Input.TextArea
@@ -339,13 +440,42 @@ const MembersList = ({ onDataChange }) => {
             />
           </div>
 
-          <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#f5f5f5", borderRadius: "4px", fontSize: "12px", color: "#666" }}>
-            <strong>ผู้ดำเนินการ:</strong> {user?.memberCode || user?.name || "admin"} | {new Date().toLocaleString("th-TH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px",
+              backgroundColor: "#f5f5f5",
+              borderRadius: "4px",
+              fontSize: "12px",
+              color: "#666",
+            }}
+          >
+            <strong>ผู้ดำเนินการ:</strong>{" "}
+            {user?.memberCode || user?.name || "admin"} |{" "}
+            {new Date().toLocaleString("th-TH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </div>
 
-          <div style={{ marginTop: '16px', textAlign: 'right' }}>
-            <Button onClick={() => modalInstance.destroy()} style={{ marginRight: '8px' }}>ยกเลิก</Button>
-            <Button type="primary" danger onClick={handleConfirm} loading={clearingMember === memberCode}>ยืนยันล้างข้อมูล</Button>
+          <div style={{ marginTop: "16px", textAlign: "right" }}>
+            <Button
+              onClick={() => modalInstance.destroy()}
+              style={{ marginRight: "8px" }}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="primary"
+              danger
+              onClick={handleConfirm}
+              loading={clearingMember === memberCode}
+            >
+              ยืนยันล้างข้อมูล
+            </Button>
           </div>
         </div>
       );
@@ -368,7 +498,11 @@ const MembersList = ({ onDataChange }) => {
 
   // Helpers
   const getMemberStatus = (m) => {
-    if (m.hasReceived || m.receiveStatus === "RECEIVED" || m.RECEIVE_STATUS === "RECEIVED")
+    if (
+      m.hasReceived ||
+      m.receiveStatus === "RECEIVED" ||
+      m.RECEIVE_STATUS === "RECEIVED"
+    )
       return MEMBER_STATUS.RECEIVED;
     if (m.sizeCode || m.SIZE_CODE) return MEMBER_STATUS.CONFIRMED;
     return MEMBER_STATUS.NOT_CONFIRMED;
@@ -377,12 +511,23 @@ const MembersList = ({ onDataChange }) => {
   const getStatusDisplay = (member) => {
     const status = getMemberStatus(member);
     const config = {
-      [MEMBER_STATUS.NOT_CONFIRMED]: { color: "#faad14", text: STATUS_LABELS[MEMBER_STATUS.NOT_CONFIRMED] },
-      [MEMBER_STATUS.CONFIRMED]: { color: "#1890ff", text: STATUS_LABELS[MEMBER_STATUS.CONFIRMED] },
-      [MEMBER_STATUS.RECEIVED]: { color: "#52c41a", text: STATUS_LABELS[MEMBER_STATUS.RECEIVED] },
+      [MEMBER_STATUS.NOT_CONFIRMED]: {
+        color: "#faad14",
+        text: STATUS_LABELS[MEMBER_STATUS.NOT_CONFIRMED],
+      },
+      [MEMBER_STATUS.CONFIRMED]: {
+        color: "#1890ff",
+        text: STATUS_LABELS[MEMBER_STATUS.CONFIRMED],
+      },
+      [MEMBER_STATUS.RECEIVED]: {
+        color: "#52c41a",
+        text: STATUS_LABELS[MEMBER_STATUS.RECEIVED],
+      },
     };
     const c = config[status];
-    return <strong style={{ color: c.color, fontSize: "14px" }}>{c.text}</strong>;
+    return (
+      <strong style={{ color: c.color, fontSize: "14px" }}>{c.text}</strong>
+    );
   };
 
   const getActionButtons = (member) => {
@@ -391,17 +536,30 @@ const MembersList = ({ onDataChange }) => {
     const isClearing = clearingMember === memberCode;
 
     return (
-      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-start" }}>
+      <div
+        style={{ display: "flex", gap: "8px", justifyContent: "flex-start" }}
+      >
         {status !== MEMBER_STATUS.RECEIVED ? (
-          <button className="btn-edit" onClick={() => handleOpenPickupModal(member)} disabled={isClearing} title="บันทึกการรับเสื้อ">
+          <button
+            className="btn-edit"
+            onClick={() => handleOpenPickupModal(member)}
+            disabled={isClearing}
+            title="บันทึกการรับเสื้อ"
+          >
             <EditOutlined />
           </button>
         ) : (
           <span className="text-muted">-</span>
         )}
 
-        {(status === MEMBER_STATUS.CONFIRMED || status === MEMBER_STATUS.RECEIVED) && (
-          <button className="btn-clear" onClick={() => handleClearMemberData(member)} disabled={isClearing} title="ล้างข้อมูล">
+        {(status === MEMBER_STATUS.CONFIRMED ||
+          status === MEMBER_STATUS.RECEIVED) && (
+          <button
+            className="btn-clear"
+            onClick={() => handleClearMemberData(member)}
+            disabled={isClearing}
+            title="ล้างข้อมูล"
+          >
             {isClearing ? <span>⏳</span> : <ClearOutlined />}
           </button>
         )}
@@ -424,26 +582,44 @@ const MembersList = ({ onDataChange }) => {
               className="search-input"
             />
             {searchInput && (
-              <button className="clear-search-btn" onClick={handleClearSearch}>✕</button>
+              <button className="clear-search-btn" onClick={handleClearSearch}>
+                ✕
+              </button>
             )}
           </div>
 
           <div className="filter-group">
-            <select value={statusFilter} onChange={(e) => handleFilterChange("status", e.target.value)} className="filter-select">
+            <select
+              value={statusFilter}
+              onChange={(e) => handleFilterChange("status", e.target.value)}
+              className="filter-select"
+            >
               <option value="">สถานะทั้งหมด</option>
               <option value="PENDING">ยังไม่ยืนยัน</option>
               <option value="CONFIRMED">ยืนยันแล้ว</option>
               <option value="RECEIVED">รับแล้ว</option>
             </select>
 
-            <select value={sizeFilter} onChange={(e) => handleFilterChange("size", e.target.value)} className="filter-select">
+            <select
+              value={sizeFilter}
+              onChange={(e) => handleFilterChange("size", e.target.value)}
+              className="filter-select"
+            >
               <option value="">ขนาดทั้งหมด</option>
               {SHIRT_SIZES.map((size) => (
-                <option key={size.code} value={size.code}>{size.code}</option>
+                <option key={size.code} value={size.code}>
+                  {size.code}
+                </option>
               ))}
             </select>
 
-            <Button onClick={loadMembers} loading={loading} icon={<ReloadOutlined />}>รีเฟรช</Button>
+            <Button
+              onClick={loadMembers}
+              loading={loading}
+              icon={<ReloadOutlined />}
+            >
+              รีเฟรช
+            </Button>
           </div>
         </div>
 
@@ -452,8 +628,18 @@ const MembersList = ({ onDataChange }) => {
           {sortField && (
             <span className="sort-info">
               {" • เรียงตาม: "}
-              {sortField === "memberCode" ? "รหัสสมาชิก" : sortField === "fullName" ? "ชื่อ-นามสกุล" : sortField === "sizeCode" ? "ขนาดเสื้อ" : sortField === "updatedDate" ? "วันที่อัปเดต" : sortField === "status" ? "สถานะ" : sortField}
-              {" "}({sortOrder === "asc" ? "น้อย→มาก" : "มาก→น้อย"})
+              {sortField === "memberCode"
+                ? "รหัสสมาชิก"
+                : sortField === "fullName"
+                ? "ชื่อ-นามสกุล"
+                : sortField === "sizeCode"
+                ? "ขนาดเสื้อ"
+                : sortField === "updatedDate"
+                ? "วันที่อัปเดต"
+                : sortField === "status"
+                ? "สถานะ"
+                : sortField}{" "}
+              ({sortOrder === "asc" ? "น้อย→มาก" : "มาก→น้อย"})
             </span>
           )}
         </div>
@@ -474,12 +660,48 @@ const MembersList = ({ onDataChange }) => {
             <table className="members-table">
               <thead>
                 <tr>
-                  <th onClick={() => handleSort("memberCode")} className="sortable-header" style={{ whiteSpace: "nowrap" }}>รหัสสมาชิก {getSortIcon("memberCode")}</th>
-                  <th onClick={() => handleSort("fullName")} className="sortable-header" style={{ whiteSpace: "nowrap" }}>ชื่อ-นามสกุล {getSortIcon("fullName")}</th>
-                  <th onClick={() => handleSort("sizeCode")} className="sortable-header" style={{ whiteSpace: "nowrap", textAlign: "center" }}>ขนาดที่เลือก {getSortIcon("sizeCode")}</th>
-                  <th onClick={() => handleSort("updatedDate")} className="sortable-header" style={{ whiteSpace: "nowrap" }}>วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}</th>
-                  <th onClick={() => handleSort("status")} className="sortable-header" style={{ whiteSpace: "nowrap" }}>สถานะ {getSortIcon("status")}</th>
-                  <th onClick={() => handleSort("processedBy")} className="sortable-header" style={{ whiteSpace: "nowrap" }}>ผู้ดำเนินการ {getSortIcon("processedBy")}</th>
+                  <th
+                    onClick={() => handleSort("memberCode")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    รหัสสมาชิก {getSortIcon("memberCode")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("fullName")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    ชื่อ-นามสกุล {getSortIcon("fullName")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("sizeCode")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap", textAlign: "center" }}
+                  >
+                    ขนาดที่เลือก {getSortIcon("sizeCode")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("updatedDate")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("status")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    สถานะ {getSortIcon("status")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("processedBy")}
+                    className="sortable-header"
+                    style={{ whiteSpace: "nowrap" }}
+                  >
+                    ผู้ดำเนินการ {getSortIcon("processedBy")}
+                  </th>
                   <th style={{ whiteSpace: "nowrap" }}>หมายเหตุ</th>
                   <th style={{ whiteSpace: "nowrap" }}>การดำเนินการ</th>
                 </tr>
@@ -495,35 +717,72 @@ const MembersList = ({ onDataChange }) => {
 
                   return (
                     <tr key={memberCode}>
-                      <td data-label="รหัสสมาชิก"><strong>{memberCode}</strong></td>
+                      <td data-label="รหัสสมาชิก">
+                        <strong>{memberCode}</strong>
+                      </td>
                       <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      <td data-label="ขนาดที่เลือก" style={{ textAlign: "center" }}>
-                        {sizeCode ? <strong style={{ color: "#000", fontSize: "16px" }}>{sizeCode}</strong> : <span className="text-muted">-</span>}
+                      <td
+                        data-label="ขนาดที่เลือก"
+                        style={{ textAlign: "center" }}
+                      >
+                        {sizeCode ? (
+                          <strong style={{ color: "#000", fontSize: "16px" }}>
+                            {sizeCode}
+                          </strong>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
                       </td>
                       <td data-label="วันที่อัปเดตล่าสุด">
-                        <span className="date-value">{updatedDate ? formatDateTime(updatedDate) : "-"}</span>
+                        <span className="date-value">
+                          {updatedDate ? formatDateTime(updatedDate) : "-"}
+                        </span>
                       </td>
                       <td data-label="สถานะ">{getStatusDisplay(member)}</td>
                       <td data-label="ผู้ดำเนินการ">
-                        {processedBy ? <span>{processedBy}</span> : <span className="text-muted">-</span>}
+                        {processedBy ? (
+                          <span>{processedBy}</span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
                       </td>
                       <td data-label="หมายเหตุ">
                         {remarks ? (
                           <Popover
-                            content={<div style={{ maxWidth: "400px", maxHeight: "300px", overflow: "auto", padding: "8px" }}>{remarks}</div>}
+                            content={
+                              <div
+                                style={{
+                                  maxWidth: "400px",
+                                  maxHeight: "300px",
+                                  overflow: "auto",
+                                  padding: "8px",
+                                }}
+                              >
+                                {remarks}
+                              </div>
+                            }
                             trigger={["hover", "click"]}
                             placement="topLeft"
                             overlayStyle={{ maxWidth: "450px" }}
                           >
-                            <span style={{ cursor: "pointer", textDecoration: "underline dotted" }}>
-                              {remarks.length > 30 ? `${remarks.substring(0, 30)}...` : remarks}
+                            <span
+                              style={{
+                                cursor: "pointer",
+                                textDecoration: "underline dotted",
+                              }}
+                            >
+                              {remarks.length > 30
+                                ? `${remarks.substring(0, 30)}...`
+                                : remarks}
                             </span>
                           </Popover>
                         ) : (
                           <span className="text-muted">-</span>
                         )}
                       </td>
-                      <td data-label="การดำเนินการ">{getActionButtons(member)}</td>
+                      <td data-label="การดำเนินการ">
+                        {getActionButtons(member)}
+                      </td>
                     </tr>
                   );
                 })}
