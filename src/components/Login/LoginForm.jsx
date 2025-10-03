@@ -23,6 +23,9 @@ const LoginForm = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  // อ่านค่า VITE_BASE_PATH (สำหรับ debug) — แสดงด้านล่างนอก Card
+  const basePath = import.meta.env.VITE_BASE_PATH ?? "/";
+
   const initialValues = {
     memberCode: "",
     phone: "",
@@ -293,6 +296,13 @@ const LoginForm = () => {
           </Form.Item>
         </Form>
       </Card>
+
+      {/* แสดงค่า VITE_BASE_PATH ด้านล่าง Card (ไม่เด่น) */}
+      <div style={{ textAlign: "center", marginTop: 12 }}>
+        <span style={{ color: "#fff", fontSize: 12 }}>
+          {basePath}
+        </span>
+      </div>
     </div>
   );
 };
