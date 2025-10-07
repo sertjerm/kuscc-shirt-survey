@@ -1,4 +1,4 @@
-// src/components/Admin/PickupModal.jsx - UPDATED VERSION
+// src/components/Admin/PickupModal.jsx - COMPLETE VERSION
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Radio, Row, Col, Card, message } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
@@ -37,6 +37,8 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
   const [receiverType, setReceiverType] = useState("SELF");
+  const [receiverMemberCode, setReceiverMemberCode] = useState("");
+  const [receiverFullName, setReceiverFullName] = useState("");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [memberData, setMemberData] = useState(null);
 
@@ -56,11 +58,15 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         selectedMember.sizeCode || selectedMember.SIZE_CODE || null
       );
       setReceiverType("SELF");
+      setReceiverMemberCode("");
+      setReceiverFullName("");
     } else if (!visible) {
       // Reset state เมื่อปิด modal
       setMemberData(null);
       setSelectedSize(null);
       setReceiverType("SELF");
+      setReceiverMemberCode("");
+      setReceiverFullName("");
       setLoading(false);
     }
   }, [visible, selectedMember, user]);
@@ -116,7 +122,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         sizeCode: selectedSize,
         remarks: `แก้ไขโดย ${adminCode}`,
         surveyMethod: "MANUAL",
-        processedBy: adminCode, // ✅ ส่ง memberCode ของ admin
+        processedBy: adminCode,
       });
 
       message.success("บันทึกขนาดสำเร็จ");
@@ -149,6 +155,18 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
+    // ✅ ตรวจสอบข้อมูลผู้รับแทน
+    if (receiverType === "OTHER") {
+      if (!receiverMemberCode || receiverMemberCode.length !== 6) {
+        message.warning("กรุณากรอกเลขสมาชิกผู้รับแทน 6 หลัก");
+        return;
+      }
+      if (!receiverFullName || receiverFullName.trim() === "") {
+        message.warning("กรุณากรอกชื่อ-สกุล ผู้รับแทน");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const adminCode = getAdminCode();
@@ -158,13 +176,17 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       console.log("Size Code:", selectedSize);
       console.log("Admin Code (PROCESSED_BY):", adminCode);
       console.log("Receiver Type:", receiverType);
+      console.log("Receiver Member Code:", receiverMemberCode);
+      console.log("Receiver Full Name:", receiverFullName);
 
       await submitPickup({
         memberCode: memberData.memberCode,
         sizeCode: selectedSize,
-        processedBy: adminCode, // ✅ ส่ง memberCode ของ admin
+        processedBy: adminCode,
         receiverType: receiverType,
-        receiverName: receiverType === "OTHER" ? "รับแทน" : null,
+        receiverMemberCode:
+          receiverType === "OTHER" ? receiverMemberCode : null,
+        receiverName: receiverType === "OTHER" ? receiverFullName : null,
         remarks: `ดำเนินการโดย ${adminCode}`,
       });
 
@@ -205,7 +227,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         getContainer={false}
       >
         <div className="pickup-modal-content">
-          <h2 className="modal-title">บันทึกการรับเสื้อ</h2>
+          <h2 className="modal-title">บันทึกข้อมูลการรับเสื้อ</h2>
 
           <div className="member-info-grid">
             <div className="info-item">
@@ -241,12 +263,48 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             <span className="section-label">ผู้รับเสื้อ</span>
             <Radio.Group
               value={receiverType}
-              onChange={(e) => setReceiverType(e.target.value)}
+              onChange={(e) => {
+                setReceiverType(e.target.value);
+                // ล้างข้อมูลผู้รับแทนเมื่อเปลี่ยนกลับมา "รับด้วยตนเอง"
+                if (e.target.value === "SELF") {
+                  setReceiverMemberCode("");
+                  setReceiverFullName("");
+                }
+              }}
               className="receiver-radio-group"
             >
               <Radio value="SELF">รับด้วยตนเอง</Radio>
               <Radio value="OTHER">รับแทน</Radio>
             </Radio.Group>
+
+            {receiverType === "OTHER" && (
+              <div className="receiver-other-fields">
+                <div className="input-group">
+                  <label>เลขสมาชิกผู้รับแทน (6 หลัก)</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="กรอกเลขสมาชิก 6 หลัก"
+                    value={receiverMemberCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      setReceiverMemberCode(value);
+                    }}
+                    className="receiver-input"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>ชื่อ-สกุล ผู้รับแทน</label>
+                  <input
+                    type="text"
+                    placeholder="กรอกชื่อ หรือค้นหาจากเลขสมาชิก"
+                    value={receiverFullName}
+                    onChange={(e) => setReceiverFullName(e.target.value)}
+                    className="receiver-input"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="modal-footer">
@@ -299,7 +357,6 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             </a>
           </div>
 
-          {/* เดิมใช้ <Row><Col>... เปลี่ยนเป็น grid ให้ 2 แถว 5 คอลัมน์ */}
           <div className="size-grid">
             {ALL_SIZES.map((size) => (
               <Card

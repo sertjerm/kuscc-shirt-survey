@@ -1,7 +1,7 @@
 // ===================================================================
 // File: src/components/Admin/InventoryManagement.jsx
 // Description: UI จัดการสต็อกเสื้อ (Admin)
-// ปรับปรุง: render ค่า received ให้แน่ใจว่าเป็น Number
+// ปรับปรุง: UX ที่ดีขึ้น - เลือก Action ก่อน แล้วค่อยกรอกข้อมูล
 // ===================================================================
 
 import React, { useState, useEffect } from "react";
@@ -31,6 +31,7 @@ import {
   ReloadOutlined,
   WarningOutlined,
   CheckCircleOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { getInventorySummary, adjustInventory } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
@@ -55,7 +56,6 @@ const ALL_SIZES = [
 const InventoryManagement = () => {
   const { user } = useAppContext();
   const [form] = Form.useForm();
-  // เรียก useBreakpoint จาก Grid ภายใน component (ป้องกันปัญหา hook เรียกก่อนเวลา)
   const screens = Grid.useBreakpoint();
 
   const [inventory, setInventory] = useState([]);
@@ -75,7 +75,7 @@ const InventoryManagement = () => {
     setError(null);
     try {
       const data = await getInventorySummary();
-      console.log("🔥 Inventory Data:", data);
+      console.log("📥 Inventory Data:", data);
       setInventory(data || []);
     } catch (err) {
       console.error("Error loading inventory:", err);
@@ -90,6 +90,7 @@ const InventoryManagement = () => {
     setModalVisible(true);
     form.resetFields();
   };
+
   const handleCloseModal = () => {
     setModalVisible(false);
     form.resetFields();
@@ -286,21 +287,28 @@ const InventoryManagement = () => {
           </Space>
         }
         extra={
-          <Space>
+          <Space wrap>
             <Button
               type="primary"
-              icon={<PlusOutlined />}
+              size="large"
               onClick={() => handleOpenModal("ADD")}
+              style={{
+                backgroundColor: "#1890ff",
+                borderColor: "#1890ff",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
             >
-              เติมสต็อก
+              จัดการสต็อก
             </Button>
             <Button
-              icon={<MinusOutlined />}
-              onClick={() => handleOpenModal("REMOVE")}
+              size="large"
+              icon={<ReloadOutlined />}
+              onClick={loadInventory}
+              style={{
+                borderRadius: 8,
+              }}
             >
-              เบิกสต็อก
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={loadInventory}>
               รีเฟรช
             </Button>
           </Space>
@@ -404,22 +412,48 @@ const InventoryManagement = () => {
         )}
       </Card>
 
+      {/* Modal จัดการสต็อก */}
       <Modal
-        title={adjustmentType === "ADD" ? "เติมสต็อก" : "เบิกสต็อก"}
-        open={modalVisible} // antd v5 prop
+        open={modalVisible}
         onCancel={handleCloseModal}
-        onOk={handleSubmitAdjustment}
-        confirmLoading={submitting}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
+        footer={null}
+        width={560}
+        closeIcon={
+          <CloseOutlined style={{ fontSize: 20, color: "#999" }} />
+        }
+        style={{ top: 60 }}
+        styles={{
+          header: { textAlign: "center", borderBottom: "none", paddingBottom: 0 },
+          body: { paddingTop: 16 }
+        }}
       >
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
+            จัดการสต็อก
+          </Title>
+        </div>
+
+        {/* Form */}
         <Form form={form} layout="vertical">
           <Form.Item
             name="sizeCode"
-            label="ขนาด"
+            label={
+              <Text strong style={{ fontSize: 15 }}>
+                <span style={{ color: "#ff4d4f", marginRight: 4 }}></span>
+                เลือกขนาด
+              </Text>
+            }
             rules={[{ required: true, message: "กรุณาเลือกขนาดเสื้อ" }]}
           >
-            <Select placeholder="เลือกขนาด">
+            <Select
+              placeholder="เลือกขนาด"
+              size="large"
+              style={{ fontSize: 16 }}
+              suffixIcon={
+                <span style={{ fontSize: 20, color: "#999" }}>▼</span>
+              }
+            >
               {ALL_SIZES.map((size) => (
                 <Option key={size} value={size}>
                   {size}
@@ -427,20 +461,130 @@ const InventoryManagement = () => {
               ))}
             </Select>
           </Form.Item>
+
           <Form.Item
             name="quantity"
-            label={adjustmentType === "ADD" ? "จำนวนที่เติม" : "จำนวนที่เบิก"}
+            label={
+              <Text strong style={{ fontSize: 15 }}>
+                <span style={{ color: "#ff4d4f", marginRight: 4 }}></span>
+                จำนวน
+              </Text>
+            }
             rules={[
               { required: true, message: "กรุณาระบุจำนวน" },
               { type: "number", min: 1, message: "จำนวนต้องมากกว่า 0" },
             ]}
           >
-            <InputNumber min={1} style={{ width: "100%" }} />
+            <InputNumber
+              min={1}
+              placeholder="กรอกจำนวน"
+              size="large"
+              style={{ width: "100%", fontSize: 16 }}
+            />
           </Form.Item>
-          <Form.Item name="remarks" label="หมายเหตุ (ถ้ามี)">
-            <TextArea rows={3} />
+
+          <Form.Item
+            label={
+              <Text strong style={{ fontSize: 15 }}>
+                ผู้ทำรายการ
+              </Text>
+            }
+          >
+            <Input
+              value={user?.memberCode || "ADMIN"}
+              disabled
+              size="large"
+              style={{
+                fontSize: 16,
+                backgroundColor: "#f5f5f5",
+                color: "#666",
+              }}
+            />
           </Form.Item>
+
+          <Form.Item
+            name="remarks"
+            label={
+              <Text strong style={{ fontSize: 15 }}>
+                หมายเหตุ (ถ้ามี)
+              </Text>
+            }
+          >
+            <TextArea
+              rows={3}
+              placeholder="เช่น เบิกให้แทน, ของชำรุด"
+              style={{ fontSize: 14 }}
+              maxLength={200}
+              showCount
+            />
+          </Form.Item>
+
+          {/* Buttons - ปรับสีให้เข้ากับ theme */}
+          <Row gutter={16} style={{ marginTop: 32 }}>
+            <Col span={12}>
+              <Button
+                block
+                size="large"
+                loading={submitting && adjustmentType === "ADD"}
+                onClick={() => {
+                  setAdjustmentType("ADD");
+                  handleSubmitAdjustment();
+                }}
+                icon={<PlusOutlined />}
+                style={{
+                  height: 52,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  backgroundColor: "#52c41a",
+                  borderColor: "#52c41a",
+                  color: "white",
+                }}
+              >
+                เติมสต็อก
+              </Button>
+            </Col>
+            <Col span={12}>
+              <Button
+                block
+                size="large"
+                loading={submitting && adjustmentType === "REMOVE"}
+                onClick={() => {
+                  setAdjustmentType("REMOVE");
+                  handleSubmitAdjustment();
+                }}
+                icon={<MinusOutlined />}
+                style={{
+                  height: 52,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  backgroundColor: "#faad14",
+                  borderColor: "#faad14",
+                  color: "white",
+                }}
+              >
+                เบิกสต็อก
+              </Button>
+            </Col>
+          </Row>
         </Form>
+
+        {/* ท้ายรายการ - เติมสต็อกล่าสุด */}
+        {/* <div
+          style={{
+            marginTop: 24,
+            padding: "12px 16px",
+            backgroundColor: "#e6f7ff",
+            borderRadius: 8,
+            cursor: "pointer",
+            textAlign: "center",
+          }}
+        >
+          <Text style={{ color: "#1890ff", fontWeight: 600 }}>
+            ทำรายการเติมสต็อกล่าเร็ว
+          </Text>
+        </div> */}
       </Modal>
     </Space>
   );

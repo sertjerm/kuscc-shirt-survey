@@ -1,4 +1,4 @@
-// src/pages/AdminDashboard.jsx - IMPROVED VERSION WITH RESPONSIVE HEADER
+// src/pages/AdminDashboard.jsx - UPDATED WITH STOCK LOGS
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../App";
@@ -35,6 +35,7 @@ import "../styles/AdminDashboard.css";
 import MembersList from "../components/Admin/MembersList";
 import DashboardStats from "../components/Admin/DashboardStats";
 import InventoryManagement from "../components/Admin/InventoryManagement";
+import StockLogsHistory from "../components/Admin/StockLogsHistory"; // ✅ เพิ่ม
 import { getDashboardStats } from "../services/shirtApi";
 
 const { Header, Sider, Content } = Layout;
@@ -46,7 +47,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
 
-  // UI State - ปรับให้ sidebar เริ่มต้นเป็น collapsed=true
+  // UI State
   const [collapsed, setCollapsed] = useState(true);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
   const [activeMenuKey, setActiveMenuKey] = useState("dashboard");
@@ -56,19 +57,16 @@ const AdminDashboard = () => {
   const [dashboardError, setDashboardError] = useState(null);
   const [dashboardStats, setDashboardStats] = useState(null);
 
-  // Keep sidebar collapsed on all screen sizes by default
   useEffect(() => {
     setCollapsed(true);
   }, []);
 
-  // Load dashboard stats when dashboard is active
   useEffect(() => {
     if (activeMenuKey === "dashboard") {
       loadDashboardStats();
     }
   }, [activeMenuKey]);
 
-  // Check admin permission
   useEffect(() => {
     if (user && user.role !== "admin" && user.USER_ROLE !== "admin") {
       message.error("คุณไม่มีสิทธิ์เข้าถึงหน้านี้");
@@ -76,7 +74,6 @@ const AdminDashboard = () => {
     }
   }, [user, navigate]);
 
-  // Load dashboard statistics
   const loadDashboardStats = async () => {
     setLoadingDashboard(true);
     setDashboardError(null);
@@ -91,7 +88,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle logout
   const handleLogout = () => {
     Modal.confirm({
       title: "ออกจากระบบ",
@@ -105,16 +101,15 @@ const AdminDashboard = () => {
     });
   };
 
-  // Menu items
+  // ✅ เพิ่มไอคอนและข้อความที่ชัดเจนขึ้น
   const menuItems = [
     { key: "dashboard", icon: <DashboardOutlined />, label: "ภาพรวม" },
     { key: "members", icon: <SearchOutlined />, label: "ค้นหาและจ่ายเสื้อ" },
     { key: "inventory", icon: <BarChartOutlined />, label: "จัดการสต็อก" },
-    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการจ่าย" },
+    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการทำรายการ" }, // ✅ แก้ไข
     { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
   ];
 
-  // User menu for mobile/tablet
   const userMenuItems = [
     {
       key: "profile",
@@ -133,7 +128,7 @@ const AdminDashboard = () => {
     },
   ];
 
-  // Render content based on active menu
+  // ✅ เพิ่ม case "history"
   const renderContent = () => {
     switch (activeMenuKey) {
       case "members":
@@ -143,19 +138,7 @@ const AdminDashboard = () => {
         return <InventoryManagement />;
 
       case "history":
-        return (
-          <div>
-            <Title level={3} style={{ marginBottom: 24 }}>
-              ประวัติการรับเสื้อ
-            </Title>
-            <Alert
-              message="ฟีเจอร์นี้อยู่ระหว่างการพัฒนา"
-              description="ส่วนประวัติการรับเสื้อจะพร้อมใช้งานในเร็วๆ นี้"
-              type="info"
-              showIcon
-            />
-          </div>
-        );
+        return <StockLogsHistory />; // ✅ เปลี่ยนจาก Alert เป็น Component จริง
 
       case "settings":
         return (
@@ -214,7 +197,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Sidebar content
   const siderContent = (
     <>
       <div className="logo-container">
@@ -265,7 +247,7 @@ const AdminDashboard = () => {
 
         {/* Main Layout */}
         <Layout className="site-layout">
-          {/* Header - แก้ไขให้ responsive */}
+          {/* Header */}
           <Header className="dashboard-header">
             {!screens.lg && (
               <Button
@@ -282,12 +264,8 @@ const AdminDashboard = () => {
               </Title>
 
               <Space size="middle" className="header-actions">
-                {/* Bell Icon - ซ่อนบน mobile และ tablet portrait */}
-                {screens.md && (
-                  <BellOutlined className="header-icon" />
-                )}
+                {screens.md && <BellOutlined className="header-icon" />}
 
-                {/* Desktop & Large Tablet: แสดงเต็ม */}
                 {screens.md ? (
                   <>
                     <Avatar
@@ -310,7 +288,6 @@ const AdminDashboard = () => {
                     </Button>
                   </>
                 ) : (
-                  /* Mobile & Small Tablet: ใช้ Dropdown */
                   <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
                     <Button
                       type="text"

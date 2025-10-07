@@ -238,7 +238,12 @@ export const getInventorySummary = async () => {
 };
 
 // ฟังก์ชันเติม/เบิกสต็อก
-export const addStock = async ({ sizeCode, quantity, remarks, processedBy }) => {
+export const addStock = async ({
+  sizeCode,
+  quantity,
+  remarks,
+  processedBy,
+}) => {
   const payload = {
     size_code: sizeCode,
     produced_delta: quantity,
@@ -286,7 +291,7 @@ export const clearMemberData = async ({
   clearSize = true,
   clearReceiveStatus = true,
   clearRemarks = true,
-  clearedBy
+  clearedBy,
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
   const paddedClearedBy = (clearedBy ?? "").toString().padStart(6, "0");
@@ -333,5 +338,44 @@ export const getDashboardStats = async () => {
   }
 };
 
+// ===================================================================
+// เพิ่มใน shirtApi.js
+// ===================================================================
 
-export { formatMemberData, parseWcfDate };
+// Format stock log data
+const formatStockLogData = (apiData) => {
+  if (!apiData) return null;
+
+  return {
+    logId: apiData.LOG_ID,
+    sizeCode: apiData.SIZE_CODE,
+    actionType: apiData.ACTION_TYPE,
+    producedDelta: Number(apiData.PRODUCED_DELTA) || 0,
+    distributedDelta: Number(apiData.DISTRIBUTED_DELTA) || 0,
+    quantityBefore: Number(apiData.QUANTITY_BEFORE) || 0,
+    quantityAfter: Number(apiData.QUANTITY_AFTER) || 0,
+    remarks: apiData.REMARKS || "",
+    processedBy: apiData.PROCESSED_BY || "",
+    createdDate: parseWcfDate(apiData.CREATED_DATE),
+  };
+};
+
+// ✅ API: Get Stock Logs (Simple, ไม่รับ parameters)
+export const getStockLogs = async () => {
+  console.log("🔍 Fetching all stock logs...");
+
+  const res = await api.get("/GetStockLogs");
+
+  if (res.data?.responseCode !== 200 && res.data?.responseCode !== 404) {
+    throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดประวัติได้");
+  }
+
+  const data = res.data.data || [];
+  const formattedData = Array.isArray(data) ? data.map(formatStockLogData) : [];
+
+  console.log("📋 Stock logs loaded:", formattedData.length, "records");
+
+  return formattedData;
+};
+
+export { formatMemberData, parseWcfDate, formatStockLogData };
