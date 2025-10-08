@@ -1,4 +1,4 @@
-// src/components/Admin/DashboardStats.jsx
+// src/components/Admin/DashboardStats.jsx - RESPONSIVE MODAL
 import React, { useState, useEffect } from "react";
 import {
   Row,
@@ -29,7 +29,6 @@ import { getDashboardStats } from "../../services/shirtApi";
 
 const { Title, Text } = Typography;
 
-// ฟังก์ชันสำหรับ format ตัวเลขให้มี comma
 const formatNumber = (num) => {
   if (num === null || num === undefined) return "0";
   return Number(num).toLocaleString("th-TH");
@@ -83,7 +82,7 @@ const DashboardStats = () => {
         showIcon
         action={
           <Button size="small" icon={<ReloadOutlined />} onClick={loadStats}>
-            ลองอีกครั้ง
+            ลองอีกครั้ng
           </Button>
         }
       />
@@ -94,7 +93,6 @@ const DashboardStats = () => {
     return null;
   }
 
-  // คำนวณเปอร์เซ็นต์
   const confirmedPercent =
     stats.totalMembers > 0
       ? Math.round((stats.confirmedMembers / stats.totalMembers) * 100)
@@ -109,7 +107,7 @@ const DashboardStats = () => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
-      {/* Overview Stats - แสดงแบบ x/total */}
+      {/* Overview Stats */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable style={{ height: "100%" }}>
@@ -430,7 +428,7 @@ const DashboardStats = () => {
         </Card>
       )}
 
-      {/* Summary Section - แสดงแบบ x/total */}
+      {/* Summary Section */}
       <Card style={{ backgroundColor: "#fafafa" }}>
         <Row gutter={16}>
           <Col span={8}>
@@ -493,7 +491,7 @@ const DashboardStats = () => {
         </Text>
       </div>
 
-      {/* Modal แสดงขนาดที่ได้รับความนิยมทั้งหมด */}
+      {/* ✅ Modal แสดงขนาดทั้งหมด - ปรับ responsive */}
       <Modal
         title={
           <Space>
@@ -512,7 +510,8 @@ const DashboardStats = () => {
             ปิด
           </Button>,
         ]}
-        width={700}
+        width="90%"
+        style={{ maxWidth: 800 }}
       >
         {stats && stats.popularSizes && stats.popularSizes.length > 0 ? (
           <Table
@@ -536,23 +535,23 @@ const DashboardStats = () => {
                 render: (rank) => {
                   if (rank === 1)
                     return (
-                      <Text strong style={{ fontSize: 18 }}>
+                      <Text strong style={{ fontSize: 20 }}>
                         🥇
                       </Text>
                     );
                   if (rank === 2)
                     return (
-                      <Text strong style={{ fontSize: 18 }}>
+                      <Text strong style={{ fontSize: 20 }}>
                         🥈
                       </Text>
                     );
                   if (rank === 3)
                     return (
-                      <Text strong style={{ fontSize: 18 }}>
+                      <Text strong style={{ fontSize: 20 }}>
                         🥉
                       </Text>
                     );
-                  return <Text>{rank}</Text>;
+                  return <Text strong>{rank}</Text>;
                 },
               },
               {
@@ -562,7 +561,7 @@ const DashboardStats = () => {
                 width: 100,
                 align: "center",
                 render: (size) => (
-                  <Text strong style={{ fontSize: 16 }}>
+                  <Text strong style={{ fontSize: 18 }}>
                     {size}
                   </Text>
                 ),
@@ -571,7 +570,6 @@ const DashboardStats = () => {
                 title: "จำนวน",
                 dataIndex: "count",
                 key: "count",
-                width: 120,
                 align: "right",
                 render: (count) => (
                   <Text strong style={{ fontSize: 16 }}>
@@ -583,10 +581,13 @@ const DashboardStats = () => {
                 title: "เปอร์เซ็นต์",
                 dataIndex: "percentage",
                 key: "percentage",
-                width: 150,
                 render: (percentage) => (
-                  <div>
-                    <Text type="secondary">({percentage}%)</Text>
+                  <div style={{ minWidth: 120 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Text type="secondary" style={{ minWidth: 45 }}>
+                        {percentage}%
+                      </Text>
+                    </div>
                     <Progress
                       percent={percentage}
                       size="small"
@@ -599,7 +600,7 @@ const DashboardStats = () => {
                           ? "#13c2c2"
                           : "#1890ff"
                       }
-                      style={{ marginTop: 4 }}
+                      showInfo={false}
                     />
                   </div>
                 ),
@@ -607,7 +608,7 @@ const DashboardStats = () => {
             ]}
             pagination={false}
             size="middle"
-            scroll={{ y: 400 }}
+            scroll={{ y: 400, x: "max-content" }}
             summary={(pageData) => {
               const total = pageData.reduce(
                 (sum, record) => sum + record.count,
@@ -617,7 +618,7 @@ const DashboardStats = () => {
                 <Table.Summary fixed>
                   <Table.Summary.Row style={{ backgroundColor: "#fafafa" }}>
                     <Table.Summary.Cell index={0} colSpan={2} align="center">
-                      <Text strong>รวมทั้งหมด</Text>
+                      <Text strong style={{ fontSize: 16 }}>รวมทั้งหมด</Text>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={1} align="right">
                       <Text strong style={{ fontSize: 16, color: "#1890ff" }}>

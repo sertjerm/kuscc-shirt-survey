@@ -1,8 +1,12 @@
-// src/components/Admin/PickupModal.jsx - COMPLETE VERSION
+// src/components/Admin/PickupModal.jsx - จองได้ แต่รับไม่ได้ถ้าหมด stock
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Radio, Row, Col, Card, message } from "antd";
-import { CloseOutlined } from "@ant-design/icons";
-import { submitPickup, saveMemberSize } from "../../services/shirtApi";
+import { Modal, Button, Radio, Row, Col, Card, message, Spin, Alert } from "antd";
+import { CloseOutlined, WarningOutlined } from "@ant-design/icons";
+import { 
+  submitPickup, 
+  saveMemberSize, 
+  getInventorySummary 
+} from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import "../../styles/PickupModal.css";
 
@@ -35,12 +39,14 @@ const SIZE_INFO = {
 const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const { user } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const [loadingStock, setLoadingStock] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
   const [receiverType, setReceiverType] = useState("SELF");
   const [receiverMemberCode, setReceiverMemberCode] = useState("");
   const [receiverFullName, setReceiverFullName] = useState("");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [memberData, setMemberData] = useState(null);
+  const [stockData, setStockData] = useState({});
 
   useEffect(() => {
     if (visible && selectedMember) {
@@ -60,18 +66,47 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       setReceiverType("SELF");
       setReceiverMemberCode("");
       setReceiverFullName("");
+      
+      loadStockData();
     } else if (!visible) {
-      // Reset state เมื่อปิด modal
       setMemberData(null);
       setSelectedSize(null);
       setReceiverType("SELF");
       setReceiverMemberCode("");
       setReceiverFullName("");
       setLoading(false);
+      setStockData({});
     }
   }, [visible, selectedMember, user]);
 
-  // ฟังก์ชันสำหรับดึง memberCode ของ admin ที่ login อยู่
+  const loadStockData = async () => {
+    setLoadingStock(true);
+    try {
+      const inventory = await getInventorySummary();
+      const stockMap = {};
+      inventory.forEach(item => {
+        stockMap[item.sizeCode] = {
+          remaining: item.remaining || 0,
+          produced: item.produced || 0,
+          reserved: item.reserved || 0,
+        };
+      });
+      setStockData(stockMap);
+      console.log("📦 Stock data loaded:", stockMap);
+    } catch (error) {
+      console.error("Error loading stock:", error);
+      message.error("ไม่สามารถโหลดข้อมูลสต็อกได้");
+    } finally {
+      setLoadingStock(false);
+    }
+  };
+
+  // ✅ ตรวจสอบว่า size มี stock สำหรับการรับเสื้อหรือไม่
+  const canReceiveSize = (size) => {
+    if (!stockData[size]) return false;
+    return stockData[size].remaining > 0;
+  };
+
   const getAdminCode = () => {
     console.log("Getting admin code from user:", user);
 
@@ -81,7 +116,6 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return "ADMIN";
     }
 
-    // ลองหาจาก field ต่างๆ
     const adminCode = user.memberCode || user.MEMB_CODE || user.mbcode;
 
     if (!adminCode) {
@@ -90,13 +124,13 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return "ADMIN";
     }
 
-    // Format เป็น 6 หลัก
     const paddedCode = String(adminCode).padStart(6, "0");
     console.log("✅ Using admin code:", paddedCode);
 
     return paddedCode;
   };
 
+  // ✅ บันทึกขนาด - ทำได้แม้ stock หมด (เพื่อจอง)
   const handleSaveSizeOnly = async () => {
     if (!memberData || !memberData.memberCode) {
       message.error("ไม่พบข้อมูลสมาชิก");
@@ -106,6 +140,11 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     if (!selectedSize) {
       message.warning("กรุณาเลือกขนาดเสื้อ");
       return;
+    }
+
+    // ✅ แจ้งเตือนถ้า stock หมด แต่ยังให้จองได้
+    if (!canReceiveSize(selectedSize)) {
+      message.warning(`ขนาด ${selectedSize} หมดสต็อก แต่จะบันทึกการจองไว้ให้`);
     }
 
     setLoading(true);
@@ -127,10 +166,8 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
 
       message.success("บันทึกขนาดสำเร็จ");
 
-      // ปิด modal
       onCancel();
 
-      // รอให้ modal ปิดสนิทก่อน refresh ข้อมูล
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
@@ -144,6 +181,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     }
   };
 
+  // ✅ บันทึกการรับเสื้อ - ต้องมี stock เท่านั้น
   const handleSubmitPickup = async () => {
     if (!memberData || !memberData.memberCode) {
       message.error("ไม่พบข้อมูลสมาชิก");
@@ -155,7 +193,12 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
-    // ✅ ตรวจสอบข้อมูลผู้รับแทน
+    // ✅ ห้ามรับถ้า stock หมด
+    if (!canReceiveSize(selectedSize)) {
+      message.error(`ขนาด ${selectedSize} หมดสต็อก ไม่สามารถบันทึกการรับได้`);
+      return;
+    }
+
     if (receiverType === "OTHER") {
       if (!receiverMemberCode || receiverMemberCode.length !== 6) {
         message.warning("กรุณากรอกเลขสมาชิกผู้รับแทน 6 หลัก");
@@ -192,10 +235,8 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
 
       message.success("บันทึกการรับเสื้อสำเร็จ");
 
-      // ปิด modal
       onCancel();
 
-      // รอให้ modal ปิดสนิทก่อน refresh ข้อมูล
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
@@ -247,13 +288,36 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
                 type="link"
                 size="small"
                 onClick={() => setShowSizeGuide(true)}
+                loading={loadingStock}
               >
                 เปลี่ยนขนาด
               </Button>
             </div>
 
-            {selectedSize ? (
-              <div className="selected-size-display">{selectedSize}</div>
+            {loadingStock ? (
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                <Spin tip="กำลังโหลดข้อมูลสต็อก..." />
+              </div>
+            ) : selectedSize ? (
+              <div className="selected-size-display">
+                <span style={{ 
+                  color: !canReceiveSize(selectedSize) ? "#ff4d4f" : "#000",
+                  fontWeight: "bold"
+                }}>
+                  {selectedSize}
+                </span>
+                {/* ✅ แสดงเฉพาะเมื่อหมดสต็อก */}
+                {stockData[selectedSize] && !canReceiveSize(selectedSize) && (
+                  <div style={{ 
+                    fontSize: 12, 
+                    color: "#ff4d4f", 
+                    marginTop: 4,
+                    fontWeight: "bold"
+                  }}>
+                    ⚠️ หมดสต็อก (จองได้ แต่รับไม่ได้)
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="no-size-warning">ยังไม่ได้เลือกขนาด</div>
             )}
@@ -265,7 +329,6 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               value={receiverType}
               onChange={(e) => {
                 setReceiverType(e.target.value);
-                // ล้างข้อมูลผู้รับแทนเมื่อเปลี่ยนกลับมา "รับด้วยตนเอง"
                 if (e.target.value === "SELF") {
                   setReceiverMemberCode("");
                   setReceiverFullName("");
@@ -273,8 +336,12 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               }}
               className="receiver-radio-group"
             >
-              <Radio value="SELF">รับด้วยตนเอง</Radio>
-              <Radio value="OTHER">รับแทน</Radio>
+              <Radio value="SELF" disabled={!selectedSize || !canReceiveSize(selectedSize)}>
+                รับด้วยตนเอง
+              </Radio>
+              <Radio value="OTHER" disabled={!selectedSize || !canReceiveSize(selectedSize)}>
+                รับแทน
+              </Radio>
             </Radio.Group>
 
             {receiverType === "OTHER" && (
@@ -312,6 +379,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               ยกเลิก
             </Button>
 
+            {/* ✅ บันทึกขนาด - ทำได้เสมอ */}
             <Button
               size="large"
               onClick={handleSaveSizeOnly}
@@ -321,19 +389,21 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               บันทึกขนาด
             </Button>
 
+            {/* ✅ บันทึกการรับเสื้อ - ทำได้ต่อเมื่อมี stock */}
             <Button
               type="primary"
               size="large"
               onClick={handleSubmitPickup}
               loading={loading}
-              disabled={!selectedSize || loading}
+              disabled={!selectedSize || !canReceiveSize(selectedSize) || loading}
             >
-              บันทึกการรับเสื้อ(debug)
+              บันทึกการรับเสื้อ
             </Button>
           </div>
         </div>
       </Modal>
 
+      {/* Size Guide Modal */}
       <Modal
         open={showSizeGuide}
         onCancel={() => setShowSizeGuide(false)}
@@ -357,33 +427,63 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             </a>
           </div>
 
-          <div className="size-grid">
-            {ALL_SIZES.map((size) => (
-              <Card
-                key={size}
-                hoverable
-                className={`size-card ${
-                  selectedSize === size ? "selected" : ""
-                }`}
-                onClick={() => {
-                  setSelectedSize(size);
-                  setShowSizeGuide(false);
-                }}
-              >
-                <div className="size-label">{size}</div>
-                <div className="size-measurements">
-                  <div>อก {SIZE_INFO[size].chest}</div>
-                  <div>ยาว {SIZE_INFO[size].length}</div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {loadingStock ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <Spin size="large" tip="กำลังโหลดข้อมูลสต็อก..." />
+            </div>
+          ) : (
+            <>
+              <div className="size-grid">
+                {ALL_SIZES.map((size) => {
+                  const hasStock = canReceiveSize(size);
+                  const stock = stockData[size];
+                  
+                  return (
+                    <Card
+                      key={size}
+                      hoverable
+                      className={`size-card ${selectedSize === size ? "selected" : ""}`}
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setShowSizeGuide(false);
+                        if (!hasStock) {
+                          message.warning(`ขนาด ${size} หมดสต็อก - จองได้ แต่รับไม่ได้`);
+                        }
+                      }}
+                    >
+                      <div className="size-label" style={{ fontSize: 28 }}>
+                        {size}
+                        {/* ✅ แสดงเฉพาะเมื่อหมดสต็อก */}
+                        {!hasStock && (
+                          <div style={{ 
+                            fontSize: 12, 
+                            color: "#ff4d4f", 
+                            marginTop: 6,
+                            fontWeight: "bold" 
+                          }}>
+                            หมดสต็อก
+                          </div>
+                        )}
+                      </div>
+                      <div className="size-measurements">
+                        <div style={{ fontSize: 16 }}>อก {SIZE_INFO[size].chest}</div>
+                        <div style={{ fontSize: 16 }}>ยาว {SIZE_INFO[size].length}</div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
 
-          <div className="size-guide-note">
-            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
-            2" เนื่องจากเสื้อแจ็คเก็ตต้องมีพื้นที่เก็บอุ่น เช่น วัดได้ 40"
-            ให้เลือกขนาดเสื้อ 42" แทน
-          </div>
+              <div className="size-guide-note">
+                <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
+                2" เนื่องจากเสื้อแจ็คเก็ตต้องมีพื้นที่เก็บอุ่น เช่น วัดได้ 40"
+                ให้เลือกขนาดเสื้อ 42" แทน
+                <div style={{ marginTop: 8, color: "#ff4d4f" }}>
+                  <strong>หมายเหตุ:</strong> ขนาดที่หมดสต็อกสามารถเลือกจองได้ แต่ไม่สามารถบันทึกการรับได้จนกว่าจะมีการเติมสต็อก
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
     </>

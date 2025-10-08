@@ -1,7 +1,6 @@
 // ===================================================================
 // File: src/components/Admin/InventoryManagement.jsx
-// Description: UI จัดการสต็อกเสื้อ (Admin)
-// ปรับปรุง: UX ที่ดีขึ้น - เลือก Action ก่อน แล้วค่อยกรอกข้อมูล
+// ปรับ: สมาชิกจองเกิน = warning, สต็อกต่ำ = error highlight
 // ===================================================================
 
 import React, { useState, useEffect } from "react";
@@ -24,6 +23,7 @@ import {
   Col,
   Grid,
   Descriptions,
+  Popover,
 } from "antd";
 import {
   PlusOutlined,
@@ -32,6 +32,7 @@ import {
   WarningOutlined,
   CheckCircleOutlined,
   CloseOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { getInventorySummary, adjustInventory } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
@@ -62,7 +63,6 @@ const InventoryManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [adjustmentType, setAdjustmentType] = useState("ADD");
   const [submitting, setSubmitting] = useState(false);
   const isMobile = !screens?.md;
 
@@ -85,8 +85,7 @@ const InventoryManagement = () => {
     }
   };
 
-  const handleOpenModal = (type) => {
-    setAdjustmentType(type);
+  const handleOpenModal = () => {
     setModalVisible(true);
     form.resetFields();
   };
@@ -96,23 +95,27 @@ const InventoryManagement = () => {
     form.resetFields();
   };
 
-  const handleSubmitAdjustment = async () => {
+  const handleSubmitAdjustment = async (actionType) => {
     try {
       const values = await form.validateFields();
       setSubmitting(true);
+
       const adjustmentData = {
         sizeCode: values.sizeCode,
         quantity: values.quantity,
-        type: adjustmentType,
+        type: actionType,
         remarks: values.remarks || "",
         processedBy: user.memberCode,
       };
+
       await adjustInventory(adjustmentData);
+
       message.success(
-        adjustmentType === "ADD"
+        actionType === "ADD"
           ? `เติมสต็อกขนาด ${values.sizeCode} จำนวน ${values.quantity} ตัว สำเร็จ`
           : `เบิกสต็อกขนาด ${values.sizeCode} จำนวน ${values.quantity} ตัว สำเร็จ`
       );
+
       handleCloseModal();
       loadInventory();
     } catch (error) {
@@ -135,6 +138,11 @@ const InventoryManagement = () => {
   );
 
   const lowStockCount = inventory.filter((item) => item.isLowStock).length;
+  
+  // นับจำนวนขนาดที่สมาชิกจองเกินสต็อก
+  const overReservedCount = inventory.filter(
+    (item) => item.reserved > item.produced
+  ).length;
 
   const columns = [
     {
@@ -143,13 +151,13 @@ const InventoryManagement = () => {
       key: "sizeCode",
       align: "center",
       render: (size) => (
-        <Tag color="blue" style={{ fontSize: 14, fontWeight: "bold" }}>
+        <Text strong style={{ fontSize: 14, color: "#000" }}>
           {size}
-        </Tag>
+        </Text>
       ),
     },
     {
-      title: "ผลิต",
+      title: "สต็อกเสื้อ (I)",
       dataIndex: "produced",
       key: "produced",
       align: "right",
@@ -161,19 +169,80 @@ const InventoryManagement = () => {
       ),
     },
     {
-      title: "จอง",
+      title: "สมาชิกจอง",
       dataIndex: "reserved",
       key: "reserved",
       align: "right",
       responsive: ["md"],
-      render: (value) => (
-        <Text style={{ color: "#52c41a" }}>
-          {Number(value).toLocaleString()}
-        </Text>
-      ),
+      render: (value, record) => {
+        const isOverReserved = value > record.produced;
+        const shortage = value - record.produced;
+
+        // ✅ ถ้าจองเกิน แสดง Popover พร้อม icon เตือน (สีส้ม/warning)
+        if (isOverReserved) {
+          const popoverContent = (
+            <div style={{ maxWidth: 280 }}>
+              <Text strong style={{ color: "#faad14", fontSize: 15 }}>
+                ⚠️ สมาชิกจองเกินสต็อก!
+              </Text>
+              <div style={{ marginTop: 8, fontSize: 14 }}>
+                <Text>สต็อกเสื้อ: {record.produced.toLocaleString()} ตัว</Text>
+                <br />
+                <Text>สมาชิกจอง: {value.toLocaleString()} คน</Text>
+                <br />
+                <Text strong style={{ color: "#faad14" }}>
+                  ขาด: {shortage.toLocaleString()} ตัว
+                </Text>
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "8px 12px",
+                  backgroundColor: "#fff7e6",
+                  borderRadius: 6,
+                  borderLeft: "3px solid #faad14",
+                }}
+              >
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  💡 <strong>คำแนะนำ:</strong> ควรเติมสต็อกเพิ่ม หรือติดต่อสมาชิกเพื่อเปลี่ยนขนาด
+                </Text>
+              </div>
+            </div>
+          );
+
+          return (
+            <Popover
+              content={popoverContent}
+              title={null}
+              trigger="hover"
+              placement="top"
+            >
+              <Space>
+                <ExclamationCircleOutlined
+                  style={{
+                    color: "#faad14",
+                    fontSize: 18,
+                    animation: "pulse 1.5s infinite",
+                  }}
+                />
+                <Text strong style={{ color: "#faad14" }}>
+                  {Number(value).toLocaleString()}
+                </Text>
+              </Space>
+            </Popover>
+          );
+        }
+
+        // ถ้าไม่เกิน แสดงปกติ
+        return (
+          <Text style={{ color: "#52c41a" }}>
+            {Number(value).toLocaleString()}
+          </Text>
+        );
+      },
     },
     {
-      title: "รับแล้ว",
+      title: "สมาชิกรับแล้ว",
       dataIndex: "received",
       key: "received",
       align: "right",
@@ -184,7 +253,7 @@ const InventoryManagement = () => {
       ),
     },
     {
-      title: "เบิก",
+      title: "เบิกภายใน (2)",
       dataIndex: "distributed",
       key: "distributed",
       align: "right",
@@ -196,7 +265,7 @@ const InventoryManagement = () => {
       ),
     },
     {
-      title: "คงเหลือ",
+      title: "สต็อกคงเหลือ",
       dataIndex: "remaining",
       key: "remaining",
       align: "right",
@@ -269,12 +338,26 @@ const InventoryManagement = () => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
-      {lowStockCount > 0 && (
+      {/* ✅ เปลี่ยนเป็น warning สำหรับสมาชิกจองเกิน */}
+      {overReservedCount > 0 && (
         <Alert
-          message="⚠️ แจ้งเตือนสต็อกใกล้หมด"
-          description={`พบสต็อกเสื้อใกล้หมด ${lowStockCount} ขนาด`}
+          message="⚠️ พบสมาชิกจองเกินสต็อก"
+          description={`มี ${overReservedCount} ขนาดที่สมาชิกจองเกินจำนวนสต็อกที่มี กรุณาตรวจสอบและเติมสต็อกเพิ่ม`}
           type="warning"
           showIcon
+          icon={<ExclamationCircleOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* ✅ เปลี่ยนเป็น error สำหรับสต็อกต่ำ */}
+      {lowStockCount > 0 && (
+        <Alert
+          message="🚨 แจ้งเตือนสต็อกต่ำกว่าเกณฑ์!"
+          description={`พบสต็อกเสื้อต่ำกว่าเกณฑ์ ${lowStockCount} ขนาด ต้องเติมสต็อกด่วน!`}
+          type="error"
+          showIcon
+          icon={<WarningOutlined />}
         />
       )}
 
@@ -291,7 +374,7 @@ const InventoryManagement = () => {
             <Button
               type="primary"
               size="large"
-              onClick={() => handleOpenModal("ADD")}
+              onClick={() => handleOpenModal()}
               style={{
                 backgroundColor: "#1890ff",
                 borderColor: "#1890ff",
@@ -316,66 +399,96 @@ const InventoryManagement = () => {
       >
         {isMobile ? (
           <Row gutter={[12, 12]}>
-            {inventory.map((item) => (
-              <Col xs={24} sm={12} key={item.sizeCode}>
-                <Card
-                  size="small"
-                  style={{
-                    borderRadius: 12,
-                    boxShadow: "0 6px 18px rgba(15,15,15,0.06)",
-                  }}
-                  bodyStyle={{ padding: 12 }}
-                >
-                  <Descriptions
+            {inventory.map((item) => {
+              const isOverReserved = item.reserved > item.produced;
+              const shortage = item.reserved - item.produced;
+
+              return (
+                <Col xs={24} sm={12} key={item.sizeCode}>
+                  <Card
                     size="small"
-                    column={1}
-                    bordered
-                    labelStyle={{ width: 110, fontWeight: 700 }}
-                    contentStyle={{ paddingLeft: 8 }}
+                    style={{
+                      borderRadius: 12,
+                      boxShadow: "0 6px 18px rgba(15,15,15,0.06)",
+                      // ✅ สต็อกต่ำ = แดง, จองเกิน = ส้ม
+                      borderLeft: item.isLowStock
+                        ? "4px solid #ff4d4f"
+                        : isOverReserved
+                        ? "4px solid #faad14"
+                        : undefined,
+                    }}
+                    bodyStyle={{ padding: 12 }}
                   >
-                    <Descriptions.Item label="ขนาด">
-                      <Tag color="blue" style={{ fontWeight: 700 }}>
-                        {item.sizeCode}
-                      </Tag>
-                    </Descriptions.Item>
-                    <Descriptions.Item label="ผลิต">
-                      {Number(item.produced).toLocaleString()}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="จอง">
-                      {Number(item.reserved).toLocaleString()}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="รับแล้ว">
-                      {Number(item.received).toLocaleString()}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="เบิก">
-                      {Number(item.distributed).toLocaleString()}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="คงเหลือ">
-                      <span style={{ fontWeight: 800 }}>
-                        {Number(item.remaining).toLocaleString()}
-                      </span>
-                    </Descriptions.Item>
-                    <Descriptions.Item label="สถานะ">
-                      <Tag
-                        color={
-                          item.remaining === 0
-                            ? "default"
+                    <Descriptions
+                      size="small"
+                      column={1}
+                      bordered
+                      labelStyle={{ width: 110, fontWeight: 700 }}
+                      contentStyle={{ paddingLeft: 8 }}
+                    >
+                      <Descriptions.Item label="ขนาด">
+                        <Tag color="blue" style={{ fontWeight: 700 }}>
+                          {item.sizeCode}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="สต็อกเสื้อ (I)">
+                        {Number(item.produced).toLocaleString()}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="สมาชิกจอง">
+                        {isOverReserved ? (
+                          <Space>
+                            <ExclamationCircleOutlined
+                              style={{ color: "#faad14" }}
+                            />
+                            <Text strong style={{ color: "#faad14" }}>
+                              {Number(item.reserved).toLocaleString()}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              (ขาด {shortage})
+                            </Text>
+                          </Space>
+                        ) : (
+                          Number(item.reserved).toLocaleString()
+                        )}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="สมาชิกรับแล้ว">
+                        {Number(item.received).toLocaleString()}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="เบิกภายใน (2)">
+                        {Number(item.distributed).toLocaleString()}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="สต็อกคงเหลือ">
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: item.isLowStock ? "#ff4d4f" : "#000",
+                          }}
+                        >
+                          {Number(item.remaining).toLocaleString()}
+                        </span>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="สถานะ">
+                        <Tag
+                          color={
+                            item.remaining === 0
+                              ? "default"
+                              : item.isLowStock
+                              ? "error"
+                              : "success"
+                          }
+                        >
+                          {item.remaining === 0
+                            ? "หมดสต็อก"
                             : item.isLowStock
-                            ? "error"
-                            : "success"
-                        }
-                      >
-                        {item.remaining === 0
-                          ? "หมดสต็อก"
-                          : item.isLowStock
-                          ? "ใกล้หมด"
-                          : "ปกติ"}
-                      </Tag>
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-            ))}
+                            ? "ใกล้หมด"
+                            : "ปกติ"}
+                        </Tag>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+              );
+            })}
           </Row>
         ) : (
           <Table
@@ -385,6 +498,10 @@ const InventoryManagement = () => {
             pagination={false}
             bordered
             scroll={{ x: "max-content" }}
+            // ✅ Highlight แถวที่สต็อกต่ำ (สีแดง)
+            rowClassName={(record) =>
+              record.isLowStock ? "low-stock-row" : ""
+            }
             summary={() => (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0}>
@@ -418,13 +535,15 @@ const InventoryManagement = () => {
         onCancel={handleCloseModal}
         footer={null}
         width={560}
-        closeIcon={
-          <CloseOutlined style={{ fontSize: 20, color: "#999" }} />
-        }
+        closeIcon={<CloseOutlined style={{ fontSize: 20, color: "#999" }} />}
         style={{ top: 60 }}
         styles={{
-          header: { textAlign: "center", borderBottom: "none", paddingBottom: 0 },
-          body: { paddingTop: 16 }
+          header: {
+            textAlign: "center",
+            borderBottom: "none",
+            paddingBottom: 0,
+          },
+          body: { paddingTop: 16 },
         }}
       >
         {/* Header */}
@@ -440,7 +559,6 @@ const InventoryManagement = () => {
             name="sizeCode"
             label={
               <Text strong style={{ fontSize: 15 }}>
-                <span style={{ color: "#ff4d4f", marginRight: 4 }}></span>
                 เลือกขนาด
               </Text>
             }
@@ -466,7 +584,6 @@ const InventoryManagement = () => {
             name="quantity"
             label={
               <Text strong style={{ fontSize: 15 }}>
-                <span style={{ color: "#ff4d4f", marginRight: 4 }}></span>
                 จำนวน
               </Text>
             }
@@ -519,17 +636,14 @@ const InventoryManagement = () => {
             />
           </Form.Item>
 
-          {/* Buttons - ปรับสีให้เข้ากับ theme */}
+          {/* Buttons */}
           <Row gutter={16} style={{ marginTop: 32 }}>
             <Col span={12}>
               <Button
                 block
                 size="large"
-                loading={submitting && adjustmentType === "ADD"}
-                onClick={() => {
-                  setAdjustmentType("ADD");
-                  handleSubmitAdjustment();
-                }}
+                loading={submitting}
+                onClick={() => handleSubmitAdjustment("ADD")}
                 icon={<PlusOutlined />}
                 style={{
                   height: 52,
@@ -548,11 +662,8 @@ const InventoryManagement = () => {
               <Button
                 block
                 size="large"
-                loading={submitting && adjustmentType === "REMOVE"}
-                onClick={() => {
-                  setAdjustmentType("REMOVE");
-                  handleSubmitAdjustment();
-                }}
+                loading={submitting}
+                onClick={() => handleSubmitAdjustment("REMOVE")}
                 icon={<MinusOutlined />}
                 style={{
                   height: 52,
@@ -569,23 +680,30 @@ const InventoryManagement = () => {
             </Col>
           </Row>
         </Form>
-
-        {/* ท้ายรายการ - เติมสต็อกล่าสุด */}
-        {/* <div
-          style={{
-            marginTop: 24,
-            padding: "12px 16px",
-            backgroundColor: "#e6f7ff",
-            borderRadius: 8,
-            cursor: "pointer",
-            textAlign: "center",
-          }}
-        >
-          <Text style={{ color: "#1890ff", fontWeight: 600 }}>
-            ทำรายการเติมสต็อกล่าเร็ว
-          </Text>
-        </div> */}
       </Modal>
+
+      {/* ✅ CSS: สต็อกต่ำ = แดง, จองเกิน = เอาออก */}
+      <style jsx>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
+        }
+
+        .low-stock-row {
+          background-color: #fff2f0 !important;
+        }
+
+        .low-stock-row:hover {
+          background-color: #ffe7e6 !important;
+        }
+      `}</style>
     </Space>
   );
 };
