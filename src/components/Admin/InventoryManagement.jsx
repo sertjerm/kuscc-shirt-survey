@@ -1,6 +1,7 @@
 // ===================================================================
 // File: src/components/Admin/InventoryManagement.jsx
-// ปรับ: สมาชิกจองเกิน = warning, สต็อกต่ำ = error highlight
+// Description: จัดการสต็อกเสื้อแจ็คเก็ต - แสดงสรุปและปรับสต็อก
+// Updated: ตัด column "สถานะ" ออก + เพิ่ม Highlight แถว 2 แบบ
 // ===================================================================
 
 import React, { useState, useEffect } from "react";
@@ -41,6 +42,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
+// ขนาดเสื้อทั้งหมดที่มีในระบบ
 const ALL_SIZES = [
   "XS",
   "S",
@@ -59,6 +61,7 @@ const InventoryManagement = () => {
   const [form] = Form.useForm();
   const screens = Grid.useBreakpoint();
 
+  // State สำหรับจัดการข้อมูล
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,10 +69,12 @@ const InventoryManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const isMobile = !screens?.md;
 
+  // โหลดข้อมูลสต็อกตอน component mount
   useEffect(() => {
     loadInventory();
   }, []);
 
+  // ฟังก์ชันโหลดข้อมูลสต็อกจาก API
   const loadInventory = async () => {
     setLoading(true);
     setError(null);
@@ -85,16 +90,19 @@ const InventoryManagement = () => {
     }
   };
 
+  // เปิด Modal สำหรับเติม/เบิกสต็อก
   const handleOpenModal = () => {
     setModalVisible(true);
     form.resetFields();
   };
 
+  // ปิด Modal
   const handleCloseModal = () => {
     setModalVisible(false);
     form.resetFields();
   };
 
+  // ฟังก์ชันบันทึกการเติม/เบิกสต็อก
   const handleSubmitAdjustment = async (actionType) => {
     try {
       const values = await form.validateFields();
@@ -126,6 +134,7 @@ const InventoryManagement = () => {
     }
   };
 
+  // คำนวณยอดรวมทั้งหมด
   const totals = inventory.reduce(
     (acc, item) => ({
       produced: acc.produced + (item.produced || 0),
@@ -137,13 +146,17 @@ const InventoryManagement = () => {
     { produced: 0, reserved: 0, received: 0, distributed: 0, remaining: 0 }
   );
 
+  // นับจำนวนขนาดที่สต็อกต่ำ (≤ 50)
   const lowStockCount = inventory.filter((item) => item.isLowStock).length;
-  
+
   // นับจำนวนขนาดที่สมาชิกจองเกินสต็อก
   const overReservedCount = inventory.filter(
     (item) => item.reserved > item.produced
   ).length;
 
+  // ===================================================================
+  // ✅ COLUMNS สำหรับตาราง (Desktop View) - ตัด "สถานะ" ออกแล้ว
+  // ===================================================================
   const columns = [
     {
       title: "ขนาด",
@@ -233,7 +246,7 @@ const InventoryManagement = () => {
           );
         }
 
-        // ถ้าไม่เกิน แสดงปกติ
+        // ถ้าไม่เกิน แสดงปกติ (สีเขียว)
         return (
           <Text style={{ color: "#52c41a" }}>
             {Number(value).toLocaleString()}
@@ -273,6 +286,7 @@ const InventoryManagement = () => {
         const isLowStock = record.isLowStock;
         return (
           <Space>
+            {/* ✅ แสดง icon เตือนถ้าสต็อกต่ำ */}
             {isLowStock && <WarningOutlined style={{ color: "#ff4d4f" }} />}
             <Text
               strong
@@ -287,30 +301,10 @@ const InventoryManagement = () => {
         );
       },
     },
-    {
-      title: "สถานะ",
-      key: "status",
-      align: "center",
-      render: (_, record) => {
-        if (record.remaining === 0) {
-          return <Tag color="default">หมดสต็อก</Tag>;
-        }
-        if (record.isLowStock) {
-          return (
-            <Tag color="error" icon={<WarningOutlined />}>
-              ใกล้หมด
-            </Tag>
-          );
-        }
-        return (
-          <Tag color="success" icon={<CheckCircleOutlined />}>
-            ปกติ
-          </Tag>
-        );
-      },
-    },
+    // ❌ ตัด column "สถานะ" ออกแล้ว
   ];
 
+  // แสดง Loading
   if (loading) {
     return (
       <Card>
@@ -324,6 +318,7 @@ const InventoryManagement = () => {
     );
   }
 
+  // แสดง Error
   if (error) {
     return (
       <Alert
@@ -338,7 +333,9 @@ const InventoryManagement = () => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
-      {/* ✅ เปลี่ยนเป็น warning สำหรับสมาชิกจองเกิน */}
+      {/* ===================================================================
+          ✅ Alert Box: เตือนสมาชิกจองเกิน (สีส้ม/warning)
+          =================================================================== */}
       {overReservedCount > 0 && (
         <Alert
           message="⚠️ พบสมาชิกจองเกินสต็อก"
@@ -350,7 +347,9 @@ const InventoryManagement = () => {
         />
       )}
 
-      {/* ✅ เปลี่ยนเป็น error สำหรับสต็อกต่ำ */}
+      {/* ===================================================================
+          ✅ Alert Box: เตือนสต็อกต่ำ (สีแดง/error)
+          =================================================================== */}
       {lowStockCount > 0 && (
         <Alert
           message="🚨 แจ้งเตือนสต็อกต่ำกว่าเกณฑ์!"
@@ -361,6 +360,9 @@ const InventoryManagement = () => {
         />
       )}
 
+      {/* ===================================================================
+          CARD หลัก: ตารางสรุปสต็อก
+          =================================================================== */}
       <Card
         title={
           <Space>
@@ -397,6 +399,9 @@ const InventoryManagement = () => {
           </Space>
         }
       >
+        {/* ===================================================================
+            ✅ MOBILE VIEW: แสดงเป็นการ์ด พร้อม border สีตามสถานะ
+            =================================================================== */}
         {isMobile ? (
           <Row gutter={[12, 12]}>
             {inventory.map((item) => {
@@ -410,12 +415,15 @@ const InventoryManagement = () => {
                     style={{
                       borderRadius: 12,
                       boxShadow: "0 6px 18px rgba(15,15,15,0.06)",
-                      // ✅ สต็อกต่ำ = แดง, จองเกิน = ส้ม
-                      borderLeft: item.isLowStock
-                        ? "4px solid #ff4d4f"
-                        : isOverReserved
-                        ? "4px solid #faad14"
-                        : undefined,
+                      // ✅ Priority: หมด > ต่ำ > จองเกิน
+                      borderLeft:
+                        item.remaining === 0
+                          ? "4px solid #ff4d4f" // แดง = หมด
+                          : item.isLowStock
+                          ? "4px solid #faad14" // ส้ม = ต่ำ
+                          : isOverReserved
+                          ? "4px solid #faad14" // ส้ม = จองเกิน
+                          : undefined,
                     }}
                     bodyStyle={{ padding: 12 }}
                   >
@@ -431,7 +439,7 @@ const InventoryManagement = () => {
                           {item.sizeCode}
                         </Tag>
                       </Descriptions.Item>
-                      <Descriptions.Item label="สต็อกเสื้อ (I)">
+                      <Descriptions.Item label="สต็อกเสื้อ">
                         {Number(item.produced).toLocaleString()}
                       </Descriptions.Item>
                       <Descriptions.Item label="สมาชิกจอง">
@@ -454,7 +462,7 @@ const InventoryManagement = () => {
                       <Descriptions.Item label="สมาชิกรับแล้ว">
                         {Number(item.received).toLocaleString()}
                       </Descriptions.Item>
-                      <Descriptions.Item label="เบิกภายใน (2)">
+                      <Descriptions.Item label="เบิกภายใน">
                         {Number(item.distributed).toLocaleString()}
                       </Descriptions.Item>
                       <Descriptions.Item label="สต็อกคงเหลือ">
@@ -467,23 +475,7 @@ const InventoryManagement = () => {
                           {Number(item.remaining).toLocaleString()}
                         </span>
                       </Descriptions.Item>
-                      <Descriptions.Item label="สถานะ">
-                        <Tag
-                          color={
-                            item.remaining === 0
-                              ? "default"
-                              : item.isLowStock
-                              ? "error"
-                              : "success"
-                          }
-                        >
-                          {item.remaining === 0
-                            ? "หมดสต็อก"
-                            : item.isLowStock
-                            ? "ใกล้หมด"
-                            : "ปกติ"}
-                        </Tag>
-                      </Descriptions.Item>
+                      {/* ❌ ตัด "สถานะ" ออกจาก Mobile View แล้ว */}
                     </Descriptions>
                   </Card>
                 </Col>
@@ -491,6 +483,9 @@ const InventoryManagement = () => {
             })}
           </Row>
         ) : (
+          /* ===================================================================
+             ✅ DESKTOP VIEW: แสดงเป็นตาราง พร้อม Highlight แถว 2 แบบ
+             =================================================================== */
           <Table
             dataSource={inventory}
             columns={columns}
@@ -498,10 +493,14 @@ const InventoryManagement = () => {
             pagination={false}
             bordered
             scroll={{ x: "max-content" }}
-            // ✅ Highlight แถวที่สต็อกต่ำ (สีแดง)
-            rowClassName={(record) =>
-              record.isLowStock ? "low-stock-row" : ""
-            }
+            // ✅ Highlight แถวตามสถานะ:
+            // 1. หมด (remaining === 0) = สีแดงอ่อน
+            // 2. ต่ำ (isLowStock) = สีส้มอ่อน
+            rowClassName={(record) => {
+              if (record.remaining === 0) return "out-of-stock-row";
+              if (record.isLowStock) return "low-stock-row";
+              return "";
+            }}
             summary={() => (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0}>
@@ -522,14 +521,16 @@ const InventoryManagement = () => {
                 <Table.Summary.Cell index={5} align="right">
                   {totals.remaining.toLocaleString()}
                 </Table.Summary.Cell>
-                <Table.Summary.Cell index={6}></Table.Summary.Cell>
+                {/* ❌ ตัด index={6} ออกแล้ว (เดิมเป็น column สถานะ) */}
               </Table.Summary.Row>
             )}
           />
         )}
       </Card>
 
-      {/* Modal จัดการสต็อก */}
+      {/* ===================================================================
+          MODAL: เติม/เบิกสต็อก
+          =================================================================== */}
       <Modal
         open={modalVisible}
         onCancel={handleCloseModal}
@@ -682,8 +683,11 @@ const InventoryManagement = () => {
         </Form>
       </Modal>
 
-      {/* ✅ CSS: สต็อกต่ำ = แดง, จองเกิน = เอาออก */}
+      {/* ===================================================================
+          ✅ CSS: Highlight แถว 2 แบบ + Animation
+          =================================================================== */}
       <style jsx>{`
+        /* Animation สำหรับ icon เตือน */
         @keyframes pulse {
           0%,
           100% {
@@ -696,11 +700,21 @@ const InventoryManagement = () => {
           }
         }
 
+        /* ✅ สต็อกต่ำ (isLowStock) = สีส้มอ่อน (warning) */
         .low-stock-row {
-          background-color: #fff2f0 !important;
+          background-color: #fff7e6 !important;
         }
 
         .low-stock-row:hover {
+          background-color: #ffe7ba !important;
+        }
+
+        /* ✅ สต็อกหมด (remaining === 0) = สีแดงอ่อน (error) */
+        .out-of-stock-row {
+          background-color: #fff2f0 !important;
+        }
+
+        .out-of-stock-row:hover {
           background-color: #ffe7e6 !important;
         }
       `}</style>
