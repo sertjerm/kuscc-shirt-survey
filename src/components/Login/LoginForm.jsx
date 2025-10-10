@@ -26,6 +26,9 @@ const LoginForm = () => {
   // อ่านค่า VITE_BASE_PATH (สำหรับ debug) — แสดงด้านล่างนอก Card
   const basePath = import.meta.env.VITE_BASE_PATH ?? "/";
 
+  // 🆕 เพิ่มวันที่ build
+  const buildDate = __BUILD_DATE_LOCAL__ || "Unknown";
+
   // ตัดสินป้ายและสี (ตรวจสอบ dev ก่อน)
   const bp = String(basePath || "");
   const isShirtDev = bp.includes("ShirtSurveyDev");
@@ -317,7 +320,7 @@ const LoginForm = () => {
         </Form>
       </Card>
 
-      {/* แสดงค่า VITE_BASE_PATH ด้านล่าง Card */}
+      {/* แสดงค่า VITE_BASE_PATH และวันที่ build ด้านล่าง Card */}
       <div style={{ textAlign: "center", marginTop: 12 }}>
         {tagColor ? (
           <Tag color={tagColor} style={{ fontSize: 12 }}>
@@ -335,6 +338,21 @@ const LoginForm = () => {
             {tagLabel}
           </Tag>
         )}
+
+        {/* 🆕 แสดงวันที่ build */}
+        <div style={{ marginTop: 4 }}>
+          <Tag
+            style={{
+              fontSize: 10,
+              color: "#ffffffff",
+              background: "transparent",
+              border: "1px solid #e8e8e8",
+              borderRadius: "4px",
+            }}
+          >
+            Build: {buildDate}
+          </Tag>
+        </div>
       </div>
     </div>
   );

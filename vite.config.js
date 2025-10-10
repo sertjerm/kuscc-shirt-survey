@@ -8,13 +8,25 @@ export default defineConfig(({ mode }) => {
   return {
     base: env.VITE_BASE_PATH || "/",
     plugins: [react()],
+    define: {
+      __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+      __BUILD_DATE_LOCAL__: JSON.stringify(
+        new Date().toLocaleString("th-TH", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      ),
+    },
     server: {
       port: 3000,
       host: true,
       proxy: {
         // สมมุติ frontend เรียก /api จะถูก proxy ไปที่ WCF
         "/api": {
-          target: {REAL_API_BASE_URL},
+          target: { REAL_API_BASE_URL },
           changeOrigin: true,
           secure: false,
           // ถ้าต้องการส่ง cookie
