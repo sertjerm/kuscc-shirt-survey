@@ -551,11 +551,9 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
                         )}
                       </div>
                       <div className="size-measurements">
-                        <div style={{ fontSize: 16 }}>
-                          อก {SIZE_INFO[size].chest}
-                        </div>
-                        <div style={{ fontSize: 16 }}>
-                          ยาว {SIZE_INFO[size].length}
+                        <div style={{ fontSize: 12 }}>
+                          อก {SIZE_INFO[size].chest} | ยาว{" "}
+                          {SIZE_INFO[size].length}
                         </div>
                         {/* ✅ แสดงข้อมูลสต็อกและจอง */}
                         {stock && (
@@ -566,8 +564,8 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
                               marginTop: 4,
                             }}
                           >
-                            ผลิต: {stock.produced} | จอง: {stock.reserved} |
-                            คงเหลือ: {stock.remaining}
+                            คงเหลือ:{" "}
+                            {Math.max(0, stock.remaining - stock.reserved)} ตัว
                           </div>
                         )}
                       </div>
