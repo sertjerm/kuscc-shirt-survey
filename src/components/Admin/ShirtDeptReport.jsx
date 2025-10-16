@@ -5,16 +5,15 @@ import {
   RightOutlined,
   DownloadOutlined,
   ReloadOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import { message, Spin, Alert } from "antd";
 import { getDepartmentReport } from "../../services/shirtApi";
-// ✅ เพิ่ม import สำหรับ Excel export
 import * as XLSX from "xlsx";
 
 const ShirtDeptReport = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedDepts, setExpandedDepts] = useState(new Set());
-  // ✅ ตัด selectedSize state ออก
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [rawData, setRawData] = useState([]);
@@ -22,13 +21,28 @@ const ShirtDeptReport = () => {
 
   const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 
-  // ✅ ฟังก์ชันจัดรูปแบบตัวเลข
   const formatNumber = (num) => {
     if (!num || num === 0) return "-";
     return Number(num).toLocaleString("th-TH");
   };
 
-  // ✅ ฟังก์ชันโหลดข้อมูลจาก API
+  // ✅ ฟังก์ชันเปิด PDF ในหน้าต่างใหม่
+  const handleExportPDF = (deptCode, sectCode = null) => {
+    const baseUrl = "https://apps4.coop.ku.ac.th/php/jacket/report_details.php";
+    let url = `${baseUrl}?dept_code=${deptCode}`;
+
+    if (sectCode) {
+      url += `&sect_code=${sectCode}`;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    const label = sectCode
+      ? `ภาควิชา ${deptCode}${sectCode}`
+      : `หน่วยงาน ${deptCode}`;
+    message.success(`กำลังเปิด PDF สำหรับ${label}`);
+  };
+
   const loadReportData = async () => {
     setLoading(true);
     setError(null);
@@ -40,13 +54,12 @@ const ShirtDeptReport = () => {
         setRawData(data);
         console.log("📊 Department report loaded:", data.length, "records");
 
-        // ✅ ตรวจสอบว่าเป็น sample data หรือไม่
         const isSampleData =
           data.length <= 15 &&
           data.some(
             (item) =>
               item.DEPT_NAME === "สำนักงานมหาวิทยาลัย" &&
-              item.SECT_NAME === "ภาควิชากีฏวิทยา"
+              item.SECT_NAME === "ภาควิชากีฬาวิทยา"
           );
 
         if (isSampleData) {
@@ -65,7 +78,6 @@ const ShirtDeptReport = () => {
       setError(err.message || "ไม่สามารถโหลดข้อมูลรายงานได้");
       setRawData([]);
 
-      // แสดงข้อความ error ที่ชัดเจน
       if (err.message.includes("404") || err.message.includes("ไม่พบ")) {
         message.error("API endpoint ยังไม่พร้อมใช้งาน");
       } else if (
@@ -81,7 +93,6 @@ const ShirtDeptReport = () => {
     }
   };
 
-  // ✅ ฟังก์ชัน export Excel ที่ทำงานฝั่ง client
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
@@ -92,30 +103,25 @@ const ShirtDeptReport = () => {
         return;
       }
 
-      // ✅ เตรียมข้อมูลสำหรับ Excel
       const excelData = [];
 
-      // Header row
       const headerRow = ["หน่วยงาน/ภาควิชา", "รหัส", ...sizes, "รวม"];
       excelData.push(headerRow);
 
-      // Data rows
       groupedData.forEach((dept) => {
-        // Department row
         const deptRow = [
           dept.name,
-          dept.code, // DEPT_CODE
+          dept.code,
           ...sizes.map((size) => dept.totalBySize[size] || 0),
           dept.grandTotal,
         ];
         excelData.push(deptRow);
 
-        // Section rows (ถ้ามีการขยาย)
         if (dept.sections && dept.sections.length > 0) {
           dept.sections.forEach((section) => {
             const sectionRow = [
-              `  ${section.name}`, // เยื้องเพื่อแสดงว่าเป็น sub-section
-              `${dept.code}${section.code}`, // ✅ DEPT_CODE + SECT_CODE
+              `  ${section.name}`,
+              `${dept.code}${section.code}`,
               ...sizes.map((size) => section.sizes[size] || 0),
               section.total,
             ];
@@ -124,7 +130,6 @@ const ShirtDeptReport = () => {
         }
       });
 
-      // Grand total row
       const grandTotalRow = [
         "รวมทั้งหมด",
         "",
@@ -133,34 +138,29 @@ const ShirtDeptReport = () => {
       ];
       excelData.push(grandTotalRow);
 
-      // ✅ สร้าง workbook และ worksheet
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.aoa_to_sheet(excelData);
 
-      // ✅ กำหนดความกว้างของคอลัมน์
       const columnWidths = [
-        { wch: 40 }, // หน่วยงาน/ภาควิชา
-        { wch: 10 }, // รหัส
-        ...sizes.map(() => ({ wch: 8 })), // ขนาดเสื้อ
-        { wch: 10 }, // รวม
+        { wch: 40 },
+        { wch: 10 },
+        ...sizes.map(() => ({ wch: 8 })),
+        { wch: 10 },
       ];
       worksheet["!cols"] = columnWidths;
 
-      // ✅ จัดรูปแบบ header
       const headerStyle = {
         font: { bold: true },
         fill: { fgColor: { rgb: "4472C4" } },
         alignment: { horizontal: "center" },
       };
 
-      // Apply header style
       for (let col = 0; col < headerRow.length; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
         if (!worksheet[cellAddress]) worksheet[cellAddress] = {};
         worksheet[cellAddress].s = headerStyle;
       }
 
-      // ✅ จัดรูปแบบ grand total row
       const totalRowIndex = excelData.length - 1;
       const totalStyle = {
         font: { bold: true },
@@ -176,10 +176,8 @@ const ShirtDeptReport = () => {
         worksheet[cellAddress].s = totalStyle;
       }
 
-      // ✅ เพิ่ม worksheet ลงใน workbook
       XLSX.utils.book_append_sheet(workbook, worksheet, "รายงานแยกหน่วยงาน");
 
-      // ✅ สร้างไฟล์และดาวน์โหลด
       const fileName = `รายงานแยกหน่วยงาน_${
         new Date().toISOString().split("T")[0]
       }.xlsx`;
@@ -194,19 +192,16 @@ const ShirtDeptReport = () => {
     }
   };
 
-  // ✅ โหลดข้อมูลเมื่อ component mount
   useEffect(() => {
     loadReportData();
   }, []);
 
-  // จัดกลุ่มข้อมูลตามหน่วยงานและภาควิชา
   const groupedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
 
     const deptMap = new Map();
 
     rawData.forEach((item) => {
-      // ตรวจสอบว่าข้อมูลครบถ้วน
       if (!item.DEPT_CODE || !item.SECT_CODE || !item.SIZE_CODE) {
         console.warn("⚠️ Invalid data item:", item);
         return;
@@ -292,7 +287,6 @@ const ShirtDeptReport = () => {
     0
   );
 
-  // ✅ Loading state
   if (loading) {
     return (
       <div
@@ -312,7 +306,6 @@ const ShirtDeptReport = () => {
     );
   }
 
-  // ✅ Error state
   if (error && rawData.length === 0) {
     return (
       <div style={{ padding: 24 }}>
@@ -341,7 +334,6 @@ const ShirtDeptReport = () => {
     );
   }
 
-  // ✅ No data state
   if (!loading && rawData.length === 0) {
     return (
       <div style={{ padding: 24 }}>
@@ -379,7 +371,6 @@ const ShirtDeptReport = () => {
       }}
     >
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* ✅ Header - เฉพาะ Title และ Controls */}
         <div
           style={{
             backgroundColor: "white",
@@ -413,12 +404,11 @@ const ShirtDeptReport = () => {
               <p style={{ color: "#6b7280", margin: "4px 0 0 0" }}>
                 แยกตามหน่วยงานและภาควิชา/ฝ่ายงาน ({formatNumber(rawData.length)}{" "}
                 รายการ)
-                {/* ✅ แสดงสถานะข้อมูล */}
                 {rawData.length > 0 &&
                   rawData.some(
                     (item) =>
                       item.DEPT_NAME === "สำนักงานมหาวิทยาลัย" &&
-                      item.SECT_NAME === "ภาควิชากีฏวิทยา"
+                      item.SECT_NAME === "ภาควิชากีฬาวิทยา"
                   ) && (
                     <span
                       style={{
@@ -456,7 +446,6 @@ const ShirtDeptReport = () => {
                 <ReloadOutlined spin={loading} />
                 รีเฟรช
               </button>
-              {/* ✅ ตัดปุ่มพิมพ์ออก */}
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading || rawData.length === 0}
@@ -482,7 +471,6 @@ const ShirtDeptReport = () => {
             </div>
           </div>
 
-          {/* Search only - ตัด Filter dropdown ออก */}
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
               <SearchOutlined
@@ -511,11 +499,9 @@ const ShirtDeptReport = () => {
                 }}
               />
             </div>
-            {/* ✅ ตัด size dropdown ออก */}
           </div>
         </div>
 
-        {/* ✅ เฉพาะ Department Table เท่านั้น */}
         {filteredData.length > 0 ? (
           <div
             style={{
@@ -530,7 +516,6 @@ const ShirtDeptReport = () => {
                 <thead>
                   <tr
                     style={{
-                      // ✅ ใช้สีน้ำเงินเข้มแบบเรียบๆ
                       backgroundColor: "#1f4e79",
                       color: "white",
                     }}
@@ -571,29 +556,32 @@ const ShirtDeptReport = () => {
                     >
                       รวม
                     </th>
+                    <th
+                      style={{
+                        padding: "12px 16px",
+                        textAlign: "center",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        minWidth: "100px",
+                      }}
+                    >
+                      การดำเนินการ
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredData.map((dept) => (
                     <React.Fragment key={dept.code}>
-                      {/* Department Row */}
                       <tr
                         style={{
                           backgroundColor: "#f3f4f6",
-                          cursor: "pointer",
                           borderBottom: "1px solid #e5e7eb",
                         }}
-                        onClick={() => toggleDept(dept.code)}
-                        onMouseEnter={(e) =>
-                          (e.target.parentElement.style.backgroundColor =
-                            "#e5e7eb")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.target.parentElement.style.backgroundColor =
-                            "#f3f4f6")
-                        }
                       >
-                        <td style={{ padding: "12px 16px" }}>
+                        <td
+                          style={{ padding: "12px 16px", cursor: "pointer" }}
+                          onClick={() => toggleDept(dept.code)}
+                        >
                           <div
                             style={{
                               display: "flex",
@@ -630,7 +618,6 @@ const ShirtDeptReport = () => {
                               color: "#374151",
                             }}
                           >
-                            {/* ✅ จัดรูปแบบตัวเลข */}
                             {formatNumber(dept.totalBySize[size])}
                           </td>
                         ))}
@@ -648,13 +635,44 @@ const ShirtDeptReport = () => {
                               fontSize: "14px",
                             }}
                           >
-                            {/* ✅ จัดรูปแบบตัวเลข */}
                             {formatNumber(dept.grandTotal)}
                           </span>
                         </td>
+                        <td
+                          style={{ padding: "12px 16px", textAlign: "center" }}
+                        >
+                          <button
+                            onClick={() => handleExportPDF(dept.code)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "6px 12px",
+                              backgroundColor: "#f8f9fa",
+                              color: "#495057",
+                              border: "1px solid #dee2e6",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "13px",
+                              fontWeight: "400",
+                              transition: "all 0.15s ease-in-out",
+                            }}
+                            title={`Export PDF สำหรับ ${dept.name}`}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = "#e9ecef";
+                              e.target.style.borderColor = "#adb5bd";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = "#f8f9fa";
+                              e.target.style.borderColor = "#dee2e6";
+                            }}
+                          >
+                            <FilePdfOutlined />
+                            PDF
+                          </button>
+                        </td>
                       </tr>
 
-                      {/* Section Rows */}
                       {expandedDepts.has(dept.code) &&
                         dept.sections.map((section) => (
                           <tr
@@ -663,14 +681,6 @@ const ShirtDeptReport = () => {
                               backgroundColor: "white",
                               borderBottom: "1px solid #f3f4f6",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.parentElement.style.backgroundColor =
-                                "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.parentElement.style.backgroundColor =
-                                "white")
-                            }
                           >
                             <td
                               style={{
@@ -686,7 +696,6 @@ const ShirtDeptReport = () => {
                               <div
                                 style={{ fontSize: "12px", color: "#9ca3af" }}
                               >
-                                {/* ✅ แสดงรหัสเป็น DEPT_CODE + SECT_CODE */}
                                 รหัส: {dept.code}
                                 {section.code}
                               </div>
@@ -701,7 +710,6 @@ const ShirtDeptReport = () => {
                                   color: "#6b7280",
                                 }}
                               >
-                                {/* ✅ จัดรูปแบบตัวเลข */}
                                 {formatNumber(section.sizes[size])}
                               </td>
                             ))}
@@ -722,19 +730,54 @@ const ShirtDeptReport = () => {
                                   fontWeight: "500",
                                 }}
                               >
-                                {/* ✅ จัดรูปแบบตัวเลข */}
                                 {formatNumber(section.total)}
                               </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                textAlign: "center",
+                              }}
+                            >
+                              <button
+                                onClick={() =>
+                                  handleExportPDF(dept.code, section.code)
+                                }
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "6px 12px",
+                                  backgroundColor: "#f8f9fa",
+                                  color: "#495057",
+                                  border: "1px solid #dee2e6",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: "400",
+                                  transition: "all 0.15s ease-in-out",
+                                }}
+                                title={`Export PDF สำหรับ ${section.name}`}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = "#e9ecef";
+                                  e.target.style.borderColor = "#adb5bd";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = "#f8f9fa";
+                                  e.target.style.borderColor = "#dee2e6";
+                                }}
+                              >
+                                <FilePdfOutlined />
+                                PDF
+                              </button>
                             </td>
                           </tr>
                         ))}
                     </React.Fragment>
                   ))}
 
-                  {/* Grand Total Row */}
                   <tr
                     style={{
-                      // ✅ ใช้สีน้ำเงินเข้มแบบเรียบๆ
                       backgroundColor: "#1f4e79",
                       color: "white",
                       fontWeight: "bold",
@@ -752,7 +795,6 @@ const ShirtDeptReport = () => {
                           fontSize: "14px",
                         }}
                       >
-                        {/* ✅ จัดรูปแบบตัวเลข */}
                         {formatNumber(grandTotalBySize[size])}
                       </td>
                     ))}
@@ -763,16 +805,15 @@ const ShirtDeptReport = () => {
                         fontSize: "18px",
                       }}
                     >
-                      {/* ✅ จัดรูปแบบตัวเลข */}
                       {formatNumber(grandTotal)}
                     </td>
+                    <td style={{ padding: "16px" }}></td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
         ) : (
-          /* แสดงข้อความเมื่อไม่มีข้อมูลหลังการค้นหา */
           <div
             style={{
               backgroundColor: "white",
@@ -797,7 +838,6 @@ const ShirtDeptReport = () => {
           </div>
         )}
 
-        {/* Footer */}
         <div
           style={{
             marginTop: "24px",

@@ -1,11 +1,21 @@
 // src/components/Admin/PickupModal.jsx - จองได้ แต่รับไม่ได้ถ้าหมด stock
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Radio, Row, Col, Card, message, Spin, Alert } from "antd";
+import {
+  Modal,
+  Button,
+  Radio,
+  Row,
+  Col,
+  Card,
+  message,
+  Spin,
+  Alert,
+} from "antd";
 import { CloseOutlined, WarningOutlined } from "@ant-design/icons";
-import { 
-  submitPickup, 
-  saveMemberSize, 
-  getInventorySummary 
+import {
+  submitPickup,
+  saveMemberSize,
+  getInventorySummary,
 } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import "../../styles/PickupModal.css";
@@ -66,7 +76,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       setReceiverType("SELF");
       setReceiverMemberCode("");
       setReceiverFullName("");
-      
+
       loadStockData();
     } else if (!visible) {
       setMemberData(null);
@@ -83,8 +93,10 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     setLoadingStock(true);
     try {
       const inventory = await getInventorySummary();
+      console.log("📊 Raw inventory data:", inventory);
+
       const stockMap = {};
-      inventory.forEach(item => {
+      inventory.forEach((item) => {
         stockMap[item.sizeCode] = {
           remaining: item.remaining || 0,
           produced: item.produced || 0,
@@ -93,6 +105,14 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       });
       setStockData(stockMap);
       console.log("📦 Stock data loaded:", stockMap);
+
+      // ✅ Debug แต่ละ size ด้วยสูตรใหม่
+      Object.entries(stockMap).forEach(([size, data]) => {
+        const canReserve = data.remaining - data.reserved > 0;
+        console.log(
+          `Size ${size}: remaining=${data.remaining}, reserved=${data.reserved}, can reserve=${canReserve}`
+        );
+      });
     } catch (error) {
       console.error("Error loading stock:", error);
       message.error("ไม่สามารถโหลดข้อมูลสต็อกได้");
@@ -105,6 +125,17 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const canReceiveSize = (size) => {
     if (!stockData[size]) return false;
     return stockData[size].remaining > 0;
+  };
+
+  // ✅ ตรวจสอบว่าสามารถจองได้หรือไม่ (สต๊อกคงเหลือ - ยอดจอง > 0)
+  const canReserveSize = (size) => {
+    if (!stockData[size]) return false;
+    const { remaining = 0, reserved = 0 } = stockData[size];
+    const availableForReservation = remaining - reserved;
+    console.log(
+      `🔍 Size ${size}: remaining=${remaining}, reserved=${reserved}, available=${availableForReservation}`
+    );
+    return availableForReservation > 0;
   };
 
   const getAdminCode = () => {
@@ -130,7 +161,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     return paddedCode;
   };
 
-  // ✅ บันทึกขนาด - ทำได้แม้ stock หมด (เพื่อจอง)
+  // ✅ บันทึกขนาด - ตรวจสอบเงื่อนไขการจองใหม่
   const handleSaveSizeOnly = async () => {
     if (!memberData || !memberData.memberCode) {
       message.error("ไม่พบข้อมูลสมาชิก");
@@ -142,7 +173,15 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
-    // ✅ แจ้งเตือนถ้า stock หมด แต่ยังให้จองได้
+    // ✅ ตรวจสอบเงื่อนไขการจองใหม่
+    if (!canReserveSize(selectedSize)) {
+      message.error(
+        `ขนาด ${selectedSize} ไม่สามารถจองได้ เนื่องจากยอดจองเต็มแล้ว`
+      );
+      return;
+    }
+
+    // ✅ แจ้งเตือนถ้า stock หมด แต่ยังจองได้
     if (!canReceiveSize(selectedSize)) {
       message.warning(`ขนาด ${selectedSize} หมดสต็อก แต่จะบันทึกการจองไว้ให้`);
     }
@@ -300,21 +339,28 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               </div>
             ) : selectedSize ? (
               <div className="selected-size-display">
-                <span style={{ 
-                  color: !canReceiveSize(selectedSize) ? "#ff4d4f" : "#000",
-                  fontWeight: "bold"
-                }}>
+                <span
+                  style={{
+                    color: !canReceiveSize(selectedSize) ? "#ff4d4f" : "#000",
+                    fontWeight: "bold",
+                  }}
+                >
                   {selectedSize}
                 </span>
-                {/* ✅ แสดงเฉพาะเมื่อหมดสต็อก */}
-                {stockData[selectedSize] && !canReceiveSize(selectedSize) && (
-                  <div style={{ 
-                    fontSize: 12, 
-                    color: "#ff4d4f", 
-                    marginTop: 4,
-                    fontWeight: "bold"
-                  }}>
-                    ⚠️ หมดสต็อก (จองได้ แต่รับไม่ได้)
+                {/* ✅ แสดงสถานะการจองและรับ */}
+                {stockData[selectedSize] && (
+                  <div style={{ fontSize: 12, marginTop: 4 }}>
+                    {!canReserveSize(selectedSize) && (
+                      <div style={{ color: "#ff4d4f", fontWeight: "bold" }}>
+                        ❌ จองไม่ได้ (ยอดจองเต็ม)
+                      </div>
+                    )}
+                    {canReserveSize(selectedSize) &&
+                      !canReceiveSize(selectedSize) && (
+                        <div style={{ color: "#ff7a00", fontWeight: "bold" }}>
+                          ⚠️ จองได้ แต่รับไม่ได้ (หมดสต็อก)
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -336,10 +382,16 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               }}
               className="receiver-radio-group"
             >
-              <Radio value="SELF" disabled={!selectedSize || !canReceiveSize(selectedSize)}>
+              <Radio
+                value="SELF"
+                disabled={!selectedSize || !canReceiveSize(selectedSize)}
+              >
                 รับด้วยตนเอง
               </Radio>
-              <Radio value="OTHER" disabled={!selectedSize || !canReceiveSize(selectedSize)}>
+              <Radio
+                value="OTHER"
+                disabled={!selectedSize || !canReceiveSize(selectedSize)}
+              >
                 รับแทน
               </Radio>
             </Radio.Group>
@@ -379,12 +431,14 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               ยกเลิก
             </Button>
 
-            {/* ✅ บันทึกขนาด - ทำได้เสมอ */}
+            {/* ✅ บันทึกขนาด - ตรวจสอบการจองได้ */}
             <Button
               size="large"
               onClick={handleSaveSizeOnly}
               loading={loading}
-              disabled={!selectedSize || loading}
+              disabled={
+                !selectedSize || !canReserveSize(selectedSize) || loading
+              }
             >
               บันทึกขนาด
             </Button>
@@ -395,7 +449,9 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               size="large"
               onClick={handleSubmitPickup}
               loading={loading}
-              disabled={!selectedSize || !canReceiveSize(selectedSize) || loading}
+              disabled={
+                !selectedSize || !canReceiveSize(selectedSize) || loading
+              }
             >
               บันทึกการรับเสื้อ
             </Button>
@@ -436,38 +492,84 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               <div className="size-grid">
                 {ALL_SIZES.map((size) => {
                   const hasStock = canReceiveSize(size);
+                  const canReserve = canReserveSize(size);
                   const stock = stockData[size];
-                  
+
                   return (
                     <Card
                       key={size}
-                      hoverable
-                      className={`size-card ${selectedSize === size ? "selected" : ""}`}
+                      hoverable={canReserve}
+                      className={`size-card ${
+                        selectedSize === size ? "selected" : ""
+                      } ${!canReserve ? "disabled" : ""}`}
                       onClick={() => {
+                        if (!canReserve) {
+                          message.error(
+                            `ขนาด ${size} ไม่สามารถจองได้ เนื่องจากยอดจองเต็มแล้ว`
+                          );
+                          return;
+                        }
                         setSelectedSize(size);
                         setShowSizeGuide(false);
                         if (!hasStock) {
-                          message.warning(`ขนาด ${size} หมดสต็อก - จองได้ แต่รับไม่ได้`);
+                          message.warning(
+                            `ขนาด ${size} หมดสต็อก - จองได้ แต่รับไม่ได้`
+                          );
                         }
+                      }}
+                      style={{
+                        opacity: canReserve ? 1 : 0.5,
+                        cursor: canReserve ? "pointer" : "not-allowed",
                       }}
                     >
                       <div className="size-label" style={{ fontSize: 28 }}>
                         {size}
-                        {/* ✅ แสดงเฉพาะเมื่อหมดสต็อก */}
-                        {!hasStock && (
-                          <div style={{ 
-                            fontSize: 12, 
-                            color: "#ff4d4f", 
-                            marginTop: 6,
-                            fontWeight: "bold" 
-                          }}>
+                        {/* ✅ แสดงสถานะต่างๆ */}
+                        {!canReserve && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#ff4d4f",
+                              marginTop: 6,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            จองไม่ได้
+                          </div>
+                        )}
+                        {canReserve && !hasStock && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#ff7a00",
+                              marginTop: 6,
+                              fontWeight: "bold",
+                            }}
+                          >
                             หมดสต็อก
                           </div>
                         )}
                       </div>
                       <div className="size-measurements">
-                        <div style={{ fontSize: 16 }}>อก {SIZE_INFO[size].chest}</div>
-                        <div style={{ fontSize: 16 }}>ยาว {SIZE_INFO[size].length}</div>
+                        <div style={{ fontSize: 16 }}>
+                          อก {SIZE_INFO[size].chest}
+                        </div>
+                        <div style={{ fontSize: 16 }}>
+                          ยาว {SIZE_INFO[size].length}
+                        </div>
+                        {/* ✅ แสดงข้อมูลสต็อกและจอง */}
+                        {stock && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#666",
+                              marginTop: 4,
+                            }}
+                          >
+                            ผลิต: {stock.produced} | จอง: {stock.reserved} |
+                            คงเหลือ: {stock.remaining}
+                          </div>
+                        )}
                       </div>
                     </Card>
                   );
@@ -475,11 +577,15 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               </div>
 
               <div className="size-guide-note">
-                <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
-                2" เนื่องจากเสื้อแจ็คเก็ตต้องมีพื้นที่เก็บอุ่น เช่น วัดได้ 40"
+                <strong>คำแนะนำ:</strong>{" "}
+                ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ 2"
+                เนื่องจากเสื้อแจ็คเก็ตต้องมีพื้นที่เก็บอุ่น เช่น วัดได้ 40"
                 ให้เลือกขนาดเสื้อ 42" แทน
                 <div style={{ marginTop: 8, color: "#ff4d4f" }}>
-                  <strong>หมายเหตุ:</strong> ขนาดที่หมดสต็อกสามารถเลือกจองได้ แต่ไม่สามารถบันทึกการรับได้จนกว่าจะมีการเติมสต็อก
+                  <strong>หมายเหตุ:</strong>
+                  <br />• ขนาดที่หมดสต็อกสามารถเลือกจองได้
+                  แต่ไม่สามารถบันทึกการรับได้จนกว่าจะมีการเติมสต็อก
+                  <br />• ขนาดที่ยอดจองเต็มแล้วจะไม่สามารถจองเพิ่มได้
                 </div>
               </div>
             </>

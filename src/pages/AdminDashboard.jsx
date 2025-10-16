@@ -108,8 +108,8 @@ const AdminDashboard = () => {
     { key: "dashboard", icon: <DashboardOutlined />, label: "ภาพรวม" },
     { key: "members", icon: <SearchOutlined />, label: "ค้นหาและจ่ายเสื้อ" },
     { key: "inventory", icon: <BarChartOutlined />, label: "จัดการสต็อก" },
-    { key: "reports", icon: <FileTextOutlined />, label: "รายงานแยกหน่วยงาน" }, // ✅ เปลี่ยนจาก BarChartOutlined เป็น FileTextOutlined
-    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการทำรายการ" },
+     { key: "history", icon: <HistoryOutlined />, label: "ประวัติการจัดการสต๊อก" },
+    { key: "reports", icon: <FileTextOutlined />, label: "รายงานแยกหน่วยงาน" }, // ✅ เปลี่ยนจาก BarChartOutlined เป็น FileTextOutlined  
     { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
   ];
 
