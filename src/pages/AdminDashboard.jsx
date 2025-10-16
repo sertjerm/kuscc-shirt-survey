@@ -28,6 +28,7 @@ import {
   HistoryOutlined,
   ReloadOutlined,
   MoreOutlined,
+  FileTextOutlined, // ✅ เพิ่ม import สำหรับ icon ใหม่
 } from "@ant-design/icons";
 import "../styles/AdminDashboard.css";
 
@@ -35,7 +36,8 @@ import "../styles/AdminDashboard.css";
 import MembersList from "../components/Admin/MembersList";
 import DashboardStats from "../components/Admin/DashboardStats";
 import InventoryManagement from "../components/Admin/InventoryManagement";
-import StockLogsHistory from "../components/Admin/StockLogsHistory"; // ✅ เพิ่ม
+import StockLogsHistory from "../components/Admin/StockLogsHistory";
+import ShirtDeptReport from "../components/Admin/ShirtDeptReport"; // ✅ เพิ่ม
 import { getDashboardStats } from "../services/shirtApi";
 
 const { Header, Sider, Content } = Layout;
@@ -106,7 +108,8 @@ const AdminDashboard = () => {
     { key: "dashboard", icon: <DashboardOutlined />, label: "ภาพรวม" },
     { key: "members", icon: <SearchOutlined />, label: "ค้นหาและจ่ายเสื้อ" },
     { key: "inventory", icon: <BarChartOutlined />, label: "จัดการสต็อก" },
-    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการทำรายการ" }, // ✅ แก้ไข
+    { key: "reports", icon: <FileTextOutlined />, label: "รายงานแยกหน่วยงาน" }, // ✅ เปลี่ยนจาก BarChartOutlined เป็น FileTextOutlined
+    { key: "history", icon: <HistoryOutlined />, label: "ประวัติการทำรายการ" },
     { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
   ];
 
@@ -128,7 +131,7 @@ const AdminDashboard = () => {
     },
   ];
 
-  // ✅ เพิ่ม case "history"
+  // ✅ เพิ่ม case "reports"
   const renderContent = () => {
     switch (activeMenuKey) {
       case "members":
@@ -137,8 +140,11 @@ const AdminDashboard = () => {
       case "inventory":
         return <InventoryManagement />;
 
+      case "reports":
+        return <ShirtDeptReport />; // ✅ เพิ่ม
+
       case "history":
-        return <StockLogsHistory />; // ✅ เปลี่ยนจาก Alert เป็น Component จริง
+        return <StockLogsHistory />;
 
       case "settings":
         return (
