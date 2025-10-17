@@ -8,7 +8,7 @@ import {
   FilePdfOutlined,
 } from "@ant-design/icons";
 import { message, Spin, Alert } from "antd";
-import { getDepartmentReport } from "../../services/shirtApi";
+import { getDepartmentReport, getShirtSizes } from "../../services/shirtApi";
 import * as XLSX from "xlsx";
 
 const ShirtDeptReport = () => {
@@ -18,15 +18,13 @@ const ShirtDeptReport = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [rawData, setRawData] = useState([]);
   const [error, setError] = useState(null);
-
-  const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+  const [sizes, setSizes] = useState([]);
 
   const formatNumber = (num) => {
     if (!num || num === 0) return "-";
     return Number(num).toLocaleString("th-TH");
   };
 
-  // ✅ ฟังก์ชันเปิด PDF ในหน้าต่างใหม่
   const handleExportPDF = (deptCode, sectCode = null) => {
     const baseUrl = "https://apps4.coop.ku.ac.th/php/jacket/report_details.php";
     let url = `${baseUrl}?dept_code=${deptCode}`;
@@ -47,16 +45,47 @@ const ShirtDeptReport = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("📊 Loading department report...");
-      const data = await getDepartmentReport();
+      console.log("📊 Loading department report and shirt sizes...");
 
-      if (data && Array.isArray(data) && data.length > 0) {
-        setRawData(data);
-        console.log("📊 Department report loaded:", data.length, "records");
+      // ✅ โหลดทั้งข้อมูลรายงานและขนาดเสื้อพร้อมกัน
+      const [reportData, sizeData] = await Promise.all([
+        getDepartmentReport(),
+        getShirtSizes(),
+      ]);
+
+      if (reportData && Array.isArray(reportData) && reportData.length > 0) {
+        setRawData(reportData);
+
+        // ✅ ดึงเฉพาะ SIZE_CODE ที่มีในข้อมูลจริง
+        const sizesInData = [
+          ...new Set(reportData.map((item) => item.SIZE_CODE)),
+        ];
+
+        // ✅ สร้าง map สำหรับเรียงลำดับตาม SORT_ORDER
+        const sizeOrderMap = {};
+        sizeData.forEach((s) => {
+          sizeOrderMap[s.SIZE_CODE] = s.SORT_ORDER;
+        });
+
+        // ✅ เรียงลำดับตาม SORT_ORDER
+        sizesInData.sort((a, b) => {
+          const orderA = sizeOrderMap[a] ?? 999;
+          const orderB = sizeOrderMap[b] ?? 999;
+          return orderA - orderB;
+        });
+
+        setSizes(sizesInData);
+
+        console.log(
+          "📊 Department report loaded:",
+          reportData.length,
+          "records"
+        );
+        console.log("📏 Sizes found in data:", sizesInData);
 
         const isSampleData =
-          data.length <= 15 &&
-          data.some(
+          reportData.length <= 15 &&
+          reportData.some(
             (item) =>
               item.DEPT_NAME === "สำนักงานมหาวิทยาลัย" &&
               item.SECT_NAME === "ภาควิชากีฬาวิทยา"
@@ -64,19 +93,23 @@ const ShirtDeptReport = () => {
 
         if (isSampleData) {
           message.warning(
-            `แสดงข้อมูลตัวอย่าง (${data.length} รายการ) - API ยังไม่พร้อมใช้งาน`
+            `แสดงข้อมูลตัวอย่าง (${reportData.length} รายการ) - API ยังไม่พร้อมใช้งาน`
           );
         } else {
-          message.success(`โหลดข้อมูลรายงานสำเร็จ: ${data.length} รายการ`);
+          message.success(
+            `โหลดข้อมูลรายงานสำเร็จ: ${reportData.length} รายการ`
+          );
         }
       } else {
         setRawData([]);
+        setSizes([]);
         message.info("ไม่พบข้อมูลรายงาน");
       }
     } catch (err) {
       console.error("❌ Load report error:", err);
       setError(err.message || "ไม่สามารถโหลดข้อมูลรายงานได้");
       setRawData([]);
+      setSizes([]);
 
       if (err.message.includes("404") || err.message.includes("ไม่พบ")) {
         message.error("API endpoint ยังไม่พร้อมใช้งาน");
@@ -98,7 +131,7 @@ const ShirtDeptReport = () => {
     try {
       console.log("📊 Exporting department report to Excel...");
 
-      if (!groupedData || groupedData.length === 0) {
+      if (!groupedData || groupedData.length === 0 || sizes.length === 0) {
         message.warning("ไม่มีข้อมูลสำหรับ export");
         return;
       }
@@ -296,10 +329,28 @@ const ShirtDeptReport = () => {
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
+          padding: "60px 20px",
         }}
       >
-        <Spin size="large" />
-        <div style={{ marginTop: 16, color: "#666" }}>
+        <div
+          style={{
+            border: "4px solid #f3f3f3",
+            borderTop: "4px solid #1890ff",
+            borderRadius: "50%",
+            width: "48px",
+            height: "48px",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+        <div style={{ marginTop: 16, color: "#666", fontSize: "14px" }}>
           กำลังโหลดข้อมูลรายงาน...
         </div>
       </div>
@@ -324,6 +375,7 @@ const ShirtDeptReport = () => {
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
+                fontSize: "14px",
               }}
             >
               ลองใหม่
@@ -352,6 +404,7 @@ const ShirtDeptReport = () => {
                 border: "none",
                 borderRadius: "6px",
                 cursor: "pointer",
+                fontSize: "14px",
               }}
             >
               รีเฟรช
@@ -366,18 +419,19 @@ const ShirtDeptReport = () => {
     <div
       style={{
         padding: "24px",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#fff",
         minHeight: "100vh",
       }}
     >
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto" }}>
         <div
           style={{
             backgroundColor: "white",
             borderRadius: "8px",
             padding: "24px",
-            marginBottom: "24px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            marginBottom: "20px",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+            border: "1px solid #e8e8e8",
           }}
         >
           <div
@@ -393,15 +447,15 @@ const ShirtDeptReport = () => {
             <div>
               <h1
                 style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  margin: 0,
-                  color: "#1f2937",
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  margin: "0 0 12px 0",
+                  color: "#1d1d1f",
                 }}
               >
                 สรุปจำนวนตามหน่วยงาน
               </h1>
-              <p style={{ color: "#6b7280", margin: "4px 0 0 0" }}>
+              <p style={{ color: "#666", margin: "0", fontSize: "13px" }}>
                 แยกตามหน่วยงานและภาควิชา/ฝ่ายงาน ({formatNumber(rawData.length)}{" "}
                 รายการ)
                 {rawData.length > 0 &&
@@ -431,14 +485,17 @@ const ShirtDeptReport = () => {
                 onClick={loadReportData}
                 disabled={loading}
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 16px",
+                  gap: "6px",
+                  height: "38px",
+                  padding: "0 16px",
                   backgroundColor: "#6b7280",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
                   cursor: loading ? "not-allowed" : "pointer",
                   opacity: loading ? 0.5 : 1,
                 }}
@@ -450,14 +507,17 @@ const ShirtDeptReport = () => {
                 onClick={handleExportExcel}
                 disabled={exportLoading || rawData.length === 0}
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 16px",
+                  gap: "6px",
+                  height: "38px",
+                  padding: "0 16px",
                   backgroundColor: rawData.length === 0 ? "#d1d5db" : "#52c41a",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
                   cursor:
                     exportLoading || rawData.length === 0
                       ? "not-allowed"
@@ -471,8 +531,8 @@ const ShirtDeptReport = () => {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
+          <div style={{ marginTop: "12px" }}>
+            <div style={{ position: "relative", maxWidth: "100%" }}>
               <SearchOutlined
                 style={{
                   position: "absolute",
@@ -491,11 +551,23 @@ const ShirtDeptReport = () => {
                   width: "100%",
                   paddingLeft: "40px",
                   paddingRight: "16px",
-                  paddingTop: "8px",
-                  paddingBottom: "8px",
-                  border: "1px solid #d1d5db",
+                  paddingTop: "9px",
+                  paddingBottom: "9px",
+                  border: "1px solid #d9d9d9",
                   borderRadius: "6px",
                   fontSize: "14px",
+                  height: "38px",
+                  transition: "all 0.3s",
+                  color: "#333",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1890ff";
+                  e.target.style.boxShadow =
+                    "0 0 0 2px rgba(24, 144, 255, 0.2)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#d9d9d9";
+                  e.target.style.boxShadow = "none";
                 }}
               />
             </div>
@@ -506,27 +578,35 @@ const ShirtDeptReport = () => {
           <div
             style={{
               backgroundColor: "white",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              borderRadius: "6px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+              border: "1px solid #e8e8e8",
               overflow: "hidden",
             }}
           >
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  background: "#fff",
+                }}
+              >
                 <thead>
                   <tr
                     style={{
-                      backgroundColor: "#1f4e79",
-                      color: "white",
+                      backgroundColor: "#fafafa",
+                      color: "#1d1d1f",
                     }}
                   >
                     <th
                       style={{
-                        padding: "12px 16px",
+                        padding: "16px 12px",
                         textAlign: "left",
                         fontSize: "14px",
                         fontWeight: "600",
                         minWidth: "250px",
+                        borderBottom: "2px solid #e8e8e8",
                       }}
                     >
                       หน่วยงาน/ภาควิชา
@@ -535,11 +615,12 @@ const ShirtDeptReport = () => {
                       <th
                         key={size}
                         style={{
-                          padding: "12px",
+                          padding: "16px 12px",
                           textAlign: "center",
                           fontSize: "14px",
                           fontWeight: "600",
                           minWidth: "60px",
+                          borderBottom: "2px solid #e8e8e8",
                         }}
                       >
                         {size}
@@ -547,22 +628,24 @@ const ShirtDeptReport = () => {
                     ))}
                     <th
                       style={{
-                        padding: "12px 16px",
+                        padding: "16px 12px",
                         textAlign: "center",
                         fontSize: "14px",
                         fontWeight: "600",
                         minWidth: "80px",
+                        borderBottom: "2px solid #e8e8e8",
                       }}
                     >
                       รวม
                     </th>
                     <th
                       style={{
-                        padding: "12px 16px",
+                        padding: "16px 12px",
                         textAlign: "center",
                         fontSize: "14px",
                         fontWeight: "600",
                         minWidth: "100px",
+                        borderBottom: "2px solid #e8e8e8",
                       }}
                     >
                       การดำเนินการ
@@ -574,12 +657,19 @@ const ShirtDeptReport = () => {
                     <React.Fragment key={dept.code}>
                       <tr
                         style={{
-                          backgroundColor: "#f3f4f6",
-                          borderBottom: "1px solid #e5e7eb",
+                          backgroundColor: "#fafafa",
+                          borderBottom: "1px solid #f0f0f0",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f5f5f5";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "#fafafa";
                         }}
                       >
                         <td
-                          style={{ padding: "12px 16px", cursor: "pointer" }}
+                          style={{ padding: "14px 12px", cursor: "pointer" }}
                           onClick={() => toggleDept(dept.code)}
                         >
                           <div
@@ -596,12 +686,20 @@ const ShirtDeptReport = () => {
                             )}
                             <div>
                               <div
-                                style={{ fontWeight: "600", color: "#1f2937" }}
+                                style={{
+                                  fontWeight: "600",
+                                  color: "#333",
+                                  fontSize: "14px",
+                                }}
                               >
                                 {dept.name}
                               </div>
                               <div
-                                style={{ fontSize: "12px", color: "#6b7280" }}
+                                style={{
+                                  fontSize: "13px",
+                                  color: "#666",
+                                  marginTop: "2px",
+                                }}
                               >
                                 รหัส: {dept.code}
                               </div>
@@ -612,17 +710,18 @@ const ShirtDeptReport = () => {
                           <td
                             key={size}
                             style={{
-                              padding: "12px",
+                              padding: "14px 12px",
                               textAlign: "center",
                               fontWeight: "500",
-                              color: "#374151",
+                              color: "#333",
+                              fontSize: "14px",
                             }}
                           >
                             {formatNumber(dept.totalBySize[size])}
                           </td>
                         ))}
                         <td
-                          style={{ padding: "12px 16px", textAlign: "center" }}
+                          style={{ padding: "14px 12px", textAlign: "center" }}
                         >
                           <span
                             style={{
@@ -630,7 +729,7 @@ const ShirtDeptReport = () => {
                               padding: "4px 12px",
                               backgroundColor: "#1890ff",
                               color: "white",
-                              borderRadius: "9999px",
+                              borderRadius: "12px",
                               fontWeight: "bold",
                               fontSize: "14px",
                             }}
@@ -639,7 +738,7 @@ const ShirtDeptReport = () => {
                           </span>
                         </td>
                         <td
-                          style={{ padding: "12px 16px", textAlign: "center" }}
+                          style={{ padding: "14px 12px", textAlign: "center" }}
                         >
                           <button
                             onClick={() => handleExportPDF(dept.code)}
@@ -679,22 +778,31 @@ const ShirtDeptReport = () => {
                             key={section.code}
                             style={{
                               backgroundColor: "white",
-                              borderBottom: "1px solid #f3f4f6",
+                              borderBottom: "1px solid #f0f0f0",
+                              transition: "background-color 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f5f5f5";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "white";
                             }}
                           >
                             <td
                               style={{
-                                padding: "12px 16px",
+                                padding: "14px 12px",
                                 paddingLeft: "48px",
                               }}
                             >
-                              <div
-                                style={{ fontSize: "14px", color: "#374151" }}
-                              >
+                              <div style={{ fontSize: "14px", color: "#333" }}>
                                 {section.name}
                               </div>
                               <div
-                                style={{ fontSize: "12px", color: "#9ca3af" }}
+                                style={{
+                                  fontSize: "13px",
+                                  color: "#666",
+                                  marginTop: "2px",
+                                }}
                               >
                                 รหัส: {dept.code}
                                 {section.code}
@@ -704,10 +812,10 @@ const ShirtDeptReport = () => {
                               <td
                                 key={size}
                                 style={{
-                                  padding: "12px",
+                                  padding: "14px 12px",
                                   textAlign: "center",
                                   fontSize: "14px",
-                                  color: "#6b7280",
+                                  color: "#666",
                                 }}
                               >
                                 {formatNumber(section.sizes[size])}
@@ -715,18 +823,19 @@ const ShirtDeptReport = () => {
                             ))}
                             <td
                               style={{
-                                padding: "12px 16px",
+                                padding: "14px 12px",
                                 textAlign: "center",
                               }}
                             >
                               <span
                                 style={{
                                   display: "inline-block",
-                                  padding: "2px 8px",
-                                  backgroundColor: "#e5e7eb",
-                                  color: "#374151",
-                                  borderRadius: "4px",
-                                  fontSize: "14px",
+                                  padding: "4px 12px",
+                                  backgroundColor: "#e6f7ff",
+                                  color: "#0958d9",
+                                  border: "1px solid #91d5ff",
+                                  borderRadius: "12px",
+                                  fontSize: "13px",
                                   fontWeight: "500",
                                 }}
                               >
@@ -735,7 +844,7 @@ const ShirtDeptReport = () => {
                             </td>
                             <td
                               style={{
-                                padding: "12px 16px",
+                                padding: "14px 12px",
                                 textAlign: "center",
                               }}
                             >
@@ -778,21 +887,29 @@ const ShirtDeptReport = () => {
 
                   <tr
                     style={{
-                      backgroundColor: "#1f4e79",
-                      color: "white",
+                      backgroundColor: "#fafafa",
+                      color: "#1d1d1f",
                       fontWeight: "bold",
+                      borderTop: "2px solid #e8e8e8",
                     }}
                   >
-                    <td style={{ padding: "16px", fontSize: "16px" }}>
+                    <td
+                      style={{
+                        padding: "16px 12px",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                      }}
+                    >
                       รวมทั้งหมด
                     </td>
                     {sizes.map((size) => (
                       <td
                         key={size}
                         style={{
-                          padding: "16px",
+                          padding: "16px 12px",
                           textAlign: "center",
                           fontSize: "14px",
+                          fontWeight: "600",
                         }}
                       >
                         {formatNumber(grandTotalBySize[size])}
@@ -800,14 +917,15 @@ const ShirtDeptReport = () => {
                     ))}
                     <td
                       style={{
-                        padding: "16px",
+                        padding: "16px 12px",
                         textAlign: "center",
-                        fontSize: "18px",
+                        fontSize: "16px",
+                        fontWeight: "bold",
                       }}
                     >
                       {formatNumber(grandTotal)}
                     </td>
-                    <td style={{ padding: "16px" }}></td>
+                    <td style={{ padding: "16px 12px" }}></td>
                   </tr>
                 </tbody>
               </table>
@@ -817,22 +935,23 @@ const ShirtDeptReport = () => {
           <div
             style={{
               backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "48px",
+              borderRadius: "6px",
+              padding: "60px 20px",
               textAlign: "center",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+              border: "1px solid #e8e8e8",
             }}
           >
             <div
               style={{
-                fontSize: "18px",
-                color: "#6b7280",
+                fontSize: "16px",
+                color: "#999",
                 marginBottom: "8px",
               }}
             >
               ไม่พบผลการค้นหา
             </div>
-            <div style={{ color: "#9ca3af" }}>
+            <div style={{ color: "#999", fontSize: "14px" }}>
               ลองเปลี่ยนคำค้นหาหรือลบตัวกรองออก
             </div>
           </div>
@@ -842,8 +961,9 @@ const ShirtDeptReport = () => {
           style={{
             marginTop: "24px",
             textAlign: "center",
-            color: "#6b7280",
+            color: "#666",
             fontSize: "14px",
+            padding: "16px 0",
           }}
         >
           <p style={{ margin: 0 }}>
