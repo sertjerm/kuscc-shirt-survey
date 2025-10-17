@@ -1,0 +1,66 @@
+
+// ===================================================================
+// ✨ NEW: ดึงข้อมูลขนาดเสื้อจาก API
+// ===================================================================
+
+let cachedSizes = null;
+
+export const getShirtSizes = async () => {
+  if (cachedSizes) {
+    return cachedSizes;
+  }
+
+  try {
+    console.log("🔍 Fetching shirt sizes from API...");
+    const res = await api.get("/GetShirtSizes");
+
+    if (res.data?.responseCode !== 200) {
+      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดข้อมูลขนาดเสื้อได้");
+    }
+
+    cachedSizes = res.data.data || [];
+    cachedSizes.sort((a, b) => a.SORT_ORDER - b.SORT_ORDER);
+
+    console.log("✅ Loaded shirt sizes:", cachedSizes);
+    return cachedSizes;
+  } catch (error) {
+    console.error("❌ Error fetching shirt sizes:", error);
+    return getDefaultSizes();
+  }
+};
+
+export const getSizeOrder = async () => {
+  const sizes = await getShirtSizes();
+  return sizes.map(s => s.SIZE_CODE);
+};
+
+export const getSizeOrderMap = async () => {
+  const sizes = await getShirtSizes();
+  return sizes.reduce((acc, size) => {
+    acc[size.SIZE_CODE] = size.SORT_ORDER;
+    return acc;
+  }, {});
+};
+
+export const getSizeInfo = async (sizeCode) => {
+  const sizes = await getShirtSizes();
+  return sizes.find(s => s.SIZE_CODE === sizeCode) || null;
+};
+
+const getDefaultSizes = () => {
+  return [
+    { CHEST_INCH: 38, LENGTH_INCH: 23, REMARKS: "ขนาดเล็กพิเศษ สำหรับผู้มีรูปร่างเล็กมาก", SIZE_CODE: "MINI", SIZE_NAME: "มินิไซส์", SIZE_NAME_EN: "Mini Size", SORT_ORDER: 0 },
+    { CHEST_INCH: 40, LENGTH_INCH: 24, REMARKS: null, SIZE_CODE: "XS", SIZE_NAME: "เอ็กซ์ตร้า สมอลล์", SIZE_NAME_EN: "Extra Small", SORT_ORDER: 1 },
+    { CHEST_INCH: 42, LENGTH_INCH: 25, REMARKS: null, SIZE_CODE: "S", SIZE_NAME: "สมอลล์", SIZE_NAME_EN: "Small", SORT_ORDER: 2 },
+    { CHEST_INCH: 44, LENGTH_INCH: 26, REMARKS: null, SIZE_CODE: "M", SIZE_NAME: "มีเดียม", SIZE_NAME_EN: "Medium", SORT_ORDER: 3 },
+    { CHEST_INCH: 46, LENGTH_INCH: 27, REMARKS: null, SIZE_CODE: "L", SIZE_NAME: "ลาร์จ", SIZE_NAME_EN: "Large", SORT_ORDER: 4 },
+    { CHEST_INCH: 48, LENGTH_INCH: 28, REMARKS: null, SIZE_CODE: "XL", SIZE_NAME: "เอ็กซ์ตร้า ลาร์จ", SIZE_NAME_EN: "Extra Large", SORT_ORDER: 5 },
+    { CHEST_INCH: 50, LENGTH_INCH: 29, REMARKS: null, SIZE_CODE: "2XL", SIZE_NAME: "ทู เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "2X Large", SORT_ORDER: 6 },
+    { CHEST_INCH: 52, LENGTH_INCH: 30, REMARKS: null, SIZE_CODE: "3XL", SIZE_NAME: "ทรี เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "3X Large", SORT_ORDER: 7 },
+    { CHEST_INCH: 54, LENGTH_INCH: 31, REMARKS: null, SIZE_CODE: "4XL", SIZE_NAME: "โฟร์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "4X Large", SORT_ORDER: 8 },
+    { CHEST_INCH: 56, LENGTH_INCH: 32, REMARKS: null, SIZE_CODE: "5XL", SIZE_NAME: "ไฟว์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "5X Large", SORT_ORDER: 9 },
+    { CHEST_INCH: 58, LENGTH_INCH: 33, REMARKS: null, SIZE_CODE: "6XL", SIZE_NAME: "ซิกซ์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "6X Large", SORT_ORDER: 10 },
+    { CHEST_INCH: 60, LENGTH_INCH: 34, REMARKS: "ขนาดใหญ่พิเศษ สำหรับผู้ที่ต้องการขนาดใหญ่มากเป็นพิเศษ", SIZE_CODE: "PLUS", SIZE_NAME: "พลัสไซส์", SIZE_NAME_EN: "Plus Size", SORT_ORDER: 11 },
+  ];
+};
+

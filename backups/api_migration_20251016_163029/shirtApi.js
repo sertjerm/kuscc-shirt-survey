@@ -434,35 +434,6 @@ export const getDashboardStats = async () => {
 };
 
 // ===================================================================
-// Department Report API
-// ===================================================================
-
-/**
- * ดึงรายงานแยกตามหน่วยงาน
- * @returns {Promise<Array>} รายงานแยกตามหน่วยงาน
- */
-export const getDepartmentReport = async () => {
-  try {
-    console.log("📊 Fetching department report from API...");
-
-    // ✅ แก้ไข endpoint ให้ถูกต้อง
-    const res = await api.get("/GetShirtResultDeptSect");
-
-    if (res.data?.responseCode !== 200) {
-      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดรายงานหน่วยงานได้");
-    }
-
-    const reportData = res.data.data || [];
-    
-    console.log("📊 Department report received:", reportData);
-    return reportData;
-  } catch (error) {
-    console.error("❌ Error fetching department report:", error);
-    throw error;
-  }
-};
-
-// ===================================================================
 // Clear Member Data API
 // ===================================================================
 

@@ -1,4 +1,6 @@
-// src/components/Admin/MembersList.jsx - FINAL FIXED VERSION
+// src/components/Admin/MembersList.jsx - FIXED VERSION
+// ✅ ใช้ API แทน hardcode + แก้ layout ให้เหมือน apps4
+
 import { useState, useEffect, useCallback } from "react";
 import {
   message,
@@ -6,8 +8,7 @@ import {
   Pagination,
   Modal,
   Checkbox,
-  Input,
-  Popover,
+  Tooltip,
 } from "antd";
 import {
   ReloadOutlined,
@@ -19,11 +20,11 @@ import {
   getShirtMemberListPaged,
   clearMemberData,
   saveMemberSize,
+  getShirtSizes,
 } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import { formatDateTime } from "../../utils/js_functions";
 import {
-  SHIRT_SIZES,
   MEMBER_STATUS,
   STATUS_LABELS,
 } from "../../utils/constants";
@@ -32,10 +33,6 @@ import "../../styles/MembersList.css";
 
 const MembersList = ({ onDataChange }) => {
   const { user } = useAppContext();
-
-  useEffect(() => {
-    console.log("MembersList - Current admin user:", user);
-  }, [user]);
 
   // Data States
   const [members, setMembers] = useState([]);
@@ -54,6 +51,7 @@ const MembersList = ({ onDataChange }) => {
   const [statusFilter, setStatusFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [sizes, setSizes] = useState([]);
 
   // Sorting
   const [sortField, setSortField] = useState("");
@@ -62,6 +60,20 @@ const MembersList = ({ onDataChange }) => {
   // Modal
   const [selectedMember, setSelectedMember] = useState(null);
   const [showPickupModal, setShowPickupModal] = useState(false);
+
+  // ✅ โหลด sizes จาก API
+  useEffect(() => {
+    loadSizes();
+  }, []);
+
+  const loadSizes = async () => {
+    try {
+      const sizesData = await getShirtSizes();
+      setSizes(sizesData);
+    } catch (error) {
+      console.error("Error loading sizes:", error);
+    }
+  };
 
   // Load Members
   const loadMembers = useCallback(async () => {
@@ -158,13 +170,11 @@ const MembersList = ({ onDataChange }) => {
   };
 
   const handleOpenPickupModal = (member) => {
-    console.log("Opening pickup modal for member:", member);
     setSelectedMember(member);
     setShowPickupModal(true);
   };
 
   const handleClosePickupModal = () => {
-    console.log("Closing pickup modal");
     setShowPickupModal(false);
     setSelectedMember(null);
   };
@@ -178,7 +188,30 @@ const MembersList = ({ onDataChange }) => {
     }
   };
 
-  // Clear Member Data Handler - FIXED VERSION
+  // Get member status
+  const getMemberStatus = (member) => {
+    if (member.hasReceived || member.receiveStatus === "RECEIVED") {
+      return MEMBER_STATUS.RECEIVED;
+    }
+    if (member.sizeCode || member.SIZE_CODE) {
+      return MEMBER_STATUS.CONFIRMED;
+    }
+    return MEMBER_STATUS.NOT_CONFIRMED;
+  };
+
+  const getStatusDisplay = (member) => {
+    const status = getMemberStatus(member);
+    const statusClass =
+      status === MEMBER_STATUS.RECEIVED
+        ? "status-badge received"
+        : status === MEMBER_STATUS.CONFIRMED
+        ? "status-badge confirmed"
+        : "status-badge not-confirmed";
+
+    return <span className={statusClass}>{STATUS_LABELS[status]}</span>;
+  };
+
+  // Clear Member Data Handler
   const handleClearMemberData = (member) => {
     const memberCode = member.memberCode || member.MEMB_CODE;
     const fullName = member.fullName || member.FULLNAME;
@@ -191,90 +224,7 @@ const MembersList = ({ onDataChange }) => {
       const [localClearSize, setLocalClearSize] = useState(false);
       const [localClearReceiveStatus, setLocalClearReceiveStatus] =
         useState(false);
-      const [localRemarks, setLocalRemarks] = useState("");
-
-      const handleSizeChange = (checked) => {
-        setLocalClearSize(checked);
-        if (checked) {
-          setLocalClearReceiveStatus(true);
-        }
-      };
-
-      const handleReceiveStatusChange = (checked) => {
-        if (!checked && localClearSize) {
-          message.warning("ต้องล้างสถานะการรับเสื้อด้วย เมื่อล้างขนาดเสื้อ");
-          return;
-        }
-        setLocalClearReceiveStatus(checked);
-      };
-
-      const handleConfirm = async () => {
-        if (!localClearSize && !localClearReceiveStatus) {
-          message.warning("กรุณาเลือกข้อมูลที่ต้องการล้างอย่างน้อย 1 รายการ");
-          return;
-        }
-
-        try {
-          setClearingMember(memberCode);
-
-          console.log("Clear options:", {
-            clearSize: localClearSize,
-            clearReceiveStatus: localClearReceiveStatus,
-          });
-
-          await clearMemberData({
-            memberCode: memberCode,
-            clearSize: localClearSize,
-            clearReceiveStatus: localClearReceiveStatus,
-            clearRemarks: true,
-            clearedBy: user?.memberCode || "admin",
-          });
-
-          const clearedItems = [];
-          if (localClearSize) clearedItems.push("ขนาดเสื้อ");
-          if (localClearReceiveStatus) clearedItems.push("สถานะการรับเสื้อ");
-
-          const clearedBy = user?.memberCode || user?.name || "admin";
-          const timestamp = new Date().toLocaleString("th-TH", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          });
-
-          let remarksMessage = `[ล้างข้อมูล: ${clearedItems.join(
-            ", "
-          )}] โดย ${clearedBy} เมื่อ ${timestamp}`;
-
-          if (localRemarks.trim()) {
-            remarksMessage += ` | เหตุผล: ${localRemarks.trim()}`;
-          }
-
-          await saveMemberSize({
-            memberCode: memberCode,
-            sizeCode: localClearSize ? "" : sizeCode, // ✅ คงค่าเดิมถ้าไม่ได้เลือก clearSize
-            remarks: remarksMessage,
-            surveyMethod: "MANUAL",
-            processedBy: user?.memberCode || "admin",
-          });
-
-          message.success(`ล้างข้อมูลสมาชิก ${memberCode} สำเร็จ`);
-          loadMembers();
-
-          if (onDataChange) {
-            onDataChange();
-          }
-
-          modalInstance.destroy();
-        } catch (err) {
-          console.error("Clear member data error:", err);
-          message.error(err.message || "ไม่สามารถล้างข้อมูลได้");
-        } finally {
-          setClearingMember(null);
-        }
-      };
+      const [localClearRemarks, setLocalClearRemarks] = useState(false);
 
       return (
         <div>
@@ -344,39 +294,16 @@ const MembersList = ({ onDataChange }) => {
                     padding: "12px",
                     border: "1px solid #d9d9d9",
                     borderRadius: "4px",
-                    backgroundColor: localClearSize ? "#fff1f0" : "white",
-                    transition: "all 0.3s",
+                    backgroundColor: localClearSize ? "#fff7e6" : "#fafafa",
                   }}
                 >
                   <Checkbox
                     checked={localClearSize}
-                    onChange={(e) => handleSizeChange(e.target.checked)}
-                    style={{ fontSize: "15px" }}
+                    onChange={(e) => setLocalClearSize(e.target.checked)}
                   >
-                    <strong>ล้างขนาดเสื้อที่เลือก:</strong>{" "}
-                    <span
-                      style={{
-                        color: "#1890ff",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {sizeCode}
-                    </span>
+                    <strong>ล้างขนาดเสื้อ</strong> (ปัจจุบัน:{" "}
+                    <strong>{sizeCode}</strong>)
                   </Checkbox>
-                  {localClearSize && (
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        marginLeft: "24px",
-                        fontSize: "12px",
-                        color: "#ff4d4f",
-                      }}
-                    >
-                      ⚠️ จะล้างสถานะการรับเสื้อด้วยอัตโนมัติ
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -388,428 +315,379 @@ const MembersList = ({ onDataChange }) => {
                     border: "1px solid #d9d9d9",
                     borderRadius: "4px",
                     backgroundColor: localClearReceiveStatus
-                      ? "#fff1f0"
-                      : "white",
-                    transition: "all 0.3s",
+                      ? "#fff7e6"
+                      : "#fafafa",
                   }}
                 >
                   <Checkbox
                     checked={localClearReceiveStatus}
                     onChange={(e) =>
-                      handleReceiveStatusChange(e.target.checked)
+                      setLocalClearReceiveStatus(e.target.checked)
                     }
-                    disabled={localClearSize}
-                    style={{ fontSize: "15px" }}
                   >
-                    <strong>ล้างสถานะการรับเสื้อ:</strong>{" "}
-                    <span
-                      style={{
-                        color: "#52c41a",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {STATUS_LABELS[MEMBER_STATUS.RECEIVED]}
-                    </span>
+                    <strong>ล้างสถานะการรับเสื้อ</strong>
                   </Checkbox>
                 </div>
               )}
-            </div>
-          </div>
 
-          <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: "bold",
-                marginBottom: "8px",
-                fontSize: "14px",
-              }}
-            >
-              หมายเหตุเพิ่มเติม (ระบุเหตุผลในการล้างข้อมูล):
-            </label>
-            <Input.TextArea
-              placeholder="เช่น: ข้อมูลผิดพลาด, สมาชิกขอเปลี่ยนแปลง, ทดสอบระบบ..."
-              rows={3}
-              maxLength={200}
-              showCount
-              value={localRemarks}
-              onChange={(e) => setLocalRemarks(e.target.value)}
-              style={{ width: "100%" }}
-            />
+              <div
+                style={{
+                  marginBottom: "12px",
+                  padding: "12px",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "4px",
+                  backgroundColor: localClearRemarks ? "#fff7e6" : "#fafafa",
+                }}
+              >
+                <Checkbox
+                  checked={localClearRemarks}
+                  onChange={(e) => setLocalClearRemarks(e.target.checked)}
+                >
+                  <strong>ล้างหมายเหตุ</strong>
+                </Checkbox>
+              </div>
+            </div>
           </div>
 
           <div
             style={{
-              marginTop: "16px",
               padding: "12px",
-              backgroundColor: "#f5f5f5",
+              backgroundColor: "#e6f7ff",
+              borderLeft: "4px solid #1890ff",
               borderRadius: "4px",
-              fontSize: "12px",
-              color: "#666",
+              marginBottom: "16px",
             }}
           >
-            <strong>ผู้ดำเนินการ:</strong>{" "}
-            {user?.memberCode || user?.name || "admin"} |{" "}
-            {new Date().toLocaleString("th-TH", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            <strong>💡 คำแนะนำ:</strong> เลือกข้อมูลที่ต้องการล้างด้านบน
+            จากนั้นกดปุ่ม "ยืนยันการล้างข้อมูล"
           </div>
 
-          <div style={{ marginTop: "16px", textAlign: "right" }}>
-            <Button
-              onClick={() => modalInstance.destroy()}
-              style={{ marginRight: "8px" }}
-            >
-              ยกเลิก
-            </Button>
+          <div
+            style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}
+          >
+            <Button onClick={() => modalInstance.destroy()}>ยกเลิก</Button>
             <Button
               type="primary"
               danger
-              onClick={handleConfirm}
-              loading={clearingMember === memberCode}
+              onClick={async () => {
+                if (
+                  !localClearSize &&
+                  !localClearReceiveStatus &&
+                  !localClearRemarks
+                ) {
+                  message.warning("กรุณาเลือกข้อมูลที่ต้องการล้าง");
+                  return;
+                }
+
+                await handleConfirmClear({
+                  clearSize: localClearSize,
+                  clearReceiveStatus: localClearReceiveStatus,
+                  clearRemarks: localClearRemarks,
+                });
+              }}
             >
-              ยืนยันล้างข้อมูล
+              ยืนยันการล้างข้อมูล
             </Button>
           </div>
         </div>
       );
     };
 
-    modalInstance = Modal.info({
-      title: (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "20px" }}>⚠️</span>
-          <span>เลือกข้อมูลที่ต้องการล้าง</span>
-        </div>
-      ),
-      icon: null,
-      width: 600,
+    const handleConfirmClear = async (options) => {
+      const { clearSize, clearReceiveStatus, clearRemarks } = options;
+
+      setClearingMember(memberCode);
+
+      try {
+        let remarksMessage = "ล้างข้อมูล: ";
+        if (clearSize) remarksMessage += "ขนาด ";
+        if (clearReceiveStatus) remarksMessage += "สถานะการรับ ";
+        if (clearRemarks) remarksMessage += "หมายเหตุ ";
+
+        await clearMemberData({
+          memberCode,
+          clearSize,
+          clearReceiveStatus,
+          clearRemarks,
+          clearedBy: user?.memberCode || "admin",
+        });
+
+        if (!clearSize && sizeCode) {
+          await saveMemberSize({
+            memberCode,
+            sizeCode: sizeCode,
+            remarks: remarksMessage,
+            surveyMethod: "MANUAL",
+            processedBy: user?.memberCode || "admin",
+          });
+        }
+
+        message.success(`ล้างข้อมูลสมาชิก ${memberCode} สำเร็จ`);
+        loadMembers();
+
+        if (onDataChange) {
+          onDataChange();
+        }
+
+        modalInstance.destroy();
+      } catch (err) {
+        console.error("Clear member data error:", err);
+        message.error(err.message || "ไม่สามารถล้างข้อมูลได้");
+      } finally {
+        setClearingMember(null);
+      }
+    };
+
+    modalInstance = Modal.confirm({
+      title: "ล้างข้อมูลสมาชิก",
+      icon: <ClearOutlined style={{ color: "#ff4d4f" }} />,
       content: <ClearModalContent />,
       footer: null,
+      width: 600,
       maskClosable: true,
     });
   };
 
-  // Helpers
-  const getMemberStatus = (m) => {
-    if (
-      m.hasReceived ||
-      m.receiveStatus === "RECEIVED" ||
-      m.RECEIVE_STATUS === "RECEIVED"
-    )
-      return MEMBER_STATUS.RECEIVED;
-    if (m.sizeCode || m.SIZE_CODE) return MEMBER_STATUS.CONFIRMED;
-    return MEMBER_STATUS.NOT_CONFIRMED;
-  };
-
-  const getStatusDisplay = (member) => {
-    const status = getMemberStatus(member);
-    const config = {
-      [MEMBER_STATUS.NOT_CONFIRMED]: {
-        color: "#faad14",
-        text: STATUS_LABELS[MEMBER_STATUS.NOT_CONFIRMED],
-      },
-      [MEMBER_STATUS.CONFIRMED]: {
-        color: "#1890ff",
-        text: STATUS_LABELS[MEMBER_STATUS.CONFIRMED],
-      },
-      [MEMBER_STATUS.RECEIVED]: {
-        color: "#52c41a",
-        text: STATUS_LABELS[MEMBER_STATUS.RECEIVED],
-      },
-    };
-    const c = config[status];
-    return (
-      <strong style={{ color: c.color, fontSize: "14px" }}>{c.text}</strong>
-    );
-  };
-
-  const getActionButtons = (member) => {
-    const memberCode = member.memberCode || member.MEMB_CODE;
-    const status = getMemberStatus(member);
-    const isClearing = clearingMember === memberCode;
-
-    return (
-      <div
-        style={{ display: "flex", gap: "8px", justifyContent: "flex-start" }}
-      >
-        {status !== MEMBER_STATUS.RECEIVED ? (
-          <button
-            className="btn-edit"
-            onClick={() => handleOpenPickupModal(member)}
-            disabled={isClearing}
-            title="บันทึกการรับเสื้อ"
-          >
-            <EditOutlined />
-          </button>
-        ) : (
-          <span className="text-muted">-</span>
-        )}
-
-        {(status === MEMBER_STATUS.CONFIRMED ||
-          status === MEMBER_STATUS.RECEIVED) && (
-          <button
-            className="btn-clear"
-            onClick={() => handleClearMemberData(member)}
-            disabled={isClearing}
-            title="ล้างข้อมูล"
-          >
-            {isClearing ? <span>⏳</span> : <ClearOutlined />}
-          </button>
-        )}
-      </div>
-    );
-  };
-
+  // Render
   return (
     <div className="members-list-container">
-      <h2>ค้นหาและรับเสื้อ - รายชื่อสมาชิกทั้งหมด</h2>
-
-      <div className="filters-section">
-        <div className="filter-row">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="ค้นหาด้วยรหัสสมาชิก หรือ ชื่อ-นามสกุล"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="search-input"
-            />
-            {searchInput && (
-              <button className="clear-search-btn" onClick={handleClearSearch}>
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="filter-group">
-            <select
-              value={statusFilter}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="filter-select"
-            >
-              <option value="">สถานะทั้งหมด</option>
-              <option value="PENDING">ยังไม่ยืนยัน</option>
-              <option value="CONFIRMED">ยืนยันแล้ว</option>
-              <option value="RECEIVED">รับแล้ว</option>
-            </select>
-
-            <select
-              value={sizeFilter}
-              onChange={(e) => handleFilterChange("size", e.target.value)}
-              className="filter-select"
-            >
-              <option value="">ขนาดทั้งหมด</option>
-              {SHIRT_SIZES.map((size) => (
-                <option key={size.code} value={size.code}>
-                  {size.code}
-                </option>
-              ))}
-            </select>
-
-            <Button
-              onClick={loadMembers}
-              loading={loading}
-              icon={<ReloadOutlined />}
-            >
-              รีเฟรช
-            </Button>
-          </div>
+      {/* Header */}
+      <div className="list-header">
+        <div className="header-content">
+          <h2 className="header-title">
+            ค้นหาและจ่ายเสื้อ - รายชื่อสมาชิกทั้งหมด
+          </h2>
         </div>
 
-        <div className="results-info">
-          แสดง {members.length} จาก {totalCount.toLocaleString()} รายการ
-          {sortField && (
-            <span className="sort-info">
-              {" • เรียงตาม: "}
-              {sortField === "memberCode"
-                ? "รหัสสมาชิก"
-                : sortField === "fullName"
-                ? "ชื่อ-นามสกุล"
-                : sortField === "sizeCode"
-                ? "ขนาดเสื้อ"
-                : sortField === "updatedDate"
-                ? "วันที่อัปเดต"
-                : sortField === "status"
-                ? "สถานะ"
-                : sortField}{" "}
-              ({sortOrder === "asc" ? "น้อย→มาก" : "มาก→น้อย"})
+        {/* Filters */}
+        <div className="filters-section">
+          <div className="filter-row">
+            {/* Search box */}
+            <div className="filter-row-left">
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="ค้นหาด้วยรหัสสมาชิก หรือ ชื่อ..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="search-input"
+                />
+                {searchInput && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="clear-search-btn"
+                    title="ล้างการค้นหา"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Dropdowns + Refresh */}
+            <div className="filter-row-right">
+              <select
+                value={statusFilter}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
+                className="filter-select"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="NOT_CONFIRMED">ยังไม่ยืนยันขนาด</option>
+                <option value="CONFIRMED">ยืนยันขนาดแล้ว</option>
+                <option value="RECEIVED">รับเสื้อแล้ว</option>
+              </select>
+
+              <select
+                value={sizeFilter}
+                onChange={(e) => handleFilterChange("size", e.target.value)}
+                className="filter-select"
+              >
+                <option value="">ขนาดทั้งหมด</option>
+                {sizes.map((size) => (
+                  <option key={size.SIZE_CODE} value={size.SIZE_CODE}>
+                    {size.SIZE_CODE}
+                  </option>
+                ))}
+              </select>
+
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => loadMembers()}
+                loading={loading}
+                className="reload-btn"
+              >
+                รีเฟรช
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats below filters */}
+          <div className="header-stats">
+            <span className="stat-item">
+              แสดง 10 จาก {totalCount.toLocaleString()} รายการ
             </span>
-          )}
+          </div>
         </div>
       </div>
 
-      {error && <div className="error-message">⚠️ {error}</div>}
-
-      {loading ? (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>กำลังโหลดข้อมูล...</p>
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <ExclamationCircleOutlined /> {error}
         </div>
-      ) : members.length === 0 ? (
-        <div className="no-data">ไม่พบข้อมูลสมาชิก</div>
-      ) : (
-        <>
-          <div className="table-responsive">
-            <table className="members-table">
-              <thead>
-                <tr>
-                  <th
-                    onClick={() => handleSort("memberCode")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    รหัสสมาชิก {getSortIcon("memberCode")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("fullName")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    ชื่อ-นามสกุล {getSortIcon("fullName")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("sizeCode")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap", textAlign: "center" }}
-                  >
-                    ขนาดที่เลือก {getSortIcon("sizeCode")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("updatedDate")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("status")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    สถานะ {getSortIcon("status")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("processedBy")}
-                    className="sortable-header"
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    ผู้ดำเนินการ {getSortIcon("processedBy")}
-                  </th>
-                  <th style={{ whiteSpace: "nowrap" }}>หมายเหตุ</th>
-                  <th style={{ whiteSpace: "nowrap" }}>การดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((member) => {
-                  const memberCode = member.memberCode || member.MEMB_CODE;
-                  const fullName = member.fullName || member.FULLNAME;
-                  const sizeCode = member.sizeCode || member.SIZE_CODE;
-                  const updatedDate = member.updatedDate || member.UPDATED_DATE;
-                  const remarks = member.remarks || member.REMARKS;
-                  const processedBy = member.processedBy || member.PROCESSED_BY;
-
-                  return (
-                    <tr key={memberCode}>
-                      <td data-label="รหัสสมาชิก">
-                        <strong>{memberCode}</strong>
-                      </td>
-                      <td data-label="ชื่อ-นามสกุล">{fullName}</td>
-                      <td
-                        data-label="ขนาดที่เลือก"
-                        style={{ textAlign: "center" }}
-                      >
-                        {sizeCode ? (
-                          <strong style={{ color: "#000", fontSize: "16px" }}>
-                            {sizeCode}
-                          </strong>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      <td data-label="วันที่อัปเดตล่าสุด">
-                        <span className="date-value">
-                          {updatedDate ? formatDateTime(updatedDate) : "-"}
-                        </span>
-                      </td>
-                      <td data-label="สถานะ">{getStatusDisplay(member)}</td>
-                      <td data-label="ผู้ดำเนินการ">
-                        {processedBy ? (
-                          <span>{processedBy}</span>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      <td data-label="หมายเหตุ">
-                        {remarks ? (
-                          <Popover
-                            content={
-                              <div
-                                style={{
-                                  maxWidth: "400px",
-                                  maxHeight: "300px",
-                                  overflow: "auto",
-                                  padding: "8px",
-                                }}
-                              >
-                                {remarks}
-                              </div>
-                            }
-                            trigger={["hover", "click"]}
-                            placement="topLeft"
-                            overlayStyle={{ maxWidth: "450px" }}
-                          >
-                            <span
-                              style={{
-                                cursor: "pointer",
-                                textDecoration: "underline dotted",
-                              }}
-                            >
-                              {remarks.length > 30
-                                ? `${remarks.substring(0, 30)}...`
-                                : remarks}
-                            </span>
-                          </Popover>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      <td data-label="การดำเนินการ">
-                        {getActionButtons(member)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="pagination">
-            <Pagination
-              current={currentPage}
-              total={totalCount}
-              pageSize={pageSize}
-              onChange={handlePageChange}
-              onShowSizeChange={handlePageSizeChange}
-              showSizeChanger={true}
-              pageSizeOptions={["10", "20", "50", "100"]}
-            />
-          </div>
-        </>
       )}
 
+      {/* Table Section */}
+      <div className="table-container">
+        {loading && members.length === 0 ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>กำลังโหลดข้อมูล...</p>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="empty-state">
+            <p>ไม่พบข้อมูลสมาชิก</p>
+          </div>
+        ) : (
+          <table className="members-table">
+            <thead>
+              <tr>
+                <th
+                  onClick={() => handleSort("memberCode")}
+                  className="sortable"
+                >
+                  รหัสสมาชิก {getSortIcon("memberCode")}
+                </th>
+                <th onClick={() => handleSort("fullName")} className="sortable">
+                  ชื่อ-นามสกุล {getSortIcon("fullName")}
+                </th>
+                <th style={{ textAlign: "center" }}>ขนาดที่เลือก</th>
+                <th
+                  onClick={() => handleSort("updatedDate")}
+                  className="sortable"
+                >
+                  วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
+                </th>
+                <th>สถานะ</th>
+                <th>ผู้ดำเนินการ</th>
+                <th>หมายเหตุ</th>
+                <th style={{ textAlign: "center" }}>การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.map((member) => {
+                const memberCode = member.memberCode || member.MEMB_CODE;
+                const fullName = member.fullName || member.FULLNAME;
+                const sizeCode = member.sizeCode || member.SIZE_CODE;
+                const updatedDate = member.updatedDate || member.UPDATED_DATE;
+                const remarks = member.remarks || member.REMARKS;
+                const processedBy = member.processedBy || member.PROCESSED_BY;
+
+                return (
+                  <tr key={memberCode}>
+                    <td data-label="รหัสสมาชิก">
+                      <strong>{memberCode}</strong>
+                    </td>
+                    <td data-label="ชื่อ-นามสกุล">{fullName}</td>
+                    <td
+                      data-label="ขนาดที่เลือก"
+                      style={{ textAlign: "center" }}
+                    >
+                      {sizeCode ? (
+                        <strong style={{ color: "#000", fontSize: "16px" }}>
+                          {sizeCode}
+                        </strong>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td data-label="วันที่อัปเดตล่าสุด">
+                      <span className="date-value">
+                        {updatedDate ? formatDateTime(updatedDate) : "-"}
+                      </span>
+                    </td>
+                    <td data-label="สถานะ">{getStatusDisplay(member)}</td>
+                    <td data-label="ผู้ดำเนินการ">
+                      {processedBy ? (
+                        <span>{processedBy}</span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td data-label="หมายเหตุ">
+                      {remarks ? (
+                        <Tooltip title={remarks} placement="topLeft">
+                          <span className="remarks-preview">{remarks}</span>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td data-label="การดำเนินการ">
+                      <div className="action-buttons">
+                        <Tooltip
+                          title={
+                            member.hasReceived ? "ดูรายละเอียด" : "บันทึกการรับ"
+                          }
+                        >
+                          <Button
+                            size="small"
+                            type="primary"
+                            onClick={() => handleOpenPickupModal(member)}
+                            disabled={clearingMember === memberCode}
+                            icon={<EditOutlined />}
+                            aria-label={
+                              member.hasReceived
+                                ? "ดูรายละเอียด"
+                                : "บันทึกการรับ"
+                            }
+                          />
+                        </Tooltip>
+
+                        <Tooltip title="ล้างข้อมูล">
+                          <Button
+                            size="small"
+                            danger
+                            onClick={() => handleClearMemberData(member)}
+                            disabled={clearingMember === memberCode}
+                            loading={clearingMember === memberCode}
+                            icon={<ClearOutlined />}
+                            aria-label="ล้างข้อมูล"
+                          />
+                        </Tooltip>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pagination */}
+      <div className="pagination-container">
+        <Pagination
+          current={currentPage}
+          total={totalCount}
+          pageSize={pageSize}
+          onChange={handlePageChange}
+          onShowSizeChange={handlePageSizeChange}
+          showSizeChanger
+          showTotal={(total, range) =>
+            `${range[0]}-${range[1]} จาก ${total} รายการ`
+          }
+          pageSizeOptions={["10", "20", "50", "100"]}
+        />
+      </div>
+
+      {/* Pickup Modal */}
       {showPickupModal && selectedMember && (
         <PickupModal
           visible={showPickupModal}
           onCancel={handleClosePickupModal}
-          onSuccess={handlePickupSuccess}
           selectedMember={selectedMember}
+          onSuccess={handlePickupSuccess}
         />
       )}
     </div>
