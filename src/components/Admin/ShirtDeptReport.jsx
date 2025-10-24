@@ -26,7 +26,7 @@ const ShirtDeptReport = () => {
   };
 
   const handleExportPDF = (deptCode, sectCode = null) => {
-    const baseUrl = "https://apps4.coop.ku.ac.th/php/jacket/report_details.php";
+    const baseUrl = "https://apps4.coop.ku.ac.th/php/jacket/draft_report_details.php";
     let url = `${baseUrl}?dept_code=${deptCode}`;
 
     if (sectCode) {

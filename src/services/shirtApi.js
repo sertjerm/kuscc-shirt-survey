@@ -44,7 +44,9 @@ export const getShirtSizes = async () => {
     const res = await api.get("/GetShirtSizes");
 
     if (res.data?.responseCode !== 200) {
-      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดข้อมูลขนาดเสื้อได้");
+      throw new Error(
+        res.data?.responseMessage || "ไม่สามารถโหลดข้อมูลขนาดเสื้อได้"
+      );
     }
 
     // ✅ ใช้ข้อมูลจาก API โดยตรง ไม่แปลง case
@@ -68,7 +70,7 @@ export const getShirtSizes = async () => {
  */
 export const getSizeOrder = async () => {
   const sizes = await getShirtSizes();
-  return sizes.map(s => s.SIZE_CODE);
+  return sizes.map((s) => s.SIZE_CODE);
 };
 
 /**
@@ -90,7 +92,7 @@ export const getSizeOrderMap = async () => {
  */
 export const getSizeInfo = async (sizeCode) => {
   const sizes = await getShirtSizes();
-  return sizes.find(s => s.SIZE_CODE === sizeCode) || null;
+  return sizes.find((s) => s.SIZE_CODE === sizeCode) || null;
 };
 
 /**
@@ -98,18 +100,114 @@ export const getSizeInfo = async (sizeCode) => {
  */
 const getDefaultSizes = () => {
   return [
-    { CHEST_INCH: 38, LENGTH_INCH: 23, REMARKS: "ขนาดเล็กพิเศษ สำหรับผู้มีรูปร่างเล็กมาก", SIZE_CODE: "MINI", SIZE_NAME: "มินิไซส์", SIZE_NAME_EN: "Mini Size", SORT_ORDER: 0 },
-    { CHEST_INCH: 40, LENGTH_INCH: 24, REMARKS: null, SIZE_CODE: "XS", SIZE_NAME: "เอ็กซ์ตร้า สมอลล์", SIZE_NAME_EN: "Extra Small", SORT_ORDER: 1 },
-    { CHEST_INCH: 42, LENGTH_INCH: 25, REMARKS: null, SIZE_CODE: "S", SIZE_NAME: "สมอลล์", SIZE_NAME_EN: "Small", SORT_ORDER: 2 },
-    { CHEST_INCH: 44, LENGTH_INCH: 26, REMARKS: null, SIZE_CODE: "M", SIZE_NAME: "มีเดียม", SIZE_NAME_EN: "Medium", SORT_ORDER: 3 },
-    { CHEST_INCH: 46, LENGTH_INCH: 27, REMARKS: null, SIZE_CODE: "L", SIZE_NAME: "ลาร์จ", SIZE_NAME_EN: "Large", SORT_ORDER: 4 },
-    { CHEST_INCH: 48, LENGTH_INCH: 28, REMARKS: null, SIZE_CODE: "XL", SIZE_NAME: "เอ็กซ์ตร้า ลาร์จ", SIZE_NAME_EN: "Extra Large", SORT_ORDER: 5 },
-    { CHEST_INCH: 50, LENGTH_INCH: 29, REMARKS: null, SIZE_CODE: "2XL", SIZE_NAME: "ทู เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "2X Large", SORT_ORDER: 6 },
-    { CHEST_INCH: 52, LENGTH_INCH: 30, REMARKS: null, SIZE_CODE: "3XL", SIZE_NAME: "ทรี เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "3X Large", SORT_ORDER: 7 },
-    { CHEST_INCH: 54, LENGTH_INCH: 31, REMARKS: null, SIZE_CODE: "4XL", SIZE_NAME: "โฟร์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "4X Large", SORT_ORDER: 8 },
-    { CHEST_INCH: 56, LENGTH_INCH: 32, REMARKS: null, SIZE_CODE: "5XL", SIZE_NAME: "ไฟว์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "5X Large", SORT_ORDER: 9 },
-    { CHEST_INCH: 58, LENGTH_INCH: 33, REMARKS: null, SIZE_CODE: "6XL", SIZE_NAME: "ซิกซ์ เอ็กซ์ ลาร์จ", SIZE_NAME_EN: "6X Large", SORT_ORDER: 10 },
-    { CHEST_INCH: 60, LENGTH_INCH: 34, REMARKS: "ขนาดใหญ่พิเศษ สำหรับผู้ที่ต้องการขนาดใหญ่มากเป็นพิเศษ", SIZE_CODE: "PLUS", SIZE_NAME: "พลัสไซส์", SIZE_NAME_EN: "Plus Size", SORT_ORDER: 11 },
+    {
+      CHEST_INCH: 38,
+      LENGTH_INCH: 23,
+      REMARKS: "ขนาดเล็กพิเศษ สำหรับผู้มีรูปร่างเล็กมาก",
+      SIZE_CODE: "MINI",
+      SIZE_NAME: "มินิไซส์",
+      SIZE_NAME_EN: "Mini Size",
+      SORT_ORDER: 0,
+    },
+    {
+      CHEST_INCH: 40,
+      LENGTH_INCH: 24,
+      REMARKS: null,
+      SIZE_CODE: "XS",
+      SIZE_NAME: "เอ็กซ์ตร้า สมอลล์",
+      SIZE_NAME_EN: "Extra Small",
+      SORT_ORDER: 1,
+    },
+    {
+      CHEST_INCH: 42,
+      LENGTH_INCH: 25,
+      REMARKS: null,
+      SIZE_CODE: "S",
+      SIZE_NAME: "สมอลล์",
+      SIZE_NAME_EN: "Small",
+      SORT_ORDER: 2,
+    },
+    {
+      CHEST_INCH: 44,
+      LENGTH_INCH: 26,
+      REMARKS: null,
+      SIZE_CODE: "M",
+      SIZE_NAME: "มีเดียม",
+      SIZE_NAME_EN: "Medium",
+      SORT_ORDER: 3,
+    },
+    {
+      CHEST_INCH: 46,
+      LENGTH_INCH: 27,
+      REMARKS: null,
+      SIZE_CODE: "L",
+      SIZE_NAME: "ลาร์จ",
+      SIZE_NAME_EN: "Large",
+      SORT_ORDER: 4,
+    },
+    {
+      CHEST_INCH: 48,
+      LENGTH_INCH: 28,
+      REMARKS: null,
+      SIZE_CODE: "XL",
+      SIZE_NAME: "เอ็กซ์ตร้า ลาร์จ",
+      SIZE_NAME_EN: "Extra Large",
+      SORT_ORDER: 5,
+    },
+    {
+      CHEST_INCH: 50,
+      LENGTH_INCH: 29,
+      REMARKS: null,
+      SIZE_CODE: "2XL",
+      SIZE_NAME: "ทู เอ็กซ์ ลาร์จ",
+      SIZE_NAME_EN: "2X Large",
+      SORT_ORDER: 6,
+    },
+    {
+      CHEST_INCH: 52,
+      LENGTH_INCH: 30,
+      REMARKS: null,
+      SIZE_CODE: "3XL",
+      SIZE_NAME: "ทรี เอ็กซ์ ลาร์จ",
+      SIZE_NAME_EN: "3X Large",
+      SORT_ORDER: 7,
+    },
+    {
+      CHEST_INCH: 54,
+      LENGTH_INCH: 31,
+      REMARKS: null,
+      SIZE_CODE: "4XL",
+      SIZE_NAME: "โฟร์ เอ็กซ์ ลาร์จ",
+      SIZE_NAME_EN: "4X Large",
+      SORT_ORDER: 8,
+    },
+    {
+      CHEST_INCH: 56,
+      LENGTH_INCH: 32,
+      REMARKS: null,
+      SIZE_CODE: "5XL",
+      SIZE_NAME: "ไฟว์ เอ็กซ์ ลาร์จ",
+      SIZE_NAME_EN: "5X Large",
+      SORT_ORDER: 9,
+    },
+    {
+      CHEST_INCH: 58,
+      LENGTH_INCH: 33,
+      REMARKS: null,
+      SIZE_CODE: "6XL",
+      SIZE_NAME: "ซิกซ์ เอ็กซ์ ลาร์จ",
+      SIZE_NAME_EN: "6X Large",
+      SORT_ORDER: 10,
+    },
+    {
+      CHEST_INCH: 60,
+      LENGTH_INCH: 34,
+      REMARKS: "ขนาดใหญ่พิเศษ สำหรับผู้ที่ต้องการขนาดใหญ่มากเป็นพิเศษ",
+      SIZE_CODE: "PLUS",
+      SIZE_NAME: "พลัสไซส์",
+      SIZE_NAME_EN: "Plus Size",
+      SORT_ORDER: 11,
+    },
   ];
 };
 
@@ -121,7 +219,10 @@ const getDefaultSizes = () => {
 const formatMemberData = (apiData) => {
   if (!apiData) return null;
 
-  return {
+  console.log("🔧 Raw API Data:", apiData);
+  console.log("🔧 ADDR from API:", apiData.ADDR);
+
+  const formatted = {
     memberCode: apiData.MEMB_CODE,
     fullName: apiData.FULLNAME,
     displayName: apiData.DISPLAYNAME,
@@ -139,7 +240,18 @@ const formatMemberData = (apiData) => {
     updatedDate: parseWcfDate(apiData.UPDATED_DATE),
     userRole: apiData.USER_ROLE,
     hasReceived: apiData.RECEIVE_STATUS === "RECEIVED",
+
+    // ✅ เพิ่มฟิลด์ที่ขาดหายไป
+    MEMB_DBTYP: apiData.MEMB_DBTYP,
+    DEPT_CODE: apiData.DEPT_CODE,
+    DEPT_NAME: apiData.DEPT_NAME,
+    SECT_CODE: apiData.SECT_CODE,
+    SECT_NAME: apiData.SECT_NAME,
+    ADDR: apiData.ADDR, // ✅ ตรวจสอบให้แน่ใจว่า map ถูกต้อง
   };
+
+  console.log("✅ Formatted Data:", formatted);
+  return formatted;
 };
 
 // ===================================================================
@@ -151,20 +263,23 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   console.log("Login payload:", payload);
 
   const res = await api.post("/ShirtSurveyLogin", payload);
+  console.log("Login response:", res.data);
 
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่พบข้อมูลสมาชิก");
   }
 
   const memberData = formatMemberData(res.data.data);
+  console.log("📍 After formatMemberData:", memberData); // ✅ เพิ่ม debug
 
   const loginResult = {
     ...memberData,
     round: memberData.socialId ? memberData.socialId.split("-").pop() : idCard,
-    name: memberData.displayName || memberData.fullName || memberData.memberCode,
+    name:
+      memberData.displayName || memberData.fullName || memberData.memberCode,
   };
 
-  console.log("Login successful, member data:", loginResult);
+  console.log("📍 Final loginResult:", loginResult); // ✅ เพิ่ม debug
   return loginResult;
 };
 
@@ -200,7 +315,9 @@ export const saveMemberSize = async ({
 };
 
 export const SearchMember = async (mbcode) => {
-  const res = await api.get(`/SearchShirtMember?mbcode=${encodeURIComponent(mbcode)}`);
+  const res = await api.get(
+    `/SearchShirtMember?mbcode=${encodeURIComponent(mbcode)}`
+  );
 
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่พบข้อมูลสมาชิก");
@@ -329,12 +446,19 @@ export const getInventorySummary = async () => {
 
   // เรียงตาม SIZE_ORDER จาก API
   const sizeOrder = await getSizeOrder();
-  inventorySummary.sort((a, b) => sizeOrder.indexOf(a.sizeCode) - sizeOrder.indexOf(b.sizeCode));
-  
+  inventorySummary.sort(
+    (a, b) => sizeOrder.indexOf(a.sizeCode) - sizeOrder.indexOf(b.sizeCode)
+  );
+
   return inventorySummary;
 };
 
-export const addStock = async ({ sizeCode, quantity, remarks, processedBy }) => {
+export const addStock = async ({
+  sizeCode,
+  quantity,
+  remarks,
+  processedBy,
+}) => {
   const payload = {
     size_code: sizeCode,
     produced_delta: quantity,
@@ -348,7 +472,12 @@ export const addStock = async ({ sizeCode, quantity, remarks, processedBy }) => 
   return res.data;
 };
 
-export const removeStock = async ({ sizeCode, quantity, remarks, processedBy }) => {
+export const removeStock = async ({
+  sizeCode,
+  quantity,
+  remarks,
+  processedBy,
+}) => {
   const payload = {
     size_code: sizeCode,
     distributed_delta: quantity,
@@ -449,11 +578,13 @@ export const getDepartmentReport = async () => {
     const res = await api.get("/GetShirtResultDeptSect");
 
     if (res.data?.responseCode !== 200) {
-      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดรายงานหน่วยงานได้");
+      throw new Error(
+        res.data?.responseMessage || "ไม่สามารถโหลดรายงานหน่วยงานได้"
+      );
     }
 
     const reportData = res.data.data || [];
-    
+
     console.log("📊 Department report received:", reportData);
     return reportData;
   } catch (error) {

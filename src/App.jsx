@@ -10,6 +10,7 @@ import thTH from "antd/locale/th_TH";
 import LoginForm from "./components/Login/LoginForm";
 import MemberPortal from "./pages/MemberPortal";
 import AdminDashboard from "./pages/AdminDashboard";
+import RetirementDelivery from "./pages/RetirementDelivery";
 
 // AppContext and AppProvider remain the same
 const AppContext = createContext();
@@ -52,7 +53,7 @@ const AppProvider = ({ children }) => {
       setIsAuthenticated(true);
     }
   }, []);
-  
+
   return (
     <AppContext.Provider
       value={{ user, userType, isAuthenticated, login, logout }}
@@ -61,7 +62,6 @@ const AppProvider = ({ children }) => {
     </AppContext.Provider>
   );
 };
-
 
 const ProtectedRoute = ({ children, requiredType = null }) => {
   const { isAuthenticated, userType } = useAppContext();
@@ -73,7 +73,6 @@ const ProtectedRoute = ({ children, requiredType = null }) => {
   }
   return children;
 };
-
 
 function App() {
   return (
@@ -91,27 +90,34 @@ function App() {
     >
       <AppProvider>
         <HashRouter>
-            <Routes>
-              <Route path="/login" element={<LoginForm />} />
-              <Route
-                path="/member"
-                element={
-                  <ProtectedRoute requiredType="member">
-                    <MemberPortal />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requiredType="admin">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
+          <Routes>
+            <Route path="/" element={<LoginForm />} />
+            <Route
+              path="/member"
+              element={
+                <ProtectedRoute>
+                  <MemberPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/retirement-delivery"
+              element={
+                <ProtectedRoute>
+                  <RetirementDelivery />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </HashRouter>
       </AppProvider>
     </ConfigProvider>

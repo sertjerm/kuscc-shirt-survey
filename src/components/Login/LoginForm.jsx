@@ -72,8 +72,14 @@ const LoginForm = () => {
         // 🔥 แก้ไข: ตรวจสอบ userRole (camelCase) จาก API response
         const isAdmin = memberData.userRole === "admin";
 
-        console.log("👤 userRole from API:", memberData.userRole);
+        // 🆕 ตรวจสอบว่าเป็นกลุ่มเกษียณหรือไม่ (MEMB_DBTYP = "1" หรือ "2")
+        const isRetirementMember =
+          memberData.MEMB_DBTYP === "1" || memberData.MEMB_DBTYP === "2";
+
+        console.log("👤 userRole from API:", memberData.USER_ROLE);
         console.log("🔐 Is Admin:", isAdmin);
+        console.log("👴 MEMB_DBTYP:", memberData.MEMB_DBTYP);
+        console.log("🎯 Is Retirement Member:", isRetirementMember);
 
         // สร้าง user object
         const userData = {
@@ -91,6 +97,10 @@ const LoginForm = () => {
           remarks: memberData.remarks,
           round: memberData.round,
 
+          // 🆕 เพิ่มข้อมูลประเภทสมาชิก
+          membDbtyp: memberData.memb_dbtyp || memberData.MEMB_DBTYP,
+          isRetirementMember: isRetirementMember,
+
           // ฟิลด์ใหม่สำหรับการรับเสื้อ
           hasReceived:
             memberData.hasReceived || memberData.receiveStatus === "RECEIVED",
@@ -106,6 +116,7 @@ const LoginForm = () => {
           FULLNAME: memberData.fullName,
           MEMB_MOBILE: memberData.phone,
           MEMB_SOCID: memberData.socialId,
+          MEMB_DBTYP: memberData.memb_dbtyp || memberData.MEMB_DBTYP,
           SIZE_CODE: memberData.sizeCode,
           SURVEY_DATE: memberData.surveyDate,
           SURVEY_METHOD: memberData.surveyMethod,
@@ -117,6 +128,7 @@ const LoginForm = () => {
           RECEIVE_DATE: memberData.receiveDate,
           RECEIVE_STATUS: memberData.receiveStatus,
           UPDATED_DATE: memberData.updatedDate,
+          ADDR:memberData.ADDR,
         };
 
         console.log("💾 Final userData:", userData);
@@ -130,13 +142,13 @@ const LoginForm = () => {
           showConfirmButton: false,
         });
 
-        // 🔥 เงื่อนไขใหม่: ถ้าเป็น Admin ให้แสดง Modal เลือก
+        // 🔥 เงื่อนไขใหม่: ตรวจสอบตามลำดับความสำคัญ
         if (isAdmin) {
+          // 1. ถ้าเป็น Admin ให้แสดง Modal เลือก
           console.log("🎯 Admin detected - showing role selection modal");
 
-          // แสดง Modal ให้เลือกหน้า (ไม่มีหัวข้อ มีแค่ 2 ปุ่ม)
           Modal.confirm({
-            title: null, // ไม่มีหัวข้อ
+            title: null,
             icon: null,
             width: 440,
             centered: true,
@@ -178,14 +190,28 @@ const LoginForm = () => {
               navigate("/admin");
             },
             onCancel: () => {
-              // เลือกไปหน้า Member
+              // เลือกไปหน้า Member (ตรวจสอบกลุ่มเกษียณอีกครั้ง)
               console.log("✅ User selected: Member page");
               login(userData, "member");
-              navigate("/member");
+
+              if (isRetirementMember) {
+                console.log("👴 Navigating to Retirement Delivery Survey");
+                navigate("/retirement-delivery");
+              } else {
+                console.log("👤 Navigating to Regular Member Survey");
+                navigate("/member");
+              }
             },
           });
+        } else if (isRetirementMember) {
+          // 2. ถ้าเป็นกลุ่มเกษียณ (memb_dbtyp = "1" หรือ "2") และไม่ใช่ admin ให้ไปหน้าสำรวจที่อยู่
+          console.log(
+            "👴 Non-admin retirement member detected - navigate to /retirement-delivery"
+          );
+          login(userData, "member");
+          navigate("/retirement-delivery");
         } else {
-          // Member ปกติ - เข้าหน้า Survey เลย
+          // 3. Member ปกติ - เข้าหน้า Survey เลย
           console.log("👤 Regular member - navigate to /member");
           login(userData, "member");
           navigate("/member");

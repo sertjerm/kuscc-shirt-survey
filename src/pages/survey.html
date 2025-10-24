@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบสำรวจตัวเลือกการจัดส่ง</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sukhumvit Set', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #4A9FE8 0%, #5AB9EA 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #1E88E5;
+            margin-bottom: 8px;
+            font-size: 28px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .option {
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .option:hover {
+            box-shadow: 0 12px 32px rgba(30, 136, 229, 0.15);
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .option input[type="radio"]:checked ~ .option-content {
+            color: #1E88E5;
+        }
+
+        .option input[type="radio"]:checked ~ .checkmark {
+            background: #1E88E5;
+            border-color: #1E88E5;
+        }
+
+        .option input[type="radio"]:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        .option input[type="radio"]:checked + .option-content {
+            font-weight: 500;
+        }
+
+        .option-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        .checkmark {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #BDBDBD;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 6px;
+            height: 11px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .option-icon {
+            font-size: 28px;
+            filter: grayscale(0.3);
+        }
+
+        .option input[type="radio"]:checked ~ .option-content .option-icon {
+            filter: grayscale(0);
+        }
+
+        .custom-address-input {
+            width: 100%;
+            margin-top: 15px;
+            padding: 14px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            font-size: 15px;
+            display: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #FAFAFA;
+            color: #333;
+        }
+
+        .custom-address-input:focus {
+            outline: none;
+            border-color: #1E88E5;
+            background: white;
+        }
+
+        .custom-address-input.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .system-address {
+            background: #E3F2FD;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #424242;
+            border-left: 4px solid #1E88E5;
+            line-height: 1.6;
+        }
+
+        .system-address strong {
+            color: #1565C0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #1E88E5;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+        }
+
+        .submit-btn:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(30, 136, 229, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: white;
+            border-radius: 12px;
+            display: none;
+            border-left: 4px solid #4CAF50;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .result.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result strong {
+            color: #2E7D32;
+        }
+
+        .result small {
+            color: #666;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .option-content {
+                font-size: 15px;
+            }
+
+            .option {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>เลือกช่องทางการจัดส่ง</h1>
+        <p class="subtitle">กรุณาเลือกวิธีการรับสินค้าที่สะดวกที่สุดสำหรับคุณ</p>
+
+        <form id="deliveryForm">
+            <div class="option-group">
+                <!-- Option 1: สหกรณ์ -->
+                <label class="option">
+                    <input type="radio" name="delivery" value="coop" checked>
+                    <div class="option-content">
+                        <span class="checkmark"></span>
+                        <span class="option-icon">🏢</span>
+                        <div style="flex: 1;">
+                            <div><strong>รับที่สหกรณ์</strong></div>
+                            <div style="font-size: 14px; color: #757575; margin-top: 4px;">รับสินค้าด้วยตนเองที่สหกรณ์</div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 2: ที่อยู่ในระบบ -->
+                <label class="option">
+                    <input type="radio" name="delivery" value="system">
+                    <div class="option-content">
+                        <span class="checkmark"></span>
+                        <span class="option-icon">📍</span>
+                        <div style="flex: 1;">
+                            <div><strong>จัดส่งตามที่อยู่ในระบบ</strong></div>
+                            <div style="font-size: 14px; color: #757575; margin-top: 4px;">ใช้ที่อยู่ที่ลงทะเบียนไว้</div>
+                        </div>
+                    </div>
+                    <div class="system-address">
+                        <strong>ที่อยู่จัดส่ง:</strong><br>
+                        123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย<br>
+                        กรุงเทพมหานคร 10110
+                    </div>
+                </label>
+
+                <!-- Option 3: กรอกเอง -->
+                <label class="option">
+                    <input type="radio" name="delivery" value="custom">
+                    <div class="option-content">
+                        <span class="checkmark"></span>
+                        <span class="option-icon">✏️</span>
+                        <div style="flex: 1;">
+                            <div><strong>ระบุที่อยู่ใหม่</strong></div>
+                            <div style="font-size: 14px; color: #757575; margin-top: 4px;">กรอกที่อยู่จัดส่งด้วยตนเอง</div>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="customAddress" 
+                        class="custom-address-input" 
+                        placeholder="กรุณากรอกที่อยู่สำหรับจัดส่ง&#10;&#10;ตัวอย่าง:&#10;99/99 ถนนพระราม 4 แขวงสีลม เขตบางรัก&#10;กรุงเทพมหานคร 10500&#10;เบอร์โทร: 081-234-5678"
+                        rows="6"
+                    ></textarea>
+                </label>
+            </div>
+
+            <button type="submit" class="submit-btn">⭕ ยืนยันตัวเลือก</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('deliveryForm');
+        const customAddressInput = document.getElementById('customAddress');
+        const radioButtons = document.querySelectorAll('input[name="delivery"]');
+        const result = document.getElementById('result');
+
+        // Show/hide custom address input
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customAddressInput.classList.add('active');
+                    customAddressInput.focus();
+                } else {
+                    customAddressInput.classList.remove('active');
+                }
+            });
+        });
+
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedOption = document.querySelector('input[name="delivery"]:checked').value;
+            let message = '';
+
+            switch(selectedOption) {
+                case 'coop':
+                    message = '<strong>✓ คุณเลือก:</strong> รับที่สหกรณ์ (รับด้วยตนเอง)<br><small>กรุณามารับสินค้าที่สหกรณ์ในวันและเวลาทำการ</small>';
+                    break;
+                case 'system':
+                    message = '<strong>✓ คุณเลือก:</strong> จัดส่งตามที่อยู่ในระบบ<br><small>สินค้าจะถูกจัดส่งไปยัง: 123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110</small>';
+                    break;
+                case 'custom':
+                    const customAddress = customAddressInput.value.trim();
+                    if (!customAddress) {
+                        alert('กรุณากรอกที่อยู่สำหรับจัดส่ง');
+                        customAddressInput.focus();
+                        return;
+                    }
+                    message = '<strong>✓ คุณเลือก:</strong> ระบุที่อยู่ใหม่<br><small>จัดส่งไปยัง: ' + customAddress.replace(/\n/g, ' ') + '</small>';
+                    break;
+            }
+
+            result.innerHTML = message;
+            result.classList.add('show');
+
+            // Scroll to result
+            result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    </script>
+</body>
+</html>
