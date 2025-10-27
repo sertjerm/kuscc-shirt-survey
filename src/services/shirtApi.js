@@ -4,7 +4,7 @@
 // ===================================================================
 
 import axios from "axios";
-import { REAL_API_BASE_URL } from "../utils/constants";
+import { REAL_API_BASE_URL, DEFAULT_SHIRT_SIZES } from "../utils/constants";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -24,14 +24,14 @@ const parseWcfDate = (dateString) => {
 };
 
 // ===================================================================
-// ✨ NEW: ดึงข้อมูลขนาดเสื้อจาก API
+// ✨ Shirt Sizes API
 // ===================================================================
 
 let cachedSizes = null; // Cache เพื่อไม่ต้องเรียก API ซ้ำ
 
 /**
  * ดึงข้อมูลขนาดเสื้อทั้งหมดจาก API
- * @returns {Promise<Array>} รายการขนาดเสื้อ (ใช้ CASE จาก API ตรงๆ)
+ * @returns {Promise<Array>} รายการขนาดเสื้อ
  */
 export const getShirtSizes = async () => {
   // ถ้ามี cache แล้วให้ return เลย
@@ -49,18 +49,21 @@ export const getShirtSizes = async () => {
       );
     }
 
-    // ✅ ใช้ข้อมูลจาก API โดยตรง ไม่แปลง case
+    // ใช้ข้อมูลจาก API โดยตรง
     cachedSizes = res.data.data || [];
 
     // เรียงตาม SORT_ORDER
     cachedSizes.sort((a, b) => a.SORT_ORDER - b.SORT_ORDER);
 
-    console.log("✅ Loaded shirt sizes:", cachedSizes);
+    console.log("✅ Loaded shirt sizes from API:", cachedSizes.length, "sizes");
     return cachedSizes;
   } catch (error) {
     console.error("❌ Error fetching shirt sizes:", error);
-    // ถ้าเกิด error ให้ fallback ไปใช้ค่า default
-    return getDefaultSizes();
+    console.log("⚠️ Using default sizes as fallback");
+
+    // ✅ ใช้ค่า default จาก constants
+    cachedSizes = DEFAULT_SHIRT_SIZES;
+    return cachedSizes;
   }
 };
 
@@ -95,122 +98,6 @@ export const getSizeInfo = async (sizeCode) => {
   return sizes.find((s) => s.SIZE_CODE === sizeCode) || null;
 };
 
-/**
- * Fallback sizes ถ้า API ไม่ทำงาน (ใช้โครงสร้างเดียวกับ API)
- */
-const getDefaultSizes = () => {
-  return [
-    {
-      CHEST_INCH: 38,
-      LENGTH_INCH: 23,
-      REMARKS: "ขนาดเล็กพิเศษ สำหรับผู้มีรูปร่างเล็กมาก",
-      SIZE_CODE: "MINI",
-      SIZE_NAME: "มินิไซส์",
-      SIZE_NAME_EN: "Mini Size",
-      SORT_ORDER: 0,
-    },
-    {
-      CHEST_INCH: 40,
-      LENGTH_INCH: 24,
-      REMARKS: null,
-      SIZE_CODE: "XS",
-      SIZE_NAME: "เอ็กซ์ตร้า สมอลล์",
-      SIZE_NAME_EN: "Extra Small",
-      SORT_ORDER: 1,
-    },
-    {
-      CHEST_INCH: 42,
-      LENGTH_INCH: 25,
-      REMARKS: null,
-      SIZE_CODE: "S",
-      SIZE_NAME: "สมอลล์",
-      SIZE_NAME_EN: "Small",
-      SORT_ORDER: 2,
-    },
-    {
-      CHEST_INCH: 44,
-      LENGTH_INCH: 26,
-      REMARKS: null,
-      SIZE_CODE: "M",
-      SIZE_NAME: "มีเดียม",
-      SIZE_NAME_EN: "Medium",
-      SORT_ORDER: 3,
-    },
-    {
-      CHEST_INCH: 46,
-      LENGTH_INCH: 27,
-      REMARKS: null,
-      SIZE_CODE: "L",
-      SIZE_NAME: "ลาร์จ",
-      SIZE_NAME_EN: "Large",
-      SORT_ORDER: 4,
-    },
-    {
-      CHEST_INCH: 48,
-      LENGTH_INCH: 28,
-      REMARKS: null,
-      SIZE_CODE: "XL",
-      SIZE_NAME: "เอ็กซ์ตร้า ลาร์จ",
-      SIZE_NAME_EN: "Extra Large",
-      SORT_ORDER: 5,
-    },
-    {
-      CHEST_INCH: 50,
-      LENGTH_INCH: 29,
-      REMARKS: null,
-      SIZE_CODE: "2XL",
-      SIZE_NAME: "ทู เอ็กซ์ ลาร์จ",
-      SIZE_NAME_EN: "2X Large",
-      SORT_ORDER: 6,
-    },
-    {
-      CHEST_INCH: 52,
-      LENGTH_INCH: 30,
-      REMARKS: null,
-      SIZE_CODE: "3XL",
-      SIZE_NAME: "ทรี เอ็กซ์ ลาร์จ",
-      SIZE_NAME_EN: "3X Large",
-      SORT_ORDER: 7,
-    },
-    {
-      CHEST_INCH: 54,
-      LENGTH_INCH: 31,
-      REMARKS: null,
-      SIZE_CODE: "4XL",
-      SIZE_NAME: "โฟร์ เอ็กซ์ ลาร์จ",
-      SIZE_NAME_EN: "4X Large",
-      SORT_ORDER: 8,
-    },
-    {
-      CHEST_INCH: 56,
-      LENGTH_INCH: 32,
-      REMARKS: null,
-      SIZE_CODE: "5XL",
-      SIZE_NAME: "ไฟว์ เอ็กซ์ ลาร์จ",
-      SIZE_NAME_EN: "5X Large",
-      SORT_ORDER: 9,
-    },
-    {
-      CHEST_INCH: 58,
-      LENGTH_INCH: 33,
-      REMARKS: null,
-      SIZE_CODE: "6XL",
-      SIZE_NAME: "ซิกซ์ เอ็กซ์ ลาร์จ",
-      SIZE_NAME_EN: "6X Large",
-      SORT_ORDER: 10,
-    },
-    {
-      CHEST_INCH: 60,
-      LENGTH_INCH: 34,
-      REMARKS: "ขนาดใหญ่พิเศษ สำหรับผู้ที่ต้องการขนาดใหญ่มากเป็นพิเศษ",
-      SIZE_CODE: "PLUS",
-      SIZE_NAME: "พลัสไซส์",
-      SIZE_NAME_EN: "Plus Size",
-      SORT_ORDER: 11,
-    },
-  ];
-};
-
 // ===================================================================
 // Format Functions
 // ===================================================================
@@ -219,10 +106,7 @@ const getDefaultSizes = () => {
 const formatMemberData = (apiData) => {
   if (!apiData) return null;
 
-  console.log("🔧 Raw API Data:", apiData);
-  console.log("🔧 ADDR from API:", apiData.ADDR);
-
-  const formatted = {
+  return {
     memberCode: apiData.MEMB_CODE,
     fullName: apiData.FULLNAME,
     displayName: apiData.DISPLAYNAME,
@@ -240,18 +124,13 @@ const formatMemberData = (apiData) => {
     updatedDate: parseWcfDate(apiData.UPDATED_DATE),
     userRole: apiData.USER_ROLE,
     hasReceived: apiData.RECEIVE_STATUS === "RECEIVED",
-
-    // ✅ เพิ่มฟิลด์ที่ขาดหายไป
     MEMB_DBTYP: apiData.MEMB_DBTYP,
     DEPT_CODE: apiData.DEPT_CODE,
     DEPT_NAME: apiData.DEPT_NAME,
     SECT_CODE: apiData.SECT_CODE,
     SECT_NAME: apiData.SECT_NAME,
-    ADDR: apiData.ADDR, // ✅ ตรวจสอบให้แน่ใจว่า map ถูกต้อง
+    ADDR: apiData.ADDR,
   };
-
-  console.log("✅ Formatted Data:", formatted);
-  return formatted;
 };
 
 // ===================================================================
@@ -270,27 +149,23 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   }
 
   const memberData = formatMemberData(res.data.data);
-  console.log("📍 After formatMemberData:", memberData); // ✅ เพิ่ม debug
 
-  const loginResult = {
+  return {
     ...memberData,
     round: memberData.socialId ? memberData.socialId.split("-").pop() : idCard,
     name:
       memberData.displayName || memberData.fullName || memberData.memberCode,
   };
-
-  console.log("📍 Final loginResult:", loginResult); // ✅ เพิ่ม debug
-  return loginResult;
 };
 
 export const saveMemberSize = async ({
   memberCode,
   sizeCode,
-  remarks = "",
   surveyMethod = "ONLINE",
-  processedBy = null,
+  remarks = "",
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+
   const payload = {
     MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
@@ -298,34 +173,29 @@ export const saveMemberSize = async ({
     REMARKS: remarks,
   };
 
-  if (processedBy) {
-    const paddedProcessedBy = processedBy.toString().padStart(6, "0");
-    payload.PROCESSED_BY = paddedProcessedBy;
-  }
-
-  console.log("Saving size payload:", payload);
+  console.log("Save size payload:", payload);
 
   const res = await api.post("/AddShirtSurvey", payload);
   if (res.data?.responseCode !== 200) {
-    throw new Error(res.data?.responseMessage || "บันทึกขนาดไม่สำเร็จ");
+    throw new Error(res.data?.responseMessage || "บันทึกขนาดเสื้อไม่สำเร็จ");
   }
 
   console.log("Save size response:", res.data);
   return res.data;
 };
 
-export const SearchMember = async (mbcode) => {
-  const res = await api.get(
-    `/SearchShirtMember?mbcode=${encodeURIComponent(mbcode)}`
-  );
+export const getMemberByCode = async (memberCode) => {
+  const paddedCode = (memberCode ?? "").toString().padStart(6, "0");
+  const res = await api.get(`/GetShirtMemberByCode/${paddedCode}`);
 
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่พบข้อมูลสมาชิก");
   }
+
   return formatMemberData(res.data.data);
 };
 
-export const getShirtMemberListPaged = async ({
+export const getMembers = async ({
   page = 1,
   pageSize = 20,
   search = "",
@@ -333,7 +203,7 @@ export const getShirtMemberListPaged = async ({
   size_code = "",
   sort_field = "",
   sort_order = "asc",
-}) => {
+} = {}) => {
   const params = new URLSearchParams({
     page: page.toString(),
     pageSize: pageSize.toString(),
@@ -344,16 +214,6 @@ export const getShirtMemberListPaged = async ({
     sort_order: sort_order || "asc",
   });
 
-  console.log("API Request params:", {
-    page,
-    pageSize,
-    search,
-    status,
-    size_code,
-    sort_field,
-    sort_order,
-  });
-
   const res = await api.get(`/GetShirtMemberListPaged?${params.toString()}`);
   if (res.data?.responseCode !== 200 && res.data?.responseCode !== 404) {
     throw new Error(res.data?.responseMessage || "เกิดข้อผิดพลาด");
@@ -361,11 +221,6 @@ export const getShirtMemberListPaged = async ({
 
   const data = res.data.data || [];
   const formattedData = Array.isArray(data) ? data.map(formatMemberData) : [];
-
-  console.log("API Response:", {
-    totalCount: res.data.totalCount,
-    dataLength: formattedData.length,
-  });
 
   return {
     data: formattedData,
@@ -441,8 +296,6 @@ export const getInventorySummary = async () => {
 
   const stockData = res.data.data || [];
   const inventorySummary = formatInventoryData(stockData);
-  console.log("Raw inventory data:", stockData);
-  console.log("Formatted inventory data:", inventorySummary);
 
   // เรียงตาม SIZE_ORDER จาก API
   const sizeOrder = await getSizeOrder();
@@ -523,8 +376,6 @@ const formatStockLogData = (apiData) => {
 };
 
 export const getStockLogs = async () => {
-  console.log("🔍 Fetching all stock logs...");
-
   const res = await api.get("/GetStockLogs");
 
   if (res.data?.responseCode !== 200 && res.data?.responseCode !== 404) {
@@ -532,10 +383,7 @@ export const getStockLogs = async () => {
   }
 
   const data = res.data.data || [];
-  const formattedData = Array.isArray(data) ? data.map(formatStockLogData) : [];
-
-  console.log("Stock logs loaded:", formattedData.length, "records");
-  return formattedData;
+  return Array.isArray(data) ? data.map(formatStockLogData) : [];
 };
 
 // ===================================================================
@@ -543,54 +391,25 @@ export const getStockLogs = async () => {
 // ===================================================================
 
 export const getDashboardStats = async () => {
-  try {
-    console.log("📊 Fetching dashboard stats from API...");
+  const res = await api.get("/GetDashboardStats");
 
-    const res = await api.get("/GetDashboardStats");
-
-    if (res.data?.responseCode !== 200) {
-      throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดสถิติได้");
-    }
-
-    const stats = res.data.data;
-
-    console.log("📊 Dashboard Stats received:", stats);
-    return stats;
-  } catch (error) {
-    console.error("❌ Error fetching dashboard stats:", error);
-    throw error;
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "ไม่สามารถโหลดสถิติได้");
   }
+
+  return res.data.data;
 };
 
-// ===================================================================
-// Department Report API
-// ===================================================================
-
-/**
- * ดึงรายงานแยกตามหน่วยงาน
- * @returns {Promise<Array>} รายงานแยกตามหน่วยงาน
- */
 export const getDepartmentReport = async () => {
-  try {
-    console.log("📊 Fetching department report from API...");
+  const res = await api.get("/GetShirtResultDeptSect");
 
-    // ✅ แก้ไข endpoint ให้ถูกต้อง
-    const res = await api.get("/GetShirtResultDeptSect");
-
-    if (res.data?.responseCode !== 200) {
-      throw new Error(
-        res.data?.responseMessage || "ไม่สามารถโหลดรายงานหน่วยงานได้"
-      );
-    }
-
-    const reportData = res.data.data || [];
-
-    console.log("📊 Department report received:", reportData);
-    return reportData;
-  } catch (error) {
-    console.error("❌ Error fetching department report:", error);
-    throw error;
+  if (res.data?.responseCode !== 200) {
+    throw new Error(
+      res.data?.responseMessage || "ไม่สามารถโหลดรายงานหน่วยงานได้"
+    );
   }
+
+  return res.data.data || [];
 };
 
 // ===================================================================
@@ -615,14 +434,162 @@ export const clearMemberData = async ({
     CLEARED_BY: paddedClearedBy,
   };
 
-  console.log("Clear member data payload:", payload);
-
   const res = await api.post("/ClearShirtSurvey", payload);
 
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "ไม่สามารถล้างข้อมูลได้");
   }
 
-  console.log("Clear member data response:", res.data);
   return res.data;
+};
+
+// ===================================================================
+// Delivery Preference APIs
+// ===================================================================
+
+/**
+ * บันทึกความประสงค์การจัดส่งเสื้อ
+ */
+export const saveDeliveryPreference = async ({
+  memberCode,
+  deliveryOption,
+  deliveryAddress = null,
+  deliveryPhone = null,
+}) => {
+  const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+
+  const payload = {
+    MEMB_CODE: paddedMemberCode,
+    DELIVERY_OPTION: deliveryOption.toLowerCase(),
+    DELIVERY_ADDRESS: deliveryAddress,
+    DELIVERY_PHONE: deliveryPhone,
+  };
+
+  console.log("📦 Save delivery preference payload:", payload);
+
+  const res = await api.post("/AddShirtDelivery", payload);
+
+  if (res.data?.responseCode !== 200) {
+    throw new Error(
+      res.data?.responseMessage || "ไม่สามารถบันทึกความประสงค์ได้"
+    );
+  }
+
+  console.log("✅ Delivery preference saved:", res.data);
+  return res.data;
+};
+
+/**
+ * ดึงข้อมูลความประสงค์การจัดส่งของสมาชิก
+ */
+export const getDeliveryPreference = async (memberCode) => {
+  const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
+
+  console.log("🔍 Fetching delivery preference for:", paddedMemberCode);
+
+  try {
+    const res = await api.get(`/GetShirtDelivery/${paddedMemberCode}`);
+
+    if (res.data?.responseCode === 404) {
+      console.log("ℹ️ No delivery preference found");
+      return null;
+    }
+
+    if (res.data?.responseCode !== 200) {
+      throw new Error(
+        res.data?.responseMessage || "ไม่สามารถโหลดข้อมูลความประสงค์ได้"
+      );
+    }
+
+    console.log("✅ Delivery preference loaded:", res.data.data);
+    return res.data.data;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Format ข้อมูล delivery preference สำหรับแสดงผล
+ */
+export const formatDeliveryData = (data) => {
+  if (!data) return null;
+
+  return {
+    memberCode: data.MEMB_CODE,
+    deliveryOption: data.DELIVERY_OPTION,
+    deliveryAddress: data.DELIVERY_ADDRESS,
+    deliveryPhone: data.DELIVERY_PHONE,
+    createdDate: parseWcfDate(data.CREATED_DATE),
+    updatedDate: parseWcfDate(data.UPDATED_DATE),
+  };
+};
+
+// ===================================================================
+// Delivery Report APIs
+// ===================================================================
+
+/**
+ * ดึงรายการข้อมูลการเลือกวิธีการรับเสื้อทั้งหมด
+ * สำหรับหน้ารายงานรายละเอียดการจัดส่ง (Admin)
+ */
+export const getDeliveryReportList = async () => {
+  try {
+    console.log("📋 Fetching delivery report list...");
+
+    const res = await api.get("/GetDeliveryReportList");
+
+    if (res.data?.responseCode !== 200) {
+      throw new Error(
+        res.data?.responseMessage || "ไม่สามารถโหลดรายงานการจัดส่งได้"
+      );
+    }
+
+    const data = res.data.data || [];
+    console.log("✅ Delivery report loaded:", data.length, "records");
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("❌ Error fetching delivery report:", error);
+    return [];
+  }
+};
+
+/**
+ * ดึงสถิติการเลือกวิธีการรับเสื้อ
+ */
+export const getDeliveryStats = async () => {
+  try {
+    console.log("📊 Fetching delivery statistics...");
+
+    const res = await api.get("/GetDeliveryStats");
+
+    if (res.data?.responseCode !== 200) {
+      throw new Error(
+        res.data?.responseMessage || "ไม่สามารถโหลดสถิติการจัดส่งได้"
+      );
+    }
+
+    console.log("✅ Delivery stats loaded:", res.data.data);
+    return res.data.data;
+  } catch (error) {
+    console.error("❌ Error fetching delivery stats:", error);
+    throw error;
+  }
+};
+
+// ===================================================================
+// Backward Compatibility Functions
+// ===================================================================
+
+/**
+ * @deprecated ใช้ getMembers() แทน
+ * เก็บไว้เพื่อ backward compatibility - อย่าลบ!
+ */
+export const getShirtMemberListPaged = async (params = {}) => {
+  console.warn(
+    "⚠️ getShirtMemberListPaged is deprecated. Use getMembers() instead."
+  );
+  return await getMembers(params);
 };

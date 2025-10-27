@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Form,
@@ -8,14 +8,21 @@ import {
   Typography,
   Space,
   message,
+  Spin,
 } from "antd";
 import {
   HomeOutlined,
   EnvironmentOutlined,
   EditOutlined,
   CheckCircleOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { useAppContext } from "../App";
+import {
+  saveDeliveryPreference,
+  getDeliveryPreference,
+  formatDeliveryData,
+} from "../services/shirtApi";
 import Swal from "sweetalert2";
 
 const { Title, Text } = Typography;
@@ -25,6 +32,7 @@ const RetirementDelivery = () => {
   const [form] = Form.useForm();
   const [selectedOption, setSelectedOption] = useState("coop");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // ข้อมูลที่อยู่ในระบบ (ดึงจาก user context)
   const { user } = useAppContext();
@@ -35,25 +43,76 @@ const RetirementDelivery = () => {
 
   const systemAddress = user?.ADDR || "ไม่พบที่อยู่ในระบบ";
 
+  // ⚡ โหลดข้อมูลความประสงค์เดิม (ถ้ามี)
+  useEffect(() => {
+    const loadExistingPreference = async () => {
+      if (!user?.memberCode) {
+        setInitialLoading(false);
+        return;
+      }
+
+      try {
+        console.log("🔄 Loading existing delivery preference...");
+        const rawData = await getDeliveryPreference(user.memberCode);
+
+        if (rawData) {
+          const preference = formatDeliveryData(rawData);
+          console.log("📋 Found existing preference:", preference);
+
+          // ตั้งค่าในฟอร์ม
+          setSelectedOption(preference.deliveryOption);
+          form.setFieldsValue({
+            deliveryOption: preference.deliveryOption,
+            customAddress: preference.deliveryAddress,
+            customPhone: preference.deliveryPhone,
+          });
+
+          message.success("โหลดข้อมูลความประสงค์เดิมแล้ว");
+        } else {
+          console.log("ℹ️ No existing preference found");
+        }
+      } catch (error) {
+        console.error("❌ Error loading preference:", error);
+        message.warning("ไม่สามารถโหลดข้อมูลความประสงค์เดิมได้");
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadExistingPreference();
+  }, [user?.memberCode, form]);
+
   const handleSubmit = async (values) => {
+    if (!user?.memberCode) {
+      message.error("ไม่พบข้อมูลสมาชิก กรุณาเข้าสู่ระบบใหม่");
+      return;
+    }
+
     try {
       // 🎯 เตรียมข้อมูลสำหรับแสดง
       let addressToShow = "";
       let deliveryMethod = "";
+      let addressToSave = null;
+      let phoneToSave = null;
 
       if (values.deliveryOption === "coop") {
         deliveryMethod = "รับที่สหกรณ์";
         addressToShow = "สหกรณ์ออมทรัพย์มหาวิทยาลัยเกษตรศาสตร์ จำกัด";
+        // ไม่ต้องบันทึกที่อยู่สำหรับตัวเลือกนี้
       } else if (values.deliveryOption === "system") {
         deliveryMethod = "จัดส่งตามที่อยู่ในระบบ";
         addressToShow = systemAddress;
+        addressToSave = systemAddress;
+        phoneToSave = user.phone;
       } else if (values.deliveryOption === "custom") {
         deliveryMethod = "จัดส่งตามที่อยู่ใหม่";
         addressToShow = `${values.customAddress}\nเบอร์โทร: ${values.customPhone}`;
+        addressToSave = values.customAddress;
+        phoneToSave = values.customPhone;
       }
 
       // 🚀 แสดง SweetAlert Confirmation
-      const result = await Swal.fire({
+      const confirmResult = await Swal.fire({
         title: "ยืนยันการเลือกช่องทางการจัดส่ง",
         html: `
           <div style="text-align: left; margin: 20px 0;">
@@ -85,33 +144,27 @@ const RetirementDelivery = () => {
       });
 
       // ถ้าผู้ใช้ยกเลิก
-      if (!result.isConfirmed) {
+      if (!confirmResult.isConfirmed) {
         return;
       }
 
-      // ถ้าผู้ใช้ยืนยัน ให้ประมวลผลต่อ
+      // ถ้าผู้ใช้ยืนยัน ให้บันทึกข้อมูลจริง
       setLoading(true);
 
-      console.log("📦 Delivery Option:", values);
-      console.log("📍 Address to save:", addressToShow);
-      console.log("🚚 Delivery method:", deliveryMethod);
+      console.log("📦 Saving delivery preference...");
 
-      // ✅ เพิ่ม log เบอร์โทร
-      if (values.deliveryOption === "custom") {
-        console.log("📞 Phone number:", values.customPhone);
-      }
+      // ✅ เรียก API บันทึกข้อมูลจริง
+      const saveData = {
+        memberCode: user.memberCode,
+        deliveryOption: values.deliveryOption,
+        deliveryAddress: addressToSave,
+        deliveryPhone: phoneToSave,
+      };
 
-      // TODO: เรียก API บันทึกข้อมูล
-      // const saveData = {
-      //   memberCode: user?.memberCode,
-      //   deliveryOption: values.deliveryOption,
-      //   deliveryAddress: values.customAddress || systemAddress,
-      //   deliveryPhone: values.customPhone || user?.phone,
-      //   deliveryMethod: deliveryMethod
-      // };
+      console.log("💾 Save payload:", saveData);
 
-      // จำลองการบันทึกข้อมูล
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const saveResult = await saveDeliveryPreference(saveData);
+      console.log("✅ Save result:", saveResult);
 
       // แสดงผลสำเร็จ
       await Swal.fire({
@@ -129,7 +182,7 @@ const RetirementDelivery = () => {
 
       await Swal.fire({
         title: "เกิดข้อผิดพลาด!",
-        text: "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
+        text: error.message || "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง",
         icon: "error",
         confirmButtonColor: "#dc3545",
         confirmButtonText: "ตกลง",
@@ -160,6 +213,38 @@ const RetirementDelivery = () => {
       description: "กรอกที่อยู่จัดส่งด้วยตนเอง",
     },
   ];
+
+  // แสดง Loading Screen ขณะโหลดข้อมูลเดิม
+  if (initialLoading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(180deg, #4A9FE8 0%, #5AB9EA 100%)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Card
+          style={{
+            padding: "40px",
+            borderRadius: "24px",
+            background: "rgba(255, 255, 255, 0.95)",
+            textAlign: "center",
+          }}
+        >
+          <Spin
+            indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />}
+            size="large"
+          />
+          <div style={{ marginTop: "16px", fontSize: "16px", color: "#666" }}>
+            กำลังโหลดข้อมูล...
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div
