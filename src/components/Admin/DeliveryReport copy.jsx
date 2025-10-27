@@ -13,6 +13,9 @@ import {
   Space,
   Tooltip,
   Card,
+  Row,
+  Col,
+  Statistic,
   App, // ✅ เพิ่ม App import
 } from "antd";
 import {
@@ -20,6 +23,7 @@ import {
   ReloadOutlined,
   DownloadOutlined,
   EnvironmentOutlined,
+  HomeOutlined,
   PhoneOutlined,
   ClearOutlined,
 } from "@ant-design/icons";
@@ -36,6 +40,12 @@ const DeliveryReport = () => {
   const [dataSource, setDataSource] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [deliveryFilter, setDeliveryFilter] = useState("");
+  const [stats, setStats] = useState({
+    total: 0,
+    coop: 0,
+    system: 0,
+    custom: 0,
+  });
 
   useEffect(() => {
     loadData();
@@ -46,6 +56,7 @@ const DeliveryReport = () => {
     try {
       const data = await getDeliveryReportList();
       setDataSource(data);
+      calculateStats(data);
       message.success(`โหลดข้อมูลสำเร็จ (${data.length} รายการ)`); // ✅ ใช้ message จาก useApp
     } catch (error) {
       console.error("Error loading delivery report:", error);
@@ -53,6 +64,16 @@ const DeliveryReport = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateStats = (data) => {
+    const stats = {
+      total: data.length,
+      coop: data.filter((item) => item.DELIVERY_OPTION === "coop").length,
+      system: data.filter((item) => item.DELIVERY_OPTION === "system").length,
+      custom: data.filter((item) => item.DELIVERY_OPTION === "custom").length,
+    };
+    setStats(stats);
   };
 
   const filteredData = useMemo(() => {
@@ -98,7 +119,7 @@ const DeliveryReport = () => {
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "ช่องทางจัดส่งกลุ่มเกษียณ");
+      XLSX.utils.book_append_sheet(wb, ws, "รายละเอียดการจัดส่ง");
 
       ws["!cols"] = [
         { wch: 12 },
@@ -232,12 +253,20 @@ const DeliveryReport = () => {
         style={{
           marginBottom: "24px",
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "12px",
         }}
       >
+        <div>
+          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>
+            รายละเอียดการจัดส่ง
+          </h2>
+          <p style={{ margin: "4px 0 0", color: "#666", fontSize: "14px" }}>
+            ข้อมูลความประสงค์การรับเสื้อของสมาชิก
+          </p>
+        </div>
         <Space wrap>
           <Button
             type="default"
@@ -258,40 +287,73 @@ const DeliveryReport = () => {
         </Space>
       </div>
 
+      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="ทั้งหมด"
+              value={stats.total}
+              valueStyle={{ color: "#1890ff" }}
+              prefix={<HomeOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="รับที่สหกรณ์"
+              value={stats.coop}
+              valueStyle={{ color: "#1890ff" }}
+              suffix={`/ ${stats.total}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="ที่อยู่ในระบบ"
+              value={stats.system}
+              valueStyle={{ color: "#52c41a" }}
+              suffix={`/ ${stats.total}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="ที่อยู่ใหม่"
+              value={stats.custom}
+              valueStyle={{ color: "#fa8c16" }}
+              suffix={`/ ${stats.total}`}
+            />
+          </Card>
+        </Col>
+      </Row>
+
       <Card style={{ marginBottom: "24px" }}>
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
+            flexDirection: "column",
             gap: "12px",
           }}
         >
-          {/* ช่องค้นหาด้านซ้าย */}
-          <Input
-            placeholder="ค้นหาด้วยเลขสมาชิก, ชื่อ, ที่อยู่, เบอร์โทร..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{
-              minWidth: 250,
-              maxWidth: 400,
-              flex: "1 1 300px",
-            }}
-            allowClear
-          />
-
-          {/* ตัวกรองและข้อมูลสถิติด้านขวา */}
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
               gap: "12px",
               alignItems: "center",
-              justifyContent: "flex-end",
             }}
           >
+            <Input
+              placeholder="ค้นหาด้วยเลขสมาชิก, ชื่อ, ที่อยู่, เบอร์โทร..."
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ minWidth: 250, flex: "1 1 auto" }}
+              allowClear
+            />
             <Select
               placeholder="ความประสงค์"
               value={deliveryFilter}
@@ -311,11 +373,11 @@ const DeliveryReport = () => {
             >
               ล้างตัวกรอง
             </Button>
-            <div style={{ whiteSpace: "nowrap", marginLeft: "8px" }}>
-              <span style={{ color: "#666" }}>
-                แสดง {filteredData.length} จาก {dataSource.length} รายการ
-              </span>
-            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <span style={{ color: "#666" }}>
+              แสดง {filteredData.length} จาก {dataSource.length} รายการ
+            </span>
           </div>
         </div>
       </Card>

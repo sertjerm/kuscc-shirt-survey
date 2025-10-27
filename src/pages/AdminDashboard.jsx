@@ -119,7 +119,7 @@ const AdminDashboard = () => {
     {
       key: "delivery",
       icon: <EnvironmentOutlined />,
-      label: "รายละเอียดการจัดส่ง",
+      label: "ช่องทางจัดส่งกลุ่มเกษียณ",
     }, // ✅ เพิ่มเมนูใหม่
     { key: "settings", icon: <SettingOutlined />, label: "ตั้งค่า" },
   ];
