@@ -248,6 +248,7 @@ const RetirementDelivery = () => {
 
   return (
     <div
+      className="retirement-delivery-page"
       style={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #4A9FE8 0%, #5AB9EA 100%)",
@@ -278,7 +279,6 @@ const RetirementDelivery = () => {
               margin: "0 0 8px 0",
               color: "#1E88E5",
               fontWeight: "600",
-
             }}
           >
             โปรดเลือกช่องทางการรับเสื้อแจ็คเก็ต
@@ -296,194 +296,205 @@ const RetirementDelivery = () => {
           initialValues={{ deliveryOption: "coop" }}
         >
           <Form.Item name="deliveryOption">
-            <Radio.Group
-              style={{ width: "100%" }}
-              onChange={(e) => setSelectedOption(e.target.value)}
+            <Card
+              style={{
+                borderRadius: "16px",
+                background: "rgba(255, 255, 255, 0.9)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+              }}
+              bodyStyle={{ padding: "24px" }}
             >
-              <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                {deliveryOptions.map((option) => (
-                  <Card
-                    key={option.value}
-                    hoverable
-                    style={{
-                      borderRadius: "16px",
-                      background: "rgba(255, 255, 255, 0.9)",
-                      backdropFilter: "blur(10px)",
-                      WebkitBackdropFilter: "blur(10px)",
-                      border:
-                        selectedOption === option.value
-                          ? "2px solid #1E88E5"
-                          : "1px solid rgba(255, 255, 255, 0.3)",
-                      boxShadow:
-                        selectedOption === option.value
-                          ? "0 12px 32px rgba(30, 136, 229, 0.15)"
-                          : "0 8px 24px rgba(0, 0, 0, 0.08)",
-                      transition: "all 0.3s ease",
-                    }}
-                    bodyStyle={{ padding: "20px" }}
-                  >
-                    <Radio value={option.value} style={{ width: "100%" }}>
+              <Radio.Group
+                style={{ width: "100%" }}
+                onChange={(e) => setSelectedOption(e.target.value)}
+              >
+                <Space direction="vertical" size={0} style={{ width: "100%" }}>
+                  {deliveryOptions.map((option, index) => (
+                    <div key={option.value}>
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "15px",
+                          padding: "20px 16px",
+                          borderRadius: "12px",
+                          background:
+                            selectedOption === option.value
+                              ? "rgba(30, 136, 229, 0.05)"
+                              : "transparent",
+                          border:
+                            selectedOption === option.value
+                              ? "2px solid #1E88E5"
+                              : "2px solid transparent",
+                          transition: "all 0.3s ease",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          setSelectedOption(option.value);
+                          form.setFieldsValue({ deliveryOption: option.value });
                         }}
                       >
-                        <div
-                          style={{
-                            color:
-                              selectedOption === option.value
-                                ? "#1E88E5"
-                                : "#757575",
-                            filter:
-                              selectedOption === option.value
-                                ? "grayscale(0)"
-                                : "grayscale(0.3)",
-                          }}
-                        >
-                          {option.icon}
-                        </div>
-                        <div style={{ flex: 1 }}>
+                        <Radio value={option.value} style={{ width: "100%" }}>
                           <div
                             style={{
-                              fontWeight:
-                                selectedOption === option.value ? "500" : "400",
-                              color:
-                                selectedOption === option.value
-                                  ? "#1E88E5"
-                                  : "#333",
-                              fontSize: "16px",
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: "12px",
+                              marginLeft: "8px",
                             }}
                           >
-                            {option.label}
+                            <div style={{ flex: 1 }}>
+                              <div
+                                style={{
+                                  fontWeight:
+                                    selectedOption === option.value
+                                      ? "600"
+                                      : "500",
+                                  color:
+                                    selectedOption === option.value
+                                      ? "#1E88E5"
+                                      : "#333",
+                                  fontSize: "16px",
+                                  marginBottom: "4px",
+                                  lineHeight: "1.4",
+                                }}
+                              >
+                                {option.label}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "14px",
+                                  color: "#757575",
+                                  lineHeight: "1.4",
+                                }}
+                              >
+                                {option.description}
+                              </div>
+                            </div>
                           </div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              color: "#757575",
-                              marginTop: "4px",
-                            }}
-                          >
-                            {option.description}
-                          </div>
-                        </div>
+
+                          {/* แสดงที่อยู่ในระบบทันที */}
+                          {option.value === "system" && (
+                            <div
+                              style={{
+                                marginTop: "12px",
+                                marginLeft: "32px",
+                                padding: "12px 16px",
+                                background: "rgba(227, 242, 253, 0.7)",
+                                backdropFilter: "blur(10px)",
+                                WebkitBackdropFilter: "blur(10px)",
+                                borderRadius: "8px",
+                                borderLeft: "3px solid #1E88E5",
+                                fontSize: "14px",
+                                color: "#424242",
+                                lineHeight: "1.5",
+                              }}
+                            >
+                              <strong style={{ color: "#1565C0" }}>
+                                ที่อยู่ในระบบ:
+                              </strong>
+                              <br />
+                              <span style={{ whiteSpace: "pre-line" }}>
+                                {option.address}
+                              </span>
+                            </div>
+                          )}
+                        </Radio>
                       </div>
 
-                      {/* แสดงที่อยู่ในระบบทันที */}
-                      {option.value === "system" && (
+                      {/* เส้นคั่นระหว่าง options (ยกเว้นตัวสุดท้าย) */}
+                      {index < deliveryOptions.length - 1 && (
                         <div
                           style={{
-                            marginTop: "12px",
-                            padding: "12px 16px",
-                            background: "rgba(227, 242, 253, 0.7)",
-                            backdropFilter: "blur(10px)",
-                            WebkitBackdropFilter: "blur(10px)",
-                            borderRadius: "12px",
-                            borderLeft: "4px solid #1E88E5",
-                            fontSize: "14px",
-                            color: "#424242",
-                            lineHeight: "1.6",
-                            whiteSpace: "pre-line",
+                            height: "1px",
+                            background:
+                              "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
+                            margin: "16px 0",
                           }}
-                        >
-                          <strong style={{ color: "#1565C0" }}>
-                            ที่อยู่ในระบบ:
-                          </strong>
-                          <br />
-                          {option.address}
-                        </div>
+                        />
                       )}
-                    </Radio>
-                  </Card>
-                ))}
-              </Space>
-            </Radio.Group>
+                    </div>
+                  ))}
+                </Space>
+              </Radio.Group>
+
+              {/* แสดงช่องกรอกที่อยู่ใหม่ภายใน Card */}
+              {selectedOption === "custom" && (
+                <div
+                  style={{
+                    marginTop: "20px",
+                    paddingTop: "20px",
+                    borderTop: "1px solid rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <Form.Item
+                    name="customAddress"
+                    label={
+                      <span style={{ fontWeight: "600", color: "#333" }}>
+                        ที่อยู่จัดส่ง
+                      </span>
+                    }
+                    rules={[
+                      {
+                        required: true,
+                        message: "กรุณากรอกที่อยู่สำหรับจัดส่ง",
+                      },
+                      {
+                        min: 20,
+                        message:
+                          "กรุณากรอกที่อยู่ให้ครบถ้วน (อย่างน้อย 20 ตัวอักษร)",
+                      },
+                    ]}
+                    style={{ marginBottom: "16px" }}
+                  >
+                    <TextArea
+                      placeholder={`กรุณากรอกที่อยู่สำหรับจัดส่ง\n\nตัวอย่าง:\n99/99 ถนนพระราม 4 แขวงสีลม เขตบางรัก\nกรุงเทพมหานคร 10500`}
+                      rows={5}
+                      style={{
+                        borderRadius: "8px",
+                        border: "2px solid rgba(30, 136, 229, 0.2) !important",
+                        background: "rgba(255, 255, 255, 0.8)",
+                        fontSize: "14px",
+                      }}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="customPhone"
+                    label={
+                      <span style={{ fontWeight: "600", color: "#333" }}>
+                        เบอร์โทรติดต่อ
+                      </span>
+                    }
+                    rules={[
+                      {
+                        required: true,
+                        message: "กรุณากรอกเบอร์โทรติดต่อ",
+                      },
+                      {
+                        pattern: /^0[0-9]{9}$/,
+                        message:
+                          "กรุณากรอกเบอร์โทรให้ถูกต้อง (เช่น 0812345678)",
+                      },
+                    ]}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Input
+                      placeholder="เช่น 0812345678"
+                      maxLength={10}
+                      style={{
+                        borderRadius: "8px",
+                        border: "2px solid rgba(30, 136, 229, 0.8) !important",
+                        background: "rgba(255, 255, 255, 0.8)",
+                        fontSize: "14px",
+                        height: "40px",
+                      }}
+                    />
+                  </Form.Item>
+                </div>
+              )}
+            </Card>
           </Form.Item>
-
-          {/* แสดงช่องกรอกที่อยู่ใหม่ */}
-          {selectedOption === "custom" && (
-            <>
-              <Form.Item
-                name="customAddress"
-                label="ที่อยู่จัดส่ง"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกที่อยู่สำหรับจัดส่ง",
-                  },
-                  {
-                    min: 20,
-                    message:
-                      "กรุณากรอกที่อยู่ให้ครบถ้วน (อย่างน้อย 20 ตัวอักษร)",
-                  },
-                ]}
-                style={{ marginTop: "16px" }}
-              >
-                <TextArea
-                  placeholder={`กรุณากรอกที่อยู่สำหรับจัดส่ง\n\nตัวอย่าง:\n99/99 ถนนพระราม 4 แขวงสีลม เขตบางรัก\nกรุงเทพมหานคร 10500`}
-                  rows={5}
-                  style={{
-                    borderRadius: "12px",
-                    border: "2px solid rgba(30, 136, 229, 0.2)",
-                    background: "rgba(255, 255, 255, 0.95)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
-                    fontSize: "15px",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#1E88E5";
-                    e.target.style.boxShadow =
-                      "0 4px 12px rgba(30, 136, 229, 0.15)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(30, 136, 229, 0.2)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="customPhone"
-                label="เบอร์โทรติดต่อ"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกเบอร์โทรติดต่อ",
-                  },
-                  {
-                    pattern: /^0[0-9]{9}$/,
-                    message: "กรุณากรอกเบอร์โทรให้ถูกต้อง (เช่น 0812345678)",
-                  },
-                ]}
-              >
-                <Input
-                  placeholder="เช่น 0812345678"
-                  maxLength={10}
-                  style={{
-                    borderRadius: "12px",
-                    border: "2px solid rgba(30, 136, 229, 0.2)",
-                    background: "rgba(255, 255, 255, 0.95)",
-                    backdropFilter: "blur(10px)",
-                    WebkitBackdropFilter: "blur(10px)",
-                    fontSize: "15px",
-                    height: "44px",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#1E88E5";
-                    e.target.style.boxShadow =
-                      "0 4px 12px rgba(30, 136, 229, 0.15)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(30, 136, 229, 0.2)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-              </Form.Item>
-            </>
-          )}
 
           {/* Submit Button */}
           <Form.Item style={{ marginTop: "30px", marginBottom: 0 }}>

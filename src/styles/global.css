@@ -22,12 +22,13 @@ body {
 .admin-dashboard-page {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg,
-      #007aff 0%,
-      #5ac8fa 35%,
-      #40a9ff 70%,
-      #1890ff 100%
-    );
+  background: linear-gradient(
+    135deg,
+    #007aff 0%,
+    #5ac8fa 35%,
+    #40a9ff 70%,
+    #1890ff 100%
+  );
   overflow: hidden;
 }
 
@@ -57,8 +58,15 @@ body {
 .admin-dashboard-page::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 20% 30%,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%
+  );
   pointer-events: none;
 }
 
@@ -73,7 +81,7 @@ body {
 
 /* ... (the rest of your shared styles like .ant-btn-primary, .ant-input, etc.) ... */
 .member-header-responsive {
-    flex-direction: column;
+  flex-direction: column;
 }
 /* Restore default padding for Ant Design inputs */
 .ant-input-affix-wrapper .ant-input {
@@ -81,14 +89,46 @@ body {
 }
 
 .ant-alert-message {
-    font-size: 1rem !important;
-    white-space: nowrap !important;
+  font-size: 1rem !important;
+  white-space: nowrap !important;
 }
 .ant-alert-description {
-    font-size: 0.8rem !important;
-    white-space: nowrap;
+  font-size: 0.8rem !important;
+  white-space: nowrap;
 }
-.ant-input, .ant-select-selector, .ant-input-number {
-    border-radius: 8px !important;
-    border: none !important;
+.ant-input,
+.ant-select-selector,
+.ant-input-number {
+  border-radius: 8px !important;
+  border: none;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .ant-card-body {
+    padding: 20px !important;
+  }
+}
+
+/* สำหรับหน้า RetirementDelivery ให้มี border ชัดเจน */
+.retirement-delivery-page .ant-input,
+.retirement-delivery-page .ant-select-selector,
+.retirement-delivery-page .ant-input-number,
+.retirement-delivery-page .ant-input.ant-input {
+  border: 2px solid rgba(30, 136, 229, 0.2) !important; 
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.retirement-delivery-page .ant-input:focus,
+.retirement-delivery-page .ant-select-selector:focus,
+.retirement-delivery-page .ant-input-number:focus {
+  border-color: rgba(30, 136, 229, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2) !important;
+}
+
+.retirement-delivery-page .ant-input:hover,
+.retirement-delivery-page .ant-select-selector:hover,
+.retirement-delivery-page .ant-input-number:hover {
+  border-color: rgba(30, 136, 229, 0.2) !important;
 }
