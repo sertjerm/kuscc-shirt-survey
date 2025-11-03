@@ -1,0 +1,36 @@
+.retirement-delivery-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #4a9fe8 0%, #5ab9ea 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.delivery-card {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+}
+
+.option-container {
+  padding: 20px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.option-container.selected {
+  background: rgba(30, 136, 229, 0.05);
+  border: 2px solid #1e88e5;
+}
+
+.option-container:not(.selected) {
+  background: transparent;
+  border: 2px solid transparent;
+}

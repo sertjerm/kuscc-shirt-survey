@@ -295,6 +295,7 @@ const RetirementDelivery = () => {
           onFinish={handleSubmit}
           initialValues={{ deliveryOption: "coop" }}
         >
+          {/* แก้ไขส่วน Radio Group */}
           <Form.Item name="deliveryOption">
             <Card
               style={{
@@ -309,7 +310,12 @@ const RetirementDelivery = () => {
             >
               <Radio.Group
                 style={{ width: "100%" }}
-                onChange={(e) => setSelectedOption(e.target.value)}
+                value={selectedOption} // เพิ่ม value prop
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedOption(value);
+                  form.setFieldsValue({ deliveryOption: value });
+                }}
               >
                 <Space direction="vertical" size={0} style={{ width: "100%" }}>
                   {deliveryOptions.map((option, index) => (
@@ -329,18 +335,23 @@ const RetirementDelivery = () => {
                           transition: "all 0.3s ease",
                           cursor: "pointer",
                         }}
-                        onClick={() => {
-                          setSelectedOption(option.value);
-                          form.setFieldsValue({ deliveryOption: option.value });
-                        }}
+                        // ลบ onClick ออกเพื่อไม่ให้ทับซ้อนกับ Radio
                       >
-                        <Radio value={option.value} style={{ width: "100%" }}>
+                        <Radio
+                          value={option.value}
+                          style={{
+                            width: "100%",
+                            display: "flex", // เปลี่ยนเป็น flex
+                            alignItems: "flex-start",
+                          }}
+                        >
                           <div
                             style={{
                               display: "flex",
                               alignItems: "flex-start",
                               gap: "12px",
                               marginLeft: "8px",
+                              width: "100%", // เพิ่ม width 100%
                             }}
                           >
                             <div style={{ flex: 1 }}>
@@ -388,6 +399,7 @@ const RetirementDelivery = () => {
                                 fontSize: "14px",
                                 color: "#424242",
                                 lineHeight: "1.5",
+                                width: "calc(100% - 32px)", // ปรับ width
                               }}
                             >
                               <strong style={{ color: "#1565C0" }}>
@@ -402,7 +414,7 @@ const RetirementDelivery = () => {
                         </Radio>
                       </div>
 
-                      {/* เส้นคั่นระหว่าง options (ยกเว้นตัวสุดท้าย) */}
+                      {/* เส้นคั่นระหว่าง options */}
                       {index < deliveryOptions.length - 1 && (
                         <div
                           style={{
@@ -418,7 +430,7 @@ const RetirementDelivery = () => {
                 </Space>
               </Radio.Group>
 
-              {/* แสดงช่องกรอกที่อยู่ใหม่ภายใน Card */}
+              {/* ส่วนแสดงช่องกรอกที่อยู่ใหม่ */}
               {selectedOption === "custom" && (
                 <div
                   style={{

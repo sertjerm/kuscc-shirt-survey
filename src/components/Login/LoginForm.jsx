@@ -226,7 +226,8 @@ const LoginForm = () => {
         icon: "error",
         title: "ไม่สามารถเข้าสู่ระบบได้",
         text: error.message || "กรุณาตรวจสอบข้อมูลอีกครั้ง",
-        confirmButtonText: "ลองใหม่",
+       // confirmButtonText: "ลองใหม่",
+        confirmButtonText: "ปิดหน้าต่าง",
         confirmButtonColor: "#007AFF",
       });
     } finally {
