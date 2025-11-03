@@ -82,42 +82,62 @@ const RetirementDelivery = () => {
     loadExistingPreference();
   }, [user?.memberCode, form]);
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async () => {
     if (!user?.memberCode) {
       message.error("ไม่พบข้อมูลสมาชิก กรุณาเข้าสู่ระบบใหม่");
       return;
     }
 
     try {
-      // 🎯 เตรียมข้อมูลสำหรับแสดง
+      // ✅ Validate ก่อน
+      await form.validateFields();
+      const values = form.getFieldsValue();
+
+      // 🔍 Debug log
+      console.log("📋 Form values before processing:", values);
+      console.log("📋 Selected option:", selectedOption);
+
       let addressToShow = "";
       let deliveryMethod = "";
       let addressToSave = null;
       let phoneToSave = null;
 
-      if (values.deliveryOption === "coop") {
+      // ⚠️ ใช้ selectedOption แทน values.deliveryOption เพราะมันอัพเดตทันที
+      if (selectedOption === "coop") {
         deliveryMethod = "รับที่สหกรณ์";
         addressToShow = "สหกรณ์ออมทรัพย์มหาวิทยาลัยเกษตรศาสตร์ จำกัด";
-        // ไม่ต้องบันทึกที่อยู่สำหรับตัวเลือกนี้
-      } else if (values.deliveryOption === "system") {
+      } else if (selectedOption === "system") {
         deliveryMethod = "จัดส่งตามที่อยู่ในระบบ";
-        addressToShow = systemAddress;
+        addressToShow = systemAddress || "ไม่พบที่อยู่ในระบบ";
         addressToSave = systemAddress;
         phoneToSave = user.phone;
-      } else if (values.deliveryOption === "custom") {
+      } else if (selectedOption === "custom") {
         deliveryMethod = "จัดส่งตามที่อยู่ใหม่";
-        addressToShow = `${values.customAddress}\nเบอร์โทร: ${values.customPhone}`;
+
+        // ✅ เพิ่ม fallback ป้องกัน undefined
+        const customAddr = values.customAddress || "(ไม่ระบุ)";
+        const customPhone = values.customPhone || "(ไม่ระบุ)";
+
+        addressToShow = `${customAddr}\nเบอร์โทร: ${customPhone}`;
         addressToSave = values.customAddress;
         phoneToSave = values.customPhone;
+
+        console.log("📍 Custom address:", customAddr);
+        console.log("📞 Custom phone:", customPhone);
       }
 
-      // 🚀 แสดง SweetAlert Confirmation
+      // � Debug ก่อนแสดง dialog
+      console.log("📦 Delivery method:", deliveryMethod);
+      console.log("📍 Address to show:", addressToShow);
+
       const confirmResult = await Swal.fire({
-        title: "ยืนยันการโปรดเลือกช่องทางการรับเสื้อแจ็คเก็ต",
+        title: "ยืนยันการเลือกช่องทางการรับเสื้อแจ็คเก็ต",
         html: `
           <div style="text-align: left; margin: 20px 0;">
             <p style="margin: 10px 0;"><strong>วิธีการจัดส่ง:</strong></p>
-            <p style="color: #1E88E5; font-weight: 500; margin-bottom: 15px;">${deliveryMethod}</p>
+            <p style="color: #1E88E5; font-weight: 500; margin-bottom: 15px;">
+              ${deliveryMethod || "(ไม่ระบุ)"}
+            </p>
             
             <p style="margin: 10px 0;"><strong>ที่อยู่จัดส่ง:</strong></p>
             <div style="
@@ -128,7 +148,7 @@ const RetirementDelivery = () => {
               white-space: pre-line;
               font-size: 14px;
               line-height: 1.5;
-            ">${addressToShow}</div>
+            ">${addressToShow || "(ไม่ระบุ)"}</div>
           </div>
         `,
         icon: "question",
@@ -137,26 +157,18 @@ const RetirementDelivery = () => {
         cancelButtonColor: "#6c757d",
         confirmButtonText: "✅ ยืนยัน",
         cancelButtonText: "❌ ยกเลิก",
-        customClass: {
-          popup: "swal-wide",
-        },
         reverseButtons: true,
       });
 
-      // ถ้าผู้ใช้ยกเลิก
       if (!confirmResult.isConfirmed) {
         return;
       }
 
-      // ถ้าผู้ใช้ยืนยัน ให้บันทึกข้อมูลจริง
       setLoading(true);
 
-      console.log("📦 Saving delivery preference...");
-
-      // ✅ เรียก API บันทึกข้อมูลจริง
       const saveData = {
         memberCode: user.memberCode,
-        deliveryOption: values.deliveryOption,
+        deliveryOption: selectedOption, // ใช้ selectedOption แทน values.deliveryOption
         deliveryAddress: addressToSave,
         deliveryPhone: phoneToSave,
       };
@@ -166,7 +178,6 @@ const RetirementDelivery = () => {
       const saveResult = await saveDeliveryPreference(saveData);
       console.log("✅ Save result:", saveResult);
 
-      // แสดงผลสำเร็จ
       await Swal.fire({
         title: "บันทึกเรียบร้อย!",
         text: "ตัวเลือกการจัดส่งของคุณได้รับการบันทึกแล้ว",
@@ -174,11 +185,16 @@ const RetirementDelivery = () => {
         confirmButtonColor: "#1E88E5",
         confirmButtonText: "เข้าใจแล้ว",
       });
-
-      // TODO: Navigate หรือ callback
-      // navigate('/member');
     } catch (error) {
-      console.error("❌ Error saving delivery option:", error);
+      console.error("❌ Error:", error);
+
+      // Handle validation error
+      if (error.errorFields) {
+        const firstError = error.errorFields[0];
+        console.log("🔴 Validation error:", firstError);
+        message.error(firstError.errors[0] || "กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+      }
 
       await Swal.fire({
         title: "เกิดข้อผิดพลาด!",
@@ -313,6 +329,7 @@ const RetirementDelivery = () => {
                 value={selectedOption} // เพิ่ม value prop
                 onChange={(e) => {
                   const value = e.target.value;
+                  console.log("🔄 Radio changed to:", value); // เพิ่ม log
                   setSelectedOption(value);
                   form.setFieldsValue({ deliveryOption: value });
                 }}
@@ -448,7 +465,7 @@ const RetirementDelivery = () => {
                     }
                     rules={[
                       {
-                        required: true,
+                        required: selectedOption === "custom", // validate เฉพาะตอนเลือก custom
                         message: "กรุณากรอกที่อยู่สำหรับจัดส่ง",
                       },
                       {
@@ -480,7 +497,7 @@ const RetirementDelivery = () => {
                     }
                     rules={[
                       {
-                        required: true,
+                        required: selectedOption === "custom", // validate เฉพาะตอนเลือก custom
                         message: "กรุณากรอกเบอร์โทรติดต่อ",
                       },
                       {
