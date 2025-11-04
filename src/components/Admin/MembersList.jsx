@@ -2,14 +2,7 @@
 // ✅ ใช้ API แทน hardcode + แก้ layout ให้เหมือน apps4
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  message,
-  Button,
-  Pagination,
-  Modal,
-  Checkbox,
-  Tooltip,
-} from "antd";
+import { message, Button, Pagination, Modal, Checkbox, Tooltip } from "antd";
 import {
   ReloadOutlined,
   ClearOutlined,
@@ -24,10 +17,7 @@ import {
 } from "../../services/shirtApi";
 import { useAppContext } from "../../App";
 import { formatDateTime } from "../../utils/js_functions";
-import {
-  MEMBER_STATUS,
-  STATUS_LABELS,
-} from "../../utils/constants";
+import { MEMBER_STATUS, STATUS_LABELS } from "../../utils/constants";
 import PickupModal from "./PickupModal";
 import "../../styles/MembersList.css";
 
@@ -90,6 +80,16 @@ const MembersList = ({ onDataChange }) => {
         sort_field: sortField,
         sort_order: sortOrder,
       });
+
+      console.log("🔍 API Response:", result);
+      console.log("🔍 Members data:", result.data);
+      if (result.data && result.data.length > 0) {
+        console.log("🔍 First member:", result.data[0]);
+        console.log(
+          "🔍 RECEIVE_CHANNEL in first member:",
+          result.data[0].RECEIVE_CHANNEL
+        );
+      }
 
       setMembers(result.data || []);
       setTotalPages(result.totalPages || 1);
@@ -209,6 +209,47 @@ const MembersList = ({ onDataChange }) => {
         : "status-badge not-confirmed";
 
     return <span className={statusClass}>{STATUS_LABELS[status]}</span>;
+  };
+
+  // แสดงช่องทางการรับเป็นข้อความสี
+  const getReceiveChannelTag = (receiveChannel) => {
+    console.log(
+      "🔍 getReceiveChannelTag called with:",
+      receiveChannel,
+      "type:",
+      typeof receiveChannel
+    );
+
+    if (!receiveChannel) {
+      console.log("🔍 receiveChannel is falsy, returning -");
+      return <span className="text-muted">-</span>;
+    }
+
+    // กำหนดสีข้อความตามช่องทางการรับ
+    const getTextColor = (channel) => {
+      switch (channel) {
+        case "รับเอง":
+          return "#1890ff"; // น้ำเงิน
+        case "จัดส่ง":
+          return "#52c41a"; // เขียว
+        case "ส่งไปรษณีย์":
+          return "#fa8c16"; // ส้ม
+        default:
+          return "#666"; // เทา
+      }
+    };
+
+    return (
+      <span
+        style={{
+          color: getTextColor(receiveChannel),
+          fontWeight: "500",
+          fontSize: "13px",
+        }}
+      >
+        {receiveChannel}
+      </span>
+    );
   };
 
   // Clear Member Data Handler
@@ -569,7 +610,7 @@ const MembersList = ({ onDataChange }) => {
                   วันที่อัปเดตล่าสุด {getSortIcon("updatedDate")}
                 </th>
                 <th>สถานะ</th>
-                <th>ผู้ดำเนินการ</th>
+                <th style={{ textAlign: "center" }}>ช่องทางการรับ</th>
                 <th>หมายเหตุ</th>
                 <th style={{ textAlign: "center" }}>การดำเนินการ</th>
               </tr>
@@ -582,6 +623,18 @@ const MembersList = ({ onDataChange }) => {
                 const updatedDate = member.updatedDate || member.UPDATED_DATE;
                 const remarks = member.remarks || member.REMARKS;
                 const processedBy = member.processedBy || member.PROCESSED_BY;
+                const receiveChannel =
+                  member.RECEIVE_CHANNEL || member.receiveChannel;
+
+                // เพิ่มการดีบัก
+                if (memberCode === "012938") {
+                  console.log("🔍 Debug member 012938:", {
+                    member: member,
+                    RECEIVE_CHANNEL: member.RECEIVE_CHANNEL,
+                    receiveChannel: member.receiveChannel,
+                    finalReceiveChannel: receiveChannel,
+                  });
+                }
 
                 return (
                   <tr key={memberCode}>
@@ -607,12 +660,11 @@ const MembersList = ({ onDataChange }) => {
                       </span>
                     </td>
                     <td data-label="สถานะ">{getStatusDisplay(member)}</td>
-                    <td data-label="ผู้ดำเนินการ">
-                      {processedBy ? (
-                        <span>{processedBy}</span>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
+                    <td
+                      data-label="ช่องทางการรับ"
+                      style={{ textAlign: "center" }}
+                    >
+                      {getReceiveChannelTag(receiveChannel)}
                     </td>
                     <td data-label="หมายเหตุ">
                       {remarks ? (

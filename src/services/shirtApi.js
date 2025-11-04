@@ -118,6 +118,7 @@ const formatMemberData = (apiData) => {
     processedBy: apiData.PROCESSED_BY,
     receiverName: apiData.RECEIVER_NAME,
     receiverType: apiData.RECEIVER_TYPE,
+    receiveChannel: apiData.RECEIVE_CHANNEL, // เพิ่มการแมป RECEIVE_CHANNEL
     receiveDate: parseWcfDate(apiData.RECEIVE_DATE),
     receiveStatus: apiData.RECEIVE_STATUS,
     remarks: apiData.REMARKS,
@@ -130,6 +131,8 @@ const formatMemberData = (apiData) => {
     SECT_CODE: apiData.SECT_CODE,
     SECT_NAME: apiData.SECT_NAME,
     ADDR: apiData.ADDR,
+    // เพิ่มฟิลด์ดิบสำหรับ fallback
+    RECEIVE_CHANNEL: apiData.RECEIVE_CHANNEL,
   };
 };
 
