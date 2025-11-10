@@ -3,7 +3,7 @@
 // Description: รายละเอียดการจัดส่งเสื้อสำหรับสมาชิกเกษียณอายุ
 // ===================================================================
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Input,
   Select,
@@ -13,7 +13,7 @@ import {
   Space,
   Tooltip,
   Card,
-  App, // ✅ เพิ่ม App import
+  App,
 } from "antd";
 import {
   SearchOutlined,
@@ -25,66 +25,115 @@ import {
 } from "@ant-design/icons";
 import { getDeliveryReportList } from "../../services/shirtApi";
 import * as XLSX from "xlsx";
-import { formatDateTime } from "../../utils/js_functions"; // ✅ เพิ่ม import นี้
+import { formatDateTime } from "../../utils/js_functions";
 
 const { Option } = Select;
 
 const DeliveryReport = () => {
-  const { message } = App.useApp(); // ✅ ใช้ App.useApp() แทน message จาก antd
+  const { message } = App.useApp();
 
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState([]);
-  const [searchText, setSearchText] = useState("");
+
+  // ✅ แยก searchInput และ searchTerm เหมือน MemberList
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [deliveryFilter, setDeliveryFilter] = useState("");
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Sorting
+  const [sortField, setSortField] = useState("createddate");
+  const [sortOrder, setSortOrder] = useState("desc");
 
-  const loadData = async () => {
+  // Pagination
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
+
+  // ✅ Debounce search input (เหมือน MemberList)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setPagination((prev) => ({ ...prev, current: 1 }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // ✅ ใช้ useCallback เพื่อ auto-reload เมื่อ dependencies เปลี่ยน
+  const loadData = useCallback(async () => {
     setLoading(true);
+
+    console.log("🔍 Loading data with params:", {
+      page: pagination.current,
+      pageSize: pagination.pageSize,
+      search: searchTerm,
+      delivery_option: deliveryFilter,
+      sort_field: sortField,
+      sort_order: sortOrder,
+    });
+
     try {
-      const data = await getDeliveryReportList();
-      setDataSource(data);
-      message.success(`โหลดข้อมูลสำเร็จ (${data.length} รายการ)`); // ✅ ใช้ message จาก useApp
+      const result = await getDeliveryReportList({
+        page: pagination.current,
+        pageSize: pagination.pageSize,
+        search: searchTerm,
+        delivery_option: deliveryFilter,
+        sort_field: sortField,
+        sort_order: sortOrder,
+      });
+
+      console.log("📊 API Response:", result);
+
+      setDataSource(result.data || []);
+      setPagination((prev) => ({
+        ...prev,
+        total: result.totalCount,
+      }));
+
+      if (result.totalCount > 0) {
+        message.success(`โหลดข้อมูลสำเร็จ (${result.totalCount} รายการ)`);
+      }
     } catch (error) {
-      console.error("Error loading delivery report:", error);
-      message.error("ไม่สามารถโหลดข้อมูลได้"); // ✅ ใช้ message จาก useApp
+      console.error("❌ Error loading delivery report:", error);
+      message.error("ไม่สามารถโหลดข้อมูลได้");
+      setDataSource([]);
     } finally {
       setLoading(false);
     }
+  }, [
+    pagination.current,
+    pagination.pageSize,
+    searchTerm,
+    deliveryFilter,
+    sortField,
+    sortOrder,
+  ]);
+
+  // ✅ Auto-reload เมื่อ dependencies เปลี่ยน
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ✅ Clear search
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
   };
 
-  const filteredData = useMemo(() => {
-    let filtered = [...dataSource];
-    if (searchText) {
-      const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.MEMB_CODE?.toLowerCase().includes(searchLower) ||
-          item.FULLNAME?.toLowerCase().includes(searchLower) ||
-          item.DELIVERY_ADDRESS?.toLowerCase().includes(searchLower) ||
-          item.DELIVERY_PHONE?.toLowerCase().includes(searchLower)
-      );
-    }
-    if (deliveryFilter) {
-      filtered = filtered.filter(
-        (item) => item.DELIVERY_OPTION === deliveryFilter
-      );
-    }
-    return filtered;
-  }, [dataSource, searchText, deliveryFilter]);
-
+  // ✅ Clear all filters
   const handleClearFilters = () => {
-    setSearchText("");
+    setSearchInput("");
+    setSearchTerm("");
     setDeliveryFilter("");
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleExportExcel = () => {
     try {
-      const exportData = filteredData.map((item) => ({
-        เลขสมาชิก: item.MEMB_CODE,
-        ชื่อ: item.FULLNAME,
+      const exportData = dataSource.map((item) => ({
+        เลขสมาชิก: item.MEMB_CODE || "-",
+        ชื่อ: item.FULLNAME || "-",
         ความประสงค์: getDeliveryLabel(item.DELIVERY_OPTION),
         ที่อยู่จัดส่ง: item.DELIVERY_ADDRESS || "-",
         เบอร์โทร: item.DELIVERY_PHONE || "-",
@@ -126,6 +175,8 @@ const DeliveryReport = () => {
         return "จัดส่งตามที่อยู่ในระบบ";
       case "custom":
         return "จัดส่งตามที่อยู่ใหม่";
+      case "no-action":
+        return "ยังไม่ได้เลือก";
       default:
         return "-";
     }
@@ -139,6 +190,8 @@ const DeliveryReport = () => {
         return <Tag color="green">ที่อยู่ในระบบ</Tag>;
       case "custom":
         return <Tag color="orange">ที่อยู่ใหม่</Tag>;
+      case "no-action":
+        return <Tag color="default">ยังไม่ได้เลือก</Tag>;
       default:
         return <Tag>-</Tag>;
     }
@@ -148,38 +201,33 @@ const DeliveryReport = () => {
     {
       title: "เลขสมาชิก",
       dataIndex: "MEMB_CODE",
-      key: "membCode",
+      key: "MEMB_CODE",
       width: 120,
       fixed: "left",
-      sorter: (a, b) => a.MEMB_CODE.localeCompare(b.MEMB_CODE),
+      sorter: true,
       responsive: ["xs", "sm", "md", "lg", "xl"],
     },
     {
       title: "ชื่อ-นามสกุล",
       dataIndex: "FULLNAME",
-      key: "fullname",
+      key: "FULLNAME",
       width: 250,
       ellipsis: true,
+      sorter: true,
       responsive: ["sm", "md", "lg", "xl"],
     },
     {
       title: "ความประสงค์",
       dataIndex: "DELIVERY_OPTION",
-      key: "deliveryOption",
+      key: "DELIVERY_OPTION",
       width: 180,
       render: (option) => getDeliveryTag(option),
-      filters: [
-        { text: "รับที่สหกรณ์", value: "coop" },
-        { text: "ที่อยู่ในระบบ", value: "system" },
-        { text: "ที่อยู่ใหม่", value: "custom" },
-      ],
-      onFilter: (value, record) => record.DELIVERY_OPTION === value,
       responsive: ["xs", "sm", "md", "lg", "xl"],
     },
     {
       title: "ที่อยู่จัดส่ง",
       dataIndex: "DELIVERY_ADDRESS",
-      key: "deliveryAddress",
+      key: "DELIVERY_ADDRESS",
       width: 300,
       ellipsis: { showTitle: false },
       render: (address) =>
@@ -197,7 +245,7 @@ const DeliveryReport = () => {
     {
       title: "เบอร์โทร",
       dataIndex: "DELIVERY_PHONE",
-      key: "deliveryPhone",
+      key: "DELIVERY_PHONE",
       width: 130,
       render: (phone) =>
         phone ? (
@@ -211,20 +259,53 @@ const DeliveryReport = () => {
     },
     {
       title: "วันที่",
-      key: "datetime",
+      key: "date",
       width: 180,
+      sorter: true,
+      // ✅ เพิ่ม defaultSortOrder เพื่อแสดง indicator
+      defaultSortOrder: "descend",
+      // ✅ เพิ่ม sortOrder เพื่อควบคุมจาก state
+      sortOrder:
+        sortField === "createddate"
+          ? sortOrder === "desc"
+            ? "descend"
+            : "ascend"
+          : null,
       render: (_, record) => {
         const date = record.UPDATED_DATE || record.CREATED_DATE;
         return date ? formatDateTime(date) : "-";
       },
-      sorter: (a, b) => {
-        const dateA = a.UPDATED_DATE || a.CREATED_DATE;
-        const dateB = b.UPDATED_DATE || b.CREATED_DATE;
-        return new Date(dateA) - new Date(dateB);
-      },
       responsive: ["sm", "md", "lg", "xl"],
     },
   ];
+
+  // ✅ แก้ไข handleTableChange เพื่อ map sortOrder กลับ
+  const handleTableChange = (newPagination, filters, sorter) => {
+    console.log("📊 Table change:", { newPagination, sorter });
+
+    // Update sorting
+    if (sorter && sorter.field) {
+      const fieldMap = {
+        MEMB_CODE: "membcode",
+        FULLNAME: "fullname",
+        date: "createddate",
+      };
+
+      setSortField(fieldMap[sorter.field] || "createddate");
+      setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
+    } else if (!sorter.order) {
+      // ✅ ถ้า clear sort ให้กลับไปใช้ default
+      setSortField("createddate");
+      setSortOrder("desc");
+    }
+
+    // Update pagination
+    setPagination((prev) => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize,
+    }));
+  };
 
   return (
     <div style={{ padding: "24px", backgroundColor: "#fff" }}>
@@ -232,12 +313,13 @@ const DeliveryReport = () => {
         style={{
           marginBottom: "24px",
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "12px",
         }}
       >
+        <h2 style={{ margin: 0 }}>รายละเอียดการจัดส่งเสื้อ - กลุ่มเกษียณ</h2>
         <Space wrap>
           <Button
             type="default"
@@ -251,7 +333,7 @@ const DeliveryReport = () => {
             type="primary"
             icon={<DownloadOutlined />}
             onClick={handleExportExcel}
-            disabled={filteredData.length === 0}
+            disabled={dataSource.length === 0}
           >
             ดาวน์โหลด Excel
           </Button>
@@ -268,21 +350,25 @@ const DeliveryReport = () => {
             gap: "12px",
           }}
         >
-          {/* ช่องค้นหาด้านซ้าย */}
-          <Input
-            placeholder="ค้นหาด้วยเลขสมาชิก, ชื่อ, ที่อยู่, เบอร์โทร..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+          {/* ✅ Search input with clear button */}
+          <div
             style={{
+              position: "relative",
+              flex: "1 1 300px",
               minWidth: 250,
               maxWidth: 400,
-              flex: "1 1 300px",
             }}
-            allowClear
-          />
+          >
+            <Input
+              placeholder="ค้นหาด้วยเลขสมาชิก, ชื่อ, ที่อยู่, เบอร์โทร..."
+              prefix={<SearchOutlined />}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              allowClear
+              onClear={handleClearSearch}
+            />
+          </div>
 
-          {/* ตัวกรองและข้อมูลสถิติด้านขวา */}
           <div
             style={{
               display: "flex",
@@ -292,28 +378,47 @@ const DeliveryReport = () => {
               justifyContent: "flex-end",
             }}
           >
+            {/* ✅ Delivery filter dropdown */}
             <Select
-              placeholder="ความประสงค์"
-              value={deliveryFilter}
-              onChange={setDeliveryFilter}
-              style={{ minWidth: 150 }}
+              placeholder="ทั้งหมด"
+              value={deliveryFilter || undefined}
+              onChange={(value) => {
+                console.log("🔍 Delivery filter changed to:", value);
+                setDeliveryFilter(value || "");
+                setPagination((prev) => ({ ...prev, current: 1 }));
+              }}
+              style={{ minWidth: 180 }}
               allowClear
             >
-              <Option value="">ทั้งหมด</Option>
+              <Option value="no-action">ยังไม่ได้เลือก</Option>
               <Option value="coop">รับที่สหกรณ์</Option>
               <Option value="system">ที่อยู่ในระบบ</Option>
               <Option value="custom">ที่อยู่ใหม่</Option>
             </Select>
-            <Button
-              icon={<ClearOutlined />}
-              onClick={handleClearFilters}
-              disabled={!searchText && !deliveryFilter}
-            >
-              ล้างตัวกรอง
-            </Button>
+
+            {/* ✅ Date range picker (ถ้าต้องการ) */}
+            {/* 
+            <DatePicker.RangePicker 
+              placeholder={['วันที่เริ่มต้น', 'วันที่สิ้นสุด']}
+              style={{ minWidth: 250 }}
+            />
+            */}
+
+            {/* ✅ Clear filters button */}
+            <Tooltip title="ล้างตัวกรอง">
+              <Button
+                icon={<ClearOutlined />}
+                onClick={handleClearFilters}
+                disabled={!searchInput && !deliveryFilter}
+              >
+                ล้างตัวกรอง
+              </Button>
+            </Tooltip>
+
+            {/* ✅ Stats display */}
             <div style={{ whiteSpace: "nowrap", marginLeft: "8px" }}>
               <span style={{ color: "#666" }}>
-                แสดง {filteredData.length} จาก {dataSource.length} รายการ
+                แสดง {dataSource.length} จาก {pagination.total} รายการ
               </span>
             </div>
           </div>
@@ -323,23 +428,24 @@ const DeliveryReport = () => {
       <Card>
         <Table
           columns={columns}
-          dataSource={filteredData}
+          dataSource={dataSource}
           loading={loading}
-          rowKey="MEMB_CODE"
+          rowKey={(record) => record.MEMB_CODE || Math.random()}
           scroll={{ x: 800 }}
           pagination={{
-            pageSize: 20,
+            ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `ทั้งหมด ${total} รายการ`,
             pageSizeOptions: ["10", "20", "50", "100"],
             responsive: true,
           }}
+          onChange={handleTableChange}
           locale={{
             emptyText: (
               <div style={{ padding: "40px 0", textAlign: "center" }}>
                 <p style={{ fontSize: "16px", color: "#999" }}>ไม่พบข้อมูล</p>
                 <p style={{ fontSize: "14px", color: "#ccc" }}>
-                  ลองปรับเปลี่ยนคำค้นหาหรือตัวกรอง
+                  ลองเปลี่ยนเงื่อนไขการค้นหา
                 </p>
               </div>
             ),

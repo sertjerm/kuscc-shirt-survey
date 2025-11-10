@@ -535,14 +535,40 @@ export const formatDeliveryData = (data) => {
 // ===================================================================
 
 /**
- * ดึงรายการข้อมูลการเลือกวิธีการรับเสื้อทั้งหมด
+ * ดึงรายการข้อมูลการเลือกวิธีการรับเสื้อทั้งหมด (แบบแบ่งหน้า)
  * สำหรับหน้ารายงานรายละเอียดการจัดส่ง (Admin)
  */
-export const getDeliveryReportList = async () => {
+export const getDeliveryReportList = async ({
+  page = 1,
+  pageSize = 20,
+  search = "",
+  delivery_option = "",
+  sort_field = "createddate",
+  sort_order = "desc",
+} = {}) => {
   try {
-    console.log("📋 Fetching delivery report list...");
+    console.log("📋 Fetching delivery report list with params:", {
+      page,
+      pageSize,
+      search,
+      delivery_option,
+      sort_field,
+      sort_order,
+    });
 
-    const res = await api.get("/GetDeliveryReportList");
+    // ✅ ส่ง params แบบ destructure เพื่อให้แน่ใจว่าทุก key ถูกส่งไป
+    const res = await api.get("/GetDeliveryReportListPaged", {
+      params: {
+        page,
+        pageSize,
+        search,
+        delivery_option, // ✅ ต้องมี key นี้!
+        sort_field,
+        sort_order,
+      },
+    });
+
+    console.log("🔍 API Response:", res.data);
 
     if (res.data?.responseCode !== 200) {
       throw new Error(
@@ -550,12 +576,25 @@ export const getDeliveryReportList = async () => {
       );
     }
 
-    const data = res.data.data || [];
+    const data = res.data?.data || [];
     console.log("✅ Delivery report loaded:", data.length, "records");
-    return Array.isArray(data) ? data : [];
+
+    return {
+      data: data,
+      totalCount: res.data?.totalCount || 0,
+      currentPage: res.data?.currentPage || page,
+      pageSize: res.data?.pageSize || pageSize,
+      totalPages: res.data?.totalPages || 1,
+    };
   } catch (error) {
     console.error("❌ Error fetching delivery report:", error);
-    return [];
+    return {
+      data: [],
+      totalCount: 0,
+      currentPage: page,
+      pageSize: pageSize,
+      totalPages: 0,
+    };
   }
 };
 
