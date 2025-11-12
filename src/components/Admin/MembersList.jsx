@@ -636,8 +636,12 @@ const MembersList = ({ onDataChange }) => {
                   });
                 }
 
+                // ตรวจสอบว่า REMARKS มีคำว่า "ตาย" หรือไม่
+                const isDead = remarks && remarks.includes("ตาย");
+                const rowStyle = isDead ? { backgroundColor: "#fff1f0" } : {};
+
                 return (
-                  <tr key={memberCode}>
+                  <tr key={memberCode} style={rowStyle}>
                     <td data-label="รหัสสมาชิก">
                       <strong>{memberCode}</strong>
                     </td>
