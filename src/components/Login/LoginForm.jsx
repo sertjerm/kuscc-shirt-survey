@@ -129,6 +129,7 @@ const LoginForm = () => {
           RECEIVE_STATUS: memberData.receiveStatus,
           UPDATED_DATE: memberData.updatedDate,
           ADDR:memberData.ADDR,
+          allowRound2: memberData.ALLOW_ROUND2,
         };
 
         console.log("💾 Final userData:", userData);
@@ -195,8 +196,17 @@ const LoginForm = () => {
               login(userData, "member");
 
               if (isRetirementMember) {
-                console.log("👴 Navigating to Retirement Delivery Survey");
-                navigate("/retirement-delivery");
+                if (userData.sizeCode) {
+                  console.log(
+                    "👴 Retirement member has size - Navigating to Delivery"
+                  );
+                  navigate("/retirement-delivery");
+                } else {
+                  console.log(
+                    "👴 Retirement member has NO size - Navigating to Size Selection"
+                  );
+                  navigate("/member");
+                }
               } else {
                 console.log("👤 Navigating to Regular Member Survey");
                 navigate("/member");
@@ -204,12 +214,17 @@ const LoginForm = () => {
             },
           });
         } else if (isRetirementMember) {
-          // 2. ถ้าเป็นกลุ่มเกษียณ (memb_dbtyp = "1" หรือ "2") และไม่ใช่ admin ให้ไปหน้าสำรวจที่อยู่
-          console.log(
-            "👴 Non-admin retirement member detected - navigate to /retirement-delivery"
-          );
+          // 2. ถ้าเป็นกลุ่มเกษียณ (memb_dbtyp = "1" หรือ "2") และไม่ใช่ admin
+          console.log("👴 Non-admin retirement member detected");
           login(userData, "member");
-          navigate("/retirement-delivery");
+
+          if (userData.sizeCode) {
+            console.log("✅ Has size -> /retirement-delivery");
+            navigate("/retirement-delivery");
+          } else {
+            console.log("❌ No size -> /member");
+            navigate("/member");
+          }
         } else {
           // 3. Member ปกติ - เข้าหน้า Survey เลย
           console.log("👤 Regular member - navigate to /member");

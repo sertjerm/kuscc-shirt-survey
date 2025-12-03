@@ -133,6 +133,7 @@ const formatMemberData = (apiData) => {
     ADDR: apiData.ADDR,
     // เพิ่มฟิลด์ดิบสำหรับ fallback
     RECEIVE_CHANNEL: apiData.RECEIVE_CHANNEL,
+    ALLOW_ROUND2: apiData.ALLOW_ROUND2,
   };
 };
 
@@ -144,7 +145,17 @@ export const loginMember = async ({ memberCode, phone, idCard }) => {
   const payload = { mbcode: memberCode, socid: idCard, mobile: phone };
   console.log("Login payload:", payload);
 
-  const res = await api.post("/ShirtSurveyLogin", payload);
+  let res;
+  try {
+    res = await api.post("/ShirtSurveyLogin", payload);
+  } catch (error) {
+    console.error("Login API Error:", error);
+    if (error.response?.data?.responseMessage) {
+      throw new Error(error.response.data.responseMessage);
+    }
+    throw new Error("ไม่สามารถเชื่อมต่อระบบได้");
+  }
+
   console.log("Login response:", res.data);
 
   if (res.data?.responseCode !== 200) {
@@ -280,7 +291,7 @@ const formatInventoryData = (apiData) => {
         reserved: Number(item.RESERVED_QTY) || 0,
         received: Number(item.RECEIVED_QTY) || 0,
         distributed: Number(item.DISTRIBUTED_QTY) || 0,
-        remaining: Number(item.REMAINING_QTY) || 0,
+        remaining: (Number(item.PRODUCED_QTY) || 0) - (Number(item.RESERVED_QTY) || 0),
         isLowStock: String(item.IS_LOW_STOCK).toUpperCase() === "Y",
         remarks: item.REMARKS || "",
         updatedBy: item.UPDATED_BY || null,

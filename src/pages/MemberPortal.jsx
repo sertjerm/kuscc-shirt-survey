@@ -27,7 +27,7 @@ const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket6.png";
 
 // ✅ ใช้ค่าคงที่จาก src/utils/shirt-size.js
 import { shirtSizes } from "../utils/shirt-size";
-import { saveMemberSize } from "../services/shirtApi";
+import { saveMemberSize, getInventorySummary } from "../services/shirtApi";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -60,7 +60,9 @@ const MemberPortal = () => {
   // --- State หลัก ---
   const [selectedSize, setSelectedSize] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [inventory, setInventory] = useState([]); // 🆕 Inventory state
 
   // --- Navigation & Context ---
   const navigate = useNavigate();
@@ -82,6 +84,8 @@ const MemberPortal = () => {
     remarks: null,
     status: "ยังไม่ยืนยันขนาด",
     selectedSize: null,
+    allowRound2: "Y", // Default to "Y" or handle as needed
+    isRetirementMember: false,
   });
 
   // ✅ ใช้ useMemo เพื่อสร้าง SIZE_OPTIONS จากค่าคงที่เพียงครั้งเดียว/เมื่อ shirtSizes เปลี่ยน
@@ -113,6 +117,8 @@ const MemberPortal = () => {
         remarks: user.remarks || user.REMARKS || null,
         status: currentStatus,
         selectedSize: user.sizeCode || user.SIZE_CODE || null,
+        allowRound2: user.allowRound2 || "Y",
+        isRetirementMember: user.isRetirementMember || false,
       };
 
       console.log("Updated member data:", updatedMemberData);
@@ -125,6 +131,21 @@ const MemberPortal = () => {
       }
     }
   }, [user]);
+
+  // 🆕 Fetch Inventory
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        const data = await getInventorySummary();
+        setInventory(data);
+        console.log("📦 Inventory loaded:", data);
+      } catch (error) {
+        console.error("Failed to load inventory:", error);
+      }
+    };
+
+    fetchInventory();
+  }, []);
 
   // --- Debug log สำหรับตรวจสอบข้อมูล ---
   useEffect(() => {
@@ -200,7 +221,13 @@ const MemberPortal = () => {
         title: "ยืนยันขนาดสำเร็จ",
         content: `คุณได้เลือกขนาด ${selectedSize} เรียบร้อยแล้ว `,
         okText: "ตกลง",
-        onOk: () => navigate("/login"),
+        onOk: () => {
+          if (memberData.isRetirementMember) {
+            navigate("/retirement-delivery");
+          } else {
+            navigate("/login");
+          }
+        },
       });
     } catch (err) {
       console.error("save size failed:", err?.response?.data || err);
@@ -255,6 +282,14 @@ const MemberPortal = () => {
       default:
         return "#8E8E93";
     }
+  };
+
+  // 🆕 Check if size is out of stock
+  const isOutOfStock = (sizeCode) => {
+    const item = inventory.find((i) => i.sizeCode === sizeCode);
+    // If no inventory data found, assume in stock (or handle as needed)
+    if (!item) return false;
+    return item.remaining <= 0;
   };
 
   const selectedSizeInfo = SIZE_OPTIONS.find((o) => o.size === selectedSize);
@@ -424,17 +459,7 @@ const MemberPortal = () => {
           }}
           message={
             <Row gutter={[16, 16]}>
-              <Col xs={24} lg={12}>
-                <div style={{ textAlign: "center" }}>
-                  <Text strong style={{ fontSize: "14px", display: "block" }}>
-                    📅 จองได้ตั้งแต่วันนี้ - 15 ตุลาคม 2568
-                  </Text>
-                  <Text style={{ color: "#666", fontSize: "12px" }}>
-                    จะได้รับเสื้อประมาณต้นเดือน ธันวาคม 2568
-                  </Text>
-                </div>
-              </Col>
-              <Col xs={24} lg={12}>
+              <Col xs={24} lg={24}>
                 <div
                   style={{
                     backgroundColor: "rgba(255, 136, 0, 0.1)",
@@ -464,6 +489,8 @@ const MemberPortal = () => {
         />
       </Card>
 
+
+
       {/* Main */}
       <Card
         style={{
@@ -479,237 +506,304 @@ const MemberPortal = () => {
         bodyStyle={{ padding: 24 }}
         className="main-content-card"
       >
-        <div style={{ textAlign: "center" }}>
-          <Title level={4} style={{ color: "#1d1d1f", marginBottom: 8 }}>
-            เลือกขนาดเสื้อแจ็คเก็ต
-          </Title>
-
-          <Button
-            type="primary"
-            ghost
-            icon={<InfoCircleOutlined />}
-            onClick={openSizeGuide}
-            style={{
-              borderRadius: 12,
-              height: 44,
-              marginBottom: 16,
-              borderColor: "#007AFF",
-              color: "#007AFF",
-              fontWeight: 500,
-            }}
-          >
-            วิธีวัดขนาดเสื้อ
-          </Button>
-        </div>
-
-        {/* Demo Image */}
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: 24,
-            padding: 0,
-            background: "linear-gradient(135deg, #f8f9fa, #e9ecef)",
-            borderRadius: 16,
-            border: "2px solid rgba(0, 122, 255, 0.1)",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ position: "relative", display: "block", padding: 16 }}>
-            <img
-              src={demoImg}
-              alt="ตัวอย่างเสื้อแจ็คเก็ต"
-              style={{
-                width: "100%",
-                height: "auto",
-                marginBottom: 16,
-                borderRadius: 12,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
-                border: "4px solid white",
-              }}
+        {memberData.allowRound2 === "N" ? (
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <ExclamationCircleOutlined
+              style={{ fontSize: 60, color: "#FF3B30", marginBottom: 20 }}
             />
+            <Title level={3} style={{ color: "#1d1d1f", marginBottom: 10 }}>
+              ท่านไม่สามารถจองได้
+            </Title>
+            <Text style={{ fontSize: 18, color: "#86868b" }}>
+              ท่านได้จองรอบแรกแล้ว
+            </Text>
+          </div>
+        ) : (
+          <>
+            <div style={{ textAlign: "center" }}>
+              <Title level={4} style={{ color: "#1d1d1f", marginBottom: 8 }}>
+                เลือกขนาดเสื้อแจ็คเก็ต
+              </Title>
+
+              <Button
+                type="primary"
+                ghost
+                icon={<InfoCircleOutlined />}
+                onClick={openSizeGuide}
+                style={{
+                  borderRadius: 12,
+                  height: 44,
+                  marginBottom: 16,
+                  borderColor: "#007AFF",
+                  color: "#007AFF",
+                  fontWeight: 500,
+                }}
+              >
+                วิธีวัดขนาดเสื้อ
+              </Button>
+            </div>
+
+            {/* Demo Image */}
             <div
               style={{
-                position: "absolute",
-                top: 24,
-                right: 24,
-                background: "linear-gradient(135deg, #32D74B, #30B84E)",
-                color: "white",
-                padding: "6px 12px",
+                textAlign: "center",
+                marginBottom: 24,
+                padding: 0,
+                background: "linear-gradient(135deg, #f8f9fa, #e9ecef)",
                 borderRadius: 16,
-                fontSize: 13,
-                fontWeight: 700,
-                boxShadow: "0 4px 12px rgba(50, 215, 75, 0.3)",
+                border: "2px solid rgba(0, 122, 255, 0.1)",
+                overflow: "hidden",
               }}
             >
-              NEW
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Size Display */}
-        {selectedSize && (
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: 24,
-              padding: 16,
-              background:
-                "linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(0, 122, 255, 0.05))",
-              borderRadius: 12,
-              border: "1px solid rgba(0, 122, 255, 0.2)",
-            }}
-          >
-            <div>
-              <Text strong style={{ fontSize: 18, color: "#007AFF" }}>
-                ขนาดที่เลือก: {selectedSize}
-              </Text>
-              {selectedSizeInfo && (
-                <div style={{ marginTop: 8 }}>
-                  <Text style={{ color: "#48484a" }}>
-                    รอบอก: {selectedSizeInfo.chestInch} นิ้ว | ความยาว:{" "}
-                    {selectedSizeInfo.lengthInch} นิ้ว
-                  </Text>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Size Selection */}
-        <div
-          style={{
-            background: "rgba(255, 255, 255, 0.95)",
-            borderRadius: "16px",
-            padding: "16px",
-            marginBottom: "24px",
-            backdropFilter: "blur(10px)",
-          }}
-        >
-          <Row gutter={[12, 12]}>
-            {SIZE_OPTIONS.map((option) => (
-              <Col xs={12} sm={8} md={6} key={option.size}>
-                <div
-                  onClick={() => handleSizeSelect(option.size)}
+              <div
+                style={{ position: "relative", display: "block", padding: 16 }}
+              >
+                <img
+                  src={demoImg}
+                  alt="ตัวอย่างเสื้อแจ็คเก็ต"
                   style={{
                     width: "100%",
-                    height: "80px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    background:
-                      selectedSize === option.size
-                        ? "linear-gradient(135deg, #007AFF, #5856D6)"
-                        : "#ffffff",
-                    border:
-                      selectedSize === option.size
-                        ? "2px solid #007AFF"
-                        : "2px solid #f0f0f0",
-                    boxShadow:
-                      selectedSize === option.size
-                        ? "0 8px 16px rgba(0, 122, 255, 0.3)"
-                        : "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    height: "auto",
+                    marginBottom: 16,
+                    borderRadius: 12,
+                    boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
+                    border: "4px solid white",
                   }}
-                  onMouseEnter={(e) => {
-                    if (selectedSize !== option.size) {
-                      e.currentTarget.style.borderColor = "#1890ff";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(24, 144, 255, 0.2)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedSize !== option.size) {
-                      e.currentTarget.style.borderColor = "#f0f0f0";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow =
-                        "0 2px 8px rgba(0, 0, 0, 0.1)";
-                    }
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 24,
+                    right: 24,
+                    background: "linear-gradient(135deg, #32D74B, #30B84E)",
+                    color: "white",
+                    padding: "6px 12px",
+                    borderRadius: 16,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(50, 215, 75, 0.3)",
                   }}
                 >
+                  NEW
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Size Display */}
+            {selectedSize && (
+              <div
+                style={{
+                  textAlign: "center",
+                  marginBottom: 24,
+                  padding: 16,
+                  background:
+                    "linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(0, 122, 255, 0.05))",
+                  borderRadius: 12,
+                  border: "1px solid rgba(0, 122, 255, 0.2)",
+                }}
+              >
+                <div>
+                  <Text strong style={{ fontSize: 18, color: "#007AFF" }}>
+                    ขนาดที่เลือก: {selectedSize}
+                  </Text>
+                  {selectedSizeInfo && (
+                    <div style={{ marginTop: 8 }}>
+                      <Text style={{ color: "#48484a" }}>
+                        รอบอก: {selectedSizeInfo.chestInch} นิ้ว | ความยาว:{" "}
+                        {selectedSizeInfo.lengthInch} นิ้ว
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Size Selection */}
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                borderRadius: "16px",
+                padding: "16px",
+                marginBottom: "24px",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Row gutter={[12, 12]}>
+                {SIZE_OPTIONS.map((option) => {
+              const item = inventory.find((i) => i.sizeCode === option.size);
+              const remaining = item ? item.remaining : 0;
+              const disabled = remaining <= 0;
+
+              return (
+                <Col xs={12} sm={8} md={6} key={option.size}>
                   <div
+                    onClick={() => !disabled && handleSizeSelect(option.size)}
                     style={{
-                      fontSize: "18px",
-                      fontWeight: "600",
-                      color: selectedSize === option.size ? "white" : "#1d1d1f",
-                      marginBottom: "4px",
-                      lineHeight: "1",
+                      width: "100%",
+                      height: "90px", // Increased height
+                      borderRadius: "12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      transition: "all 0.3s ease",
+                      background: disabled
+                        ? "#f5f5f5"
+                        : selectedSize === option.size
+                        ? "linear-gradient(135deg, #007AFF, #5856D6)"
+                        : "#ffffff",
+                      border: disabled
+                        ? "2px solid #e0e0e0"
+                        : selectedSize === option.size
+                        ? "2px solid #007AFF"
+                        : "2px solid #f0f0f0",
+                      boxShadow: disabled
+                        ? "none"
+                        : selectedSize === option.size
+                        ? "0 8px 16px rgba(0, 122, 255, 0.3)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.1)",
+                      opacity: disabled ? 0.6 : 1,
+                      position: "relative",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!disabled && selectedSize !== option.size) {
+                        e.currentTarget.style.borderColor = "#1890ff";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(24, 144, 255, 0.2)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!disabled && selectedSize !== option.size) {
+                        e.currentTarget.style.borderColor = "#f0f0f0";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 2px 8px rgba(0, 0, 0, 0.1)";
+                      }
                     }}
                   >
-                    {option.size}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color:
-                        selectedSize === option.size
+                    {disabled && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: -8,
+                          right: -8,
+                          background: "#ff4d4f",
+                          color: "white",
+                          fontSize: "10px",
+                          padding: "2px 6px",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        }}
+                      >
+                        หมด
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: "18px",
+                        fontWeight: "600",
+                        color: disabled
+                          ? "#bfbfbf"
+                          : selectedSize === option.size
+                          ? "white"
+                          : "#1d1d1f",
+                        marginBottom: "2px",
+                        lineHeight: "1",
+                      }}
+                    >
+                      {option.size}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: disabled
+                          ? "#bfbfbf"
+                          : selectedSize === option.size
                           ? "rgba(255,255,255,0.9)"
                           : "#8e8e93",
-                      lineHeight: "1.2",
-                    }}
-                  >
-                    อก {option.chestInch}" | ยาว {option.lengthInch}"
+                        lineHeight: "1.2",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      อก {option.chestInch}" | ยาว {option.lengthInch}"
+                    </div>
+                    {!disabled && (
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color:
+                            selectedSize === option.size
+                              ? "#FFD700" // Gold color for selected
+                              : "#28a745", // Green for available
+                          fontWeight: "500",
+                        }}
+                      >
+                        เหลือ {remaining} ตัว
+                      </div>
+                    )}
                   </div>
-                </div>
-              </Col>
-            ))}
-          </Row>
-        </div>
+                </Col>
+              );
+            })}
+              </Row>
+            </div>
 
-        {/* Confirm Button */}
-        <div style={{ textAlign: "center" }}>
-          <Button
-            type="primary"
-            size="large"
-            loading={isLoading}
-            onClick={handleSizeConfirm}
-            disabled={!selectedSize}
-            style={{
-              height: 50,
-              borderRadius: 25,
-              paddingInline: 40,
-              fontSize: 16,
-              fontWeight: 600,
-              background: selectedSize
-                ? "linear-gradient(135deg, #32D74B, #30B84E)"
-                : undefined,
-              border: "none",
-              boxShadow: selectedSize
-                ? "0 8px 16px rgba(50, 215, 75, 0.3)"
-                : undefined,
-            }}
-          >
-            {memberData.status === "ยืนยันขนาดแล้ว"
-              ? "อัปเดตขนาด"
-              : "ยืนยันขนาด"}
-          </Button>
-        </div>
+            {/* Confirm Button */}
+            <div style={{ textAlign: "center" }}>
+              <Button
+                type="primary"
+                size="large"
+                loading={isLoading}
+                onClick={handleSizeConfirm}
+                disabled={!selectedSize}
+                style={{
+                  height: 50,
+                  borderRadius: 25,
+                  paddingInline: 40,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  background: selectedSize
+                    ? "linear-gradient(135deg, #32D74B, #30B84E)"
+                    : undefined,
+                  border: "none",
+                  boxShadow: selectedSize
+                    ? "0 8px 16px rgba(50, 215, 75, 0.3)"
+                    : undefined,
+                }}
+              >
+                {memberData.status === "ยืนยันขนาดแล้ว"
+                  ? "อัปเดตขนาด"
+                  : "ยืนยันขนาด"}
+              </Button>
+            </div>
 
-        {/* Info Notes */}
-        <div
-          style={{
-            background: "rgba(0, 122, 255, 0.05)",
-            border: "1px solid rgba(0, 122, 255, 0.1)",
-            borderRadius: 12,
-            padding: 16,
-            marginTop: 16,
-            textAlign: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "#000",
-              fontSize: 13,
-            }}
-          >
-            <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
-            2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้ 40"
-            ให้เลือกขนาดเสื้อ 42" (Size S) แทน)
-          </Text>
-        </div>
+            {/* Info Notes */}
+            <div
+              style={{
+                background: "rgba(0, 122, 255, 0.05)",
+                border: "1px solid rgba(0, 122, 255, 0.1)",
+                borderRadius: 12,
+                padding: 16,
+                marginTop: 16,
+                textAlign: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#000",
+                  fontSize: 13,
+                }}
+              >
+                <strong>คำแนะนำ:</strong> ควรเพิ่มขนาดจากที่วัดรอบอกได้ขึ้นอีกประมาณ
+                2 นิ้ว เนื่องจากเสื้อแจ็คเก็ตมักสวมทับกับเสื้ออื่น (เช่น วัดได้
+                40" ให้เลือกขนาดเสื้อ 42" (Size S) แทน)
+              </Text>
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Confirmation Modal */}
