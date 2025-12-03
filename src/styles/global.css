@@ -22,7 +22,13 @@ body {
 .admin-dashboard-page {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  background: linear-gradient(
+    135deg,
+    #007aff 0%,
+    #5ac8fa 35%,
+    #40a9ff 70%,
+    #1890ff 100%
+  );
   overflow: hidden;
 }
 
@@ -109,7 +115,7 @@ body {
 .retirement-delivery-page .ant-select-selector,
 .retirement-delivery-page .ant-input-number,
 .retirement-delivery-page .ant-input.ant-input {
-  border: 2px solid rgba(26, 188, 156, 0.2) !important; 
+  border: 2px solid rgba(30, 136, 229, 0.2) !important; 
   border-radius: 8px !important;
   background: rgba(255, 255, 255, 0.95) !important;
 }
@@ -117,12 +123,12 @@ body {
 .retirement-delivery-page .ant-input:focus,
 .retirement-delivery-page .ant-select-selector:focus,
 .retirement-delivery-page .ant-input-number:focus {
-  border-color: rgba(26, 188, 156, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.2) !important;
+  border-color: rgba(30, 136, 229, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2) !important;
 }
 
 .retirement-delivery-page .ant-input:hover,
 .retirement-delivery-page .ant-select-selector:hover,
 .retirement-delivery-page .ant-input-number:hover {
-  border-color: rgba(26, 188, 156, 0.5) !important;
+  border-color: rgba(30, 136, 229, 0.2) !important;
 }
