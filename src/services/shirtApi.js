@@ -4,7 +4,7 @@
 // ===================================================================
 
 import axios from "axios";
-import { REAL_API_BASE_URL, DEFAULT_SHIRT_SIZES } from "../utils/constants";
+import { REAL_API_BASE_URL, DEFAULT_SHIRT_SIZES, ROUND_2_START_DATE } from "../utils/constants";
 
 export const api = axios.create({
   baseURL: REAL_API_BASE_URL,
@@ -134,6 +134,8 @@ const formatMemberData = (apiData) => {
     // เพิ่มฟิลด์ดิบสำหรับ fallback
     RECEIVE_CHANNEL: apiData.RECEIVE_CHANNEL,
     ALLOW_ROUND2: apiData.ALLOW_ROUND2,
+    // Calculate round based on ALLOW_ROUND2 flag
+    round: apiData.ALLOW_ROUND2 === "Y" ? "2" : "1",
   };
 };
 
@@ -217,6 +219,7 @@ export const getMembers = async ({
   size_code = "",
   sort_field = "",
   sort_order = "asc",
+  round = "", // Add round param
 } = {}) => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -226,6 +229,7 @@ export const getMembers = async ({
     size_code: size_code || "",
     sort_field: sort_field || "",
     sort_order: sort_order || "asc",
+    round: round || "", // Forward round param
   });
 
   const res = await api.get(`/GetShirtMemberListPaged?${params.toString()}`);

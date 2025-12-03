@@ -8,6 +8,9 @@
 export const REAL_API_BASE_URL =
   "https://apps4.coop.ku.ac.th/KusccToolService2Dev/service1.svc"; // Dev รอบ
 
+// Dev รอบ
+export const ROUND_2_START_DATE = "2025-12-01"; // วันที่เริ่มรอบ 2 (แก้ไขตามแจ้ง)
+
 // ===================================================================
 // สถานะสมาชิก (Member Status)
 // ===================================================================

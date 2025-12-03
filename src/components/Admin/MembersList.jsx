@@ -40,6 +40,7 @@ const MembersList = ({ onDataChange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
+  const [roundFilter, setRoundFilter] = useState(""); // New Round Filter
   const [searchInput, setSearchInput] = useState("");
   const [sizes, setSizes] = useState([]);
 
@@ -79,6 +80,7 @@ const MembersList = ({ onDataChange }) => {
         size_code: sizeFilter,
         sort_field: sortField,
         sort_order: sortOrder,
+        round: roundFilter, // Pass round filter to API
       });
 
       console.log("🔍 API Response:", result);
@@ -109,6 +111,7 @@ const MembersList = ({ onDataChange }) => {
     sizeFilter,
     sortField,
     sortOrder,
+    roundFilter, // Add roundFilter dependency
   ]);
 
   useEffect(() => {
@@ -145,6 +148,7 @@ const MembersList = ({ onDataChange }) => {
     setCurrentPage(1);
     if (filterType === "status") setStatusFilter(value);
     if (filterType === "size") setSizeFilter(value);
+    if (filterType === "round") setRoundFilter(value);
   };
 
   // Sort Handler
@@ -551,6 +555,16 @@ const MembersList = ({ onDataChange }) => {
                 ))}
               </select>
 
+              <select
+                value={roundFilter}
+                onChange={(e) => handleFilterChange("round", e.target.value)}
+                className="filter-select"
+              >
+                <option value="">รอบทั้งหมด</option>
+                <option value="1">รอบที่ 1</option>
+                <option value="2">รอบที่ 2</option>
+              </select>
+
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() => loadMembers()}
@@ -602,6 +616,7 @@ const MembersList = ({ onDataChange }) => {
                 <th onClick={() => handleSort("fullName")} className="sortable">
                   ชื่อ-นามสกุล {getSortIcon("fullName")}
                 </th>
+                <th style={{ textAlign: "center" }}>รอบ</th>
                 <th style={{ textAlign: "center" }}>ขนาดที่เลือก</th>
                 <th
                   onClick={() => handleSort("updatedDate")}
@@ -646,6 +661,11 @@ const MembersList = ({ onDataChange }) => {
                       <strong>{memberCode}</strong>
                     </td>
                     <td data-label="ชื่อ-นามสกุล">{fullName}</td>
+                    <td data-label="รอบ" style={{ textAlign: "center" }}>
+                      <span className="text-muted">
+                        {member.round ? `รอบ ${member.round}` : "-"}
+                      </span>
+                    </td>
                     <td
                       data-label="ขนาดที่เลือก"
                       style={{ textAlign: "center" }}
