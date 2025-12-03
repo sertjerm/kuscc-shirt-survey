@@ -603,7 +603,7 @@ const MemberPortal = () => {
                 }}
               >
                 <div>
-                  <Text strong style={{ fontSize: 18, color: "#007AFF" }}>
+                  <Text strong style={{ fontSize: 18, color: "#1ABC9C" }}>
                     ขนาดที่เลือก: {selectedSize}
                   </Text>
                   {selectedSizeInfo && (
@@ -651,17 +651,17 @@ const MemberPortal = () => {
                       background: disabled
                         ? "#f5f5f5"
                         : selectedSize === option.size
-                        ? "linear-gradient(135deg, #007AFF, #5856D6)"
+                        ? "linear-gradient(135deg, #1ABC9C, #A3E4D7)"
                         : "#ffffff",
                       border: disabled
                         ? "2px solid #e0e0e0"
                         : selectedSize === option.size
-                        ? "2px solid #007AFF"
+                        ? "2px solid #1ABC9C"
                         : "2px solid #f0f0f0",
                       boxShadow: disabled
                         ? "none"
                         : selectedSize === option.size
-                        ? "0 8px 16px rgba(0, 122, 255, 0.3)"
+                        ? "0 8px 16px rgba(26, 188, 156, 0.3)"
                         : "0 2px 8px rgba(0, 0, 0, 0.1)",
                       opacity: disabled ? 0.6 : 1,
                       position: "relative",
@@ -766,12 +766,13 @@ const MemberPortal = () => {
                   fontSize: 16,
                   fontWeight: 600,
                   background: selectedSize
-                    ? "linear-gradient(135deg, #32D74B, #30B84E)"
+                    ? "linear-gradient(135deg, #1ABC9C, #48C9B0)"
                     : undefined,
                   border: "none",
                   boxShadow: selectedSize
-                    ? "0 8px 16px rgba(50, 215, 75, 0.3)"
+                    ? "0 8px 16px rgba(26, 188, 156, 0.4)"
                     : undefined,
+                  color: selectedSize ? "#fff" : undefined,
                 }}
               >
                 {memberData.status === "ยืนยันขนาดแล้ว"
@@ -783,8 +784,8 @@ const MemberPortal = () => {
             {/* Info Notes */}
             <div
               style={{
-                background: "rgba(0, 122, 255, 0.05)",
-                border: "1px solid rgba(0, 122, 255, 0.1)",
+                background: "rgba(26, 188, 156, 0.05)",
+                border: "1px solid rgba(26, 188, 156, 0.2)",
                 borderRadius: 12,
                 padding: 16,
                 marginTop: 16,

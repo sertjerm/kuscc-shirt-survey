@@ -243,7 +243,7 @@ const LoginForm = () => {
         text: error.message || "กรุณาตรวจสอบข้อมูลอีกครั้ง",
        // confirmButtonText: "ลองใหม่",
         confirmButtonText: "ปิดหน้าต่าง",
-        confirmButtonColor: "#007AFF",
+        confirmButtonColor: "#1ABC9C",
       });
     } finally {
       setLoading(false);
@@ -269,7 +269,7 @@ const LoginForm = () => {
             level={2}
             style={{
               margin: "0 0 8px 0",
-              color: "#007AFF",
+              color: "#1ABC9C",
               fontWeight: "700",
             }}
           >
@@ -298,7 +298,7 @@ const LoginForm = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined style={{ color: "#007AFF" }} />}
+              prefix={<UserOutlined style={{ color: "#1ABC9C" }} />}
               placeholder="กรอกเลขสมาชิก (ไม่เกิน 6 ตัว)"
               maxLength={6}
             />
@@ -317,7 +317,7 @@ const LoginForm = () => {
             ]}
           >
             <Input
-              prefix={<PhoneOutlined style={{ color: "#007AFF" }} />}
+              prefix={<PhoneOutlined style={{ color: "#1ABC9C" }} />}
               placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก"
               maxLength={10}
             />
@@ -336,7 +336,7 @@ const LoginForm = () => {
             ]}
           >
             <Input
-              prefix={<IdcardOutlined style={{ color: "#007AFF" }} />}
+              prefix={<IdcardOutlined style={{ color: "#1ABC9C" }} />}
               placeholder="กรอก 3 ตัวสุดท้าย"
               maxLength={3}
             />
@@ -354,6 +354,8 @@ const LoginForm = () => {
                 fontSize: "16px",
                 fontWeight: "600",
                 borderRadius: "14px",
+                background: "#1ABC9C",
+                borderColor: "#1ABC9C",
               }}
             >
               {loading ? "กำลังตรวจสอบ..." : "เข้าสู่ระบบ"}

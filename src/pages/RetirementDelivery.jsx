@@ -293,7 +293,7 @@ const RetirementDelivery = () => {
             level={3}
             style={{
               margin: "0 0 8px 0",
-              color: "#1E88E5",
+              color: "#1ABC9C",
               fontWeight: "600",
             }}
           >
@@ -343,11 +343,11 @@ const RetirementDelivery = () => {
                           borderRadius: "12px",
                           background:
                             selectedOption === option.value
-                              ? "rgba(30, 136, 229, 0.05)"
+                              ? "rgba(26, 188, 156, 0.05)"
                               : "transparent",
                           border:
                             selectedOption === option.value
-                              ? "2px solid #1E88E5"
+                              ? "2px solid #1ABC9C"
                               : "2px solid transparent",
                           transition: "all 0.3s ease",
                           cursor: "pointer",
@@ -380,7 +380,7 @@ const RetirementDelivery = () => {
                                       : "500",
                                   color:
                                     selectedOption === option.value
-                                      ? "#1E88E5"
+                                      ? "#1ABC9C"
                                       : "#333",
                                   fontSize: "16px",
                                   marginBottom: "4px",
@@ -408,18 +408,18 @@ const RetirementDelivery = () => {
                                 marginTop: "12px",
                                 marginLeft: "32px",
                                 padding: "12px 16px",
-                                background: "rgba(227, 242, 253, 0.7)",
+                                background: "rgba(224, 242, 241, 0.7)",
                                 backdropFilter: "blur(10px)",
                                 WebkitBackdropFilter: "blur(10px)",
                                 borderRadius: "8px",
-                                borderLeft: "3px solid #1E88E5",
+                                borderLeft: "3px solid #1ABC9C",
                                 fontSize: "14px",
                                 color: "#424242",
                                 lineHeight: "1.5",
                                 width: "calc(100% - 32px)", // ปรับ width
                               }}
                             >
-                              <strong style={{ color: "#1565C0" }}>
+                              <strong style={{ color: "#1ABC9C" }}>
                                 ที่อยู่ในระบบ:
                               </strong>
                               <br />
