@@ -24,10 +24,9 @@ body {
   min-height: 100vh;
   background: linear-gradient(
     135deg,
-    #007aff 0%,
-    #5ac8fa 35%,
-    #40a9ff 70%,
-    #1890ff 100%
+    #c0392b 0%,   /* Deep Christmas Red */
+    #27ae60 50%,  /* Pine Green */
+    #f1c40f 100%  /* Gold */
   );
   overflow: hidden;
 }

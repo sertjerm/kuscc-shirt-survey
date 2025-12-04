@@ -12,8 +12,10 @@ import {
 } from "@ant-design/icons";
 import Swal from "sweetalert2";
 
+
 import { useAppContext } from "../../App";
 import { loginMember } from "../../services/shirtApi";
+import SnowEffect from "../Effects/SnowEffect";
 
 const { Title, Paragraph } = Typography;
 
@@ -251,37 +253,46 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="login-container">
-      <Card
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          borderRadius: "24px",
-          boxShadow:
-            "0 25px 50px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
-          background: "rgba(255, 255, 255, 0.95)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
+    <div className="login-container" style={{ position: "relative" }}>
+      <SnowEffect />
+      
+      {/* Wrapper for Card and Santa to ensure Santa is positioned relative to Card */}
+      <div style={{ position: "relative", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
+
+
+        <Card
+          style={{
+            width: "100%",
+            borderRadius: "24px",
+            boxShadow:
+              "0 25px 50px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
+            background: "rgba(255, 255, 255, 0.95)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+          }}
+        >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <Title
             level={2}
             style={{
               margin: "0 0 8px 0",
-              color: "#007AFF",
+              color: "#c0392b", // Christmas Red
               fontWeight: "700",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
           >
-            ยืนยันตัวตน
+            🎄 ยืนยันตัวตน 🎄
           </Title>
           <Paragraph style={{ color: "#48484a", margin: 0, fontSize: "15px" }}>
             จองขนาดเสื้อแจ็กเก็ต สอ.มก.{" "}
             <span style={{ color: "orange", fontWeight: "bold" }}>(รอบที่ 2)</span>
           </Paragraph>
           <div style={{ marginTop: 12 }}>
-            <Tag color="orange" style={{ fontSize: 14, padding: "4px 10px" }}>
-              สำหรับสมาชิกที่ยังไม่จอง
+            <Tag color="#27ae60" style={{ fontSize: 14, padding: "4px 10px", borderRadius: "100px", border: "none" }}>
+              🎁 สำหรับสมาชิกที่ยังไม่จอง 🎁
             </Tag>
           </div>
         </div>
@@ -401,6 +412,7 @@ const LoginForm = () => {
             Build: {buildDate}
           </Tag>
         </div>
+      </div>
       </div>
     </div>
   );
