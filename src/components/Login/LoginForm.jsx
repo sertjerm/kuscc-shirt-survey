@@ -276,8 +276,14 @@ const LoginForm = () => {
             ยืนยันตัวตน
           </Title>
           <Paragraph style={{ color: "#48484a", margin: 0, fontSize: "15px" }}>
-            จองขนาดเสื้อแจ็กเก็ต สอ.มก.
+            จองขนาดเสื้อแจ็กเก็ต สอ.มก.{" "}
+            <span style={{ color: "orange", fontWeight: "bold" }}>(รอบที่ 2)</span>
           </Paragraph>
+          <div style={{ marginTop: 12 }}>
+            <Tag color="orange" style={{ fontSize: 14, padding: "4px 10px" }}>
+              สำหรับสมาชิกที่ยังไม่จอง
+            </Tag>
+          </div>
         </div>
 
         {/* Form */}

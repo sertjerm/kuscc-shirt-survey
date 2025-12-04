@@ -28,6 +28,7 @@ const demoImg = "https://apps2.coop.ku.ac.th/asset/images/png/bluejacket6.png";
 // ✅ ใช้ค่าคงที่จาก src/utils/shirt-size.js
 import { shirtSizes } from "../utils/shirt-size";
 import { saveMemberSize, getInventorySummary } from "../services/shirtApi";
+import StockStatus from "../components/Common/StockStatus";
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -731,18 +732,11 @@ const MemberPortal = () => {
                       อก {option.chestInch}" | ยาว {option.lengthInch}"
                     </div>
                     {!disabled && (
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color:
-                            selectedSize === option.size
-                              ? "#FFD700" // Gold color for selected
-                              : "#28a745", // Green for available
-                          fontWeight: "500",
-                        }}
-                      >
-                        เหลือ {remaining} ตัว
-                      </div>
+                      <StockStatus
+                        remaining={remaining}
+                        isSelected={selectedSize === option.size}
+                        isDisabled={disabled}
+                      />
                     )}
                   </div>
                 </Col>

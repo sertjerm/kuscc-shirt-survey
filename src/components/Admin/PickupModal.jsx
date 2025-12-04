@@ -1,5 +1,5 @@
 // src/components/Admin/PickupModal.jsx - จองได้ แต่รับไม่ได้ถ้าหมด stock
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   Button,
@@ -10,6 +10,7 @@ import {
   message,
   Spin,
   Alert,
+  Tag,
 } from "antd";
 import { CloseOutlined, WarningOutlined } from "@ant-design/icons";
 import {
@@ -17,8 +18,10 @@ import {
   saveMemberSize,
   getInventorySummary,
 } from "../../services/shirtApi";
+import { ENABLE_PICKUP } from "../../utils/constants";
 import { useAppContext } from "../../App";
 import "../../styles/PickupModal.css";
+import StockStatus from "../Common/StockStatus";
 
 const ALL_SIZES = [
   "XS",
@@ -51,12 +54,14 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [loadingStock, setLoadingStock] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [originalSize, setOriginalSize] = useState(null); // Track original size
   const [receiverType, setReceiverType] = useState("SELF");
   const [receiverMemberCode, setReceiverMemberCode] = useState("");
   const [receiverFullName, setReceiverFullName] = useState("");
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [memberData, setMemberData] = useState(null);
   const [stockData, setStockData] = useState({});
+  const saveButtonRef = useRef(null); // Ref for Save button
 
   useEffect(() => {
     if (visible && selectedMember) {
@@ -67,12 +72,17 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         memberCode: selectedMember.memberCode || selectedMember.MEMB_CODE,
         fullName: selectedMember.fullName || selectedMember.FULLNAME || "",
         sizeCode: selectedMember.sizeCode || selectedMember.SIZE_CODE || null,
+        round: selectedMember.round || selectedMember.ROUND || "1", // Add round
         rawData: selectedMember,
       });
 
       setSelectedSize(
         selectedMember.sizeCode || selectedMember.SIZE_CODE || null
       );
+      setOriginalSize(
+        selectedMember.sizeCode || selectedMember.SIZE_CODE || null
+      );
+      console.log("Original Size set to:", selectedMember.sizeCode || selectedMember.SIZE_CODE || null);
       setReceiverType("SELF");
       setReceiverMemberCode("");
       setReceiverFullName("");
@@ -81,6 +91,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     } else if (!visible) {
       setMemberData(null);
       setSelectedSize(null);
+      setOriginalSize(null);
       setReceiverType("SELF");
       setReceiverMemberCode("");
       setReceiverFullName("");
@@ -88,6 +99,24 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       setStockData({});
     }
   }, [visible, selectedMember, user]);
+
+  // ✅ Auto-focus Save button when Size Guide closes and we have a valid change
+  useEffect(() => {
+    if (!showSizeGuide && visible) {
+      if (
+        selectedSize &&
+        originalSize &&
+        selectedSize !== originalSize &&
+        canReserveSize(selectedSize) &&
+        !loading
+      ) {
+        // Timeout needed to override Ant Design's default focus restoration
+        setTimeout(() => {
+          saveButtonRef.current?.focus();
+        }, 300);
+      }
+    }
+  }, [showSizeGuide, visible, selectedSize, originalSize, loading]);
 
   const loadStockData = async () => {
     setLoadingStock(true);
@@ -101,6 +130,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
           remaining: item.remaining || 0,
           produced: item.produced || 0,
           reserved: item.reserved || 0,
+          distributed: item.distributed || 0,
         };
       });
       setStockData(stockMap);
@@ -121,21 +151,22 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     }
   };
 
-  // ✅ ตรวจสอบว่า size มี stock สำหรับการรับเสื้อหรือไม่
+  // ✅ ตรวจสอบว่า size มี stock สำหรับการรับเสื้อหรือไม่ (ผลิต - จ่ายไปแล้ว > 0)
   const canReceiveSize = (size) => {
     if (!stockData[size]) return false;
-    return stockData[size].remaining > 0;
+    const { produced = 0, distributed = 0 } = stockData[size];
+    return produced - distributed > 0;
   };
 
-  // ✅ ตรวจสอบว่าสามารถจองได้หรือไม่ (สต๊อกคงเหลือ - ยอดจอง > 0)
+  // ✅ ตรวจสอบว่าสามารถจองได้หรือไม่ (สต๊อกคงเหลือ > 0)
+  // remaining จาก API คือ (produced - reserved) แล้ว ไม่ต้องลบ reserved ซ้ำ
   const canReserveSize = (size) => {
     if (!stockData[size]) return false;
-    const { remaining = 0, reserved = 0 } = stockData[size];
-    const availableForReservation = remaining - reserved;
+    const { remaining = 0 } = stockData[size];
     console.log(
-      `🔍 Size ${size}: remaining=${remaining}, reserved=${reserved}, available=${availableForReservation}`
+      `🔍 Size ${size}: remaining=${remaining}`
     );
-    return availableForReservation > 0;
+    return remaining > 0;
   };
 
   const getAdminCode = () => {
@@ -224,6 +255,12 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
   const handleSubmitPickup = async () => {
     if (!memberData || !memberData.memberCode) {
       message.error("ไม่พบข้อมูลสมาชิก");
+      return;
+    }
+
+    // ✅ ตรวจสอบ Feature Flag ก่อน
+    if (!ENABLE_PICKUP) {
+      message.warning("ระบบปิดการรับเสื้อชั่วคราว");
       return;
     }
 
@@ -318,6 +355,14 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               <span className="info-label">ชื่อ-นามสกุล</span>
               <span className="info-value">{memberData.fullName || "-"}</span>
             </div>
+            <div className="info-item">
+              <span className="info-label">รอบที่</span>
+              <span className="info-value">
+                <Tag color={memberData.round === "2" ? "#f50" : "#108ee9"}>
+                  {memberData.round === "2" ? "รอบที่ 2" : "รอบที่ 1"}
+                </Tag>
+              </span>
+            </div>
           </div>
 
           <div className="section">
@@ -384,13 +429,17 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
             >
               <Radio
                 value="SELF"
-                disabled={!selectedSize || !canReceiveSize(selectedSize)}
+                disabled={
+                  !ENABLE_PICKUP || !selectedSize || !canReceiveSize(selectedSize)
+                }
               >
                 รับด้วยตนเอง
               </Radio>
               <Radio
                 value="OTHER"
-                disabled={!selectedSize || !canReceiveSize(selectedSize)}
+                disabled={
+                  !ENABLE_PICKUP || !selectedSize || !canReceiveSize(selectedSize)
+                }
               >
                 รับแทน
               </Radio>
@@ -433,11 +482,16 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
 
             {/* ✅ บันทึกขนาด - ตรวจสอบการจองได้ */}
             <Button
+              ref={saveButtonRef}
+              type="primary"
               size="large"
               onClick={handleSaveSizeOnly}
               loading={loading}
               disabled={
-                !selectedSize || !canReserveSize(selectedSize) || loading
+                !selectedSize ||
+                !canReserveSize(selectedSize) ||
+                loading ||
+                selectedSize === originalSize
               }
             >
               บันทึกขนาด
@@ -450,7 +504,11 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               onClick={handleSubmitPickup}
               loading={loading}
               disabled={
-                !selectedSize || !canReceiveSize(selectedSize) || loading
+                !ENABLE_PICKUP ||
+                !selectedSize ||
+                !canReceiveSize(selectedSize) ||
+                loading ||
+                selectedSize !== originalSize // Disable pickup if size changed (must save first)
               }
             >
               บันทึกการรับเสื้อ
@@ -557,15 +615,12 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
                         </div>
                         {/* ✅ แสดงข้อมูลสต็อกและจอง */}
                         {stock && (
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "#666",
-                              marginTop: 4,
-                            }}
-                          >
-                            คงเหลือ:{" "}
-                            {Math.max(0, stock.remaining - stock.reserved)} ตัว
+                          <div style={{ marginTop: 4 }}>
+                            <StockStatus
+                              remaining={stock.remaining}
+                              isSelected={selectedSize === size}
+                              isDisabled={!canReserve}
+                            />
                           </div>
                         )}
                       </div>
