@@ -11,6 +11,7 @@ import LoginForm from "./components/Login/LoginForm";
 import MemberPortal from "./pages/MemberPortal";
 import AdminDashboard from "./pages/AdminDashboard";
 import RetirementDelivery from "./pages/RetirementDelivery";
+import SnowEffect from "./components/Effects/SnowEffect";
 
 // AppContext and AppProvider remain the same
 const AppContext = createContext();
@@ -89,6 +90,7 @@ function App() {
       }}
     >
       <AppProvider>
+        <SnowEffect />
         <HashRouter>
           <Routes>
             <Route path="/" element={<LoginForm />} />

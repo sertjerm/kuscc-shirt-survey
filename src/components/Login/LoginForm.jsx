@@ -15,7 +15,6 @@ import Swal from "sweetalert2";
 
 import { useAppContext } from "../../App";
 import { loginMember } from "../../services/shirtApi";
-import SnowEffect from "../Effects/SnowEffect";
 
 const { Title, Paragraph } = Typography;
 
@@ -254,7 +253,6 @@ const LoginForm = () => {
 
   return (
     <div className="login-container" style={{ position: "relative" }}>
-      <SnowEffect />
       
       {/* Wrapper for Card and Santa to ensure Santa is positioned relative to Card */}
       <div style={{ position: "relative", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
