@@ -283,6 +283,37 @@ export const submitPickup = async ({
   return res.data;
 };
 
+export const submitPickupByDept = async ({
+  deptCode,
+  sectCode = null,
+  processedBy,
+  remarks = "",
+  roundFilter = "ALL", // Default to ALL if not provided
+}) => {
+  const paddedProcessedBy = (processedBy ?? "").toString().padStart(6, "0");
+
+  const payload = {
+    DEPT_CODE: deptCode,
+    PROCESSED_BY: paddedProcessedBy,
+    REMARKS: remarks,
+    ROUND_FILTER: roundFilter, // "1", "2", or "ALL"
+  };
+
+  if (sectCode) {
+    payload.SECT_CODE = sectCode;
+  }
+
+  console.log("Submit pickup by dept payload:", payload);
+
+  const res = await api.post("/SubmitShirtPickupByDept", payload);
+  if (res.data?.responseCode !== 200) {
+    throw new Error(res.data?.responseMessage || "บันทึกการรับเสื้อไม่สำเร็จ");
+  }
+
+  console.log("Submit pickup by dept response:", res.data);
+  return res.data;
+};
+
 // ===================================================================
 // Inventory APIs
 // ===================================================================

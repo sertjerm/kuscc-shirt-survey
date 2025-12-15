@@ -218,9 +218,9 @@ export const SUCCESS_MESSAGES = {
 // Local Storage Keys
 // ===================================================================
 export const STORAGE_KEYS = {
-  USER: "shirt_survey_user",
-  AUTH_TOKEN: "shirt_survey_token",
-  LAST_LOGIN: "shirt_survey_last_login",
+  USER: "kuscc_user",
+  AUTH_TOKEN: "kuscc_token",
+  LAST_LOGIN: "kuscc_last_login",
 };
 
 // ===================================================================

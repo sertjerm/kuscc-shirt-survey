@@ -6,9 +6,17 @@ import {
   DownloadOutlined,
   ReloadOutlined,
   FilePdfOutlined,
+  CheckCircleOutlined,
+  SkinOutlined,
 } from "@ant-design/icons";
-import { message, Spin, Alert } from "antd";
-import { getDepartmentReport, getShirtSizes } from "../../services/shirtApi";
+import { message, Spin, Alert, Tooltip, Tag } from "antd";
+import Swal from "sweetalert2";
+import {
+  getDepartmentReport,
+  getShirtSizes,
+  submitPickupByDept,
+} from "../../services/shirtApi";
+import { STORAGE_KEYS } from "../../utils/constants";
 import * as XLSX from "xlsx";
 
 const ShirtDeptReport = () => {
@@ -123,6 +131,108 @@ const ShirtDeptReport = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+
+
+  const handleReceiveAll = async (deptCode, sectCode = null, name) => {
+    try {
+      const result = await Swal.fire({
+        title: "ยืนยันการรับเสื้อทั้งหมด",
+        html: `
+          <div style="text-align: left; font-size: 14px; margin-bottom: 10px;">
+            <p>คุณต้องการบันทึกว่า "<b>${name}</b>" รับเสื้อใช่หรือไม่?</p>
+            <div style="margin: 15px 0;">
+              <label style="display: block; margin-bottom: 5px; font-weight: bold;">เลือกรอบการจอง:</label>
+              <div style="display: flex; gap: 15px;">
+                 <label style="cursor: pointer;">
+                  <input type="radio" name="swal-round" value="1" checked> รอบแรก (ก่อน 1 ธ.ค. 68)
+                </label>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="swal-round" value="2"> รอบเก็บตก (1 ธ.ค. 68 เป็นต้นไป)
+                </label>
+                <label style="cursor: pointer;">
+                  <input type="radio" name="swal-round" value="ALL"> ทั้งหมด
+                </label>
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+              <label style="display: block; margin-bottom: 5px; font-weight: bold;">หมายเหตุ:</label>
+              <input id="swal-note" class="swal2-input" placeholder="ระบุชื่อผู้รับ (ถ้ามี)" style="margin: 0; width: 100%;">
+            </div>
+          </div>
+        `,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "ใช่, บันทึกรับแล้ว",
+        cancelButtonText: "ยกเลิก",
+        preConfirm: () => {
+          const round = document.querySelector('input[name="swal-round"]:checked').value;
+          const note = document.getElementById("swal-note").value;
+          return { round, note };
+        },
+      });
+
+      if (!result.isConfirmed) return;
+
+      const { round, note } = result.value;
+      const cleanNote = note ? note.trim() : "";
+      
+      let roundText = "";
+      if (round === "1") roundText = "(รอบแรก)";
+      else if (round === "2") roundText = "(รอบเก็บตก)";
+      else roundText = "(ทุกรอบ)";
+
+      const remarks = cleanNote
+        ? `รับเสื้อหน่วยงาน ${roundText} - ${cleanNote}`
+        : `รับเสื้อหน่วยงาน ${roundText} (Admin Bulk)`;
+
+      // Get user from storage
+      const userStr = localStorage.getItem(STORAGE_KEYS.USER);
+      let processedBy = "ADMIN";
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          processedBy = user.memberCode || user.username || "ADMIN";
+        } catch (e) {
+          console.error("Error parsing user from storage", e);
+        }
+      }
+
+      console.log(`Receiving all for Dept: ${deptCode}, Sect: ${sectCode}, Round: ${round}, Note: ${cleanNote}`);
+      
+      const response = await submitPickupByDept({
+        deptCode,
+        sectCode,
+        processedBy,
+        remarks: remarks,
+        roundFilter: round, // Send round to API
+      });
+
+      // Show success message with count
+      const updatedCount = response.data || 0;
+      Swal.fire({
+        icon: "success",
+        title: "บันทึกข้อมูลเรียบร้อย",
+        text: `บันทึกการรับเสื้อสำเร็จจำนวน ${updatedCount} รายการ`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // message.success(`บันทึกการรับเสื้อสำหรับ ${name} เรียบร้อยแล้ว`);
+      
+      // Reload data to show updated counts (though counts might not change if they only track sizes, 
+      // but if the report shows "received" status somewhere it would update. 
+      // Current report shows total counts. 
+      // If the report accounts for received status, this is good. 
+      // If not, it just updates the backend status.)
+      loadReportData();
+    } catch (err) {
+      console.error("Receive all error:", err);
+      message.error(err.message || "เกิดข้อผิดพลาดในการบันทึกสถานะ");
     }
   };
 
@@ -246,6 +356,7 @@ const ShirtDeptReport = () => {
           name: item.DEPT_NAME || `หน่วยงาน ${item.DEPT_CODE}`,
           sections: new Map(),
           totalBySize: {},
+          receivedTotal: 0, // Initialize received total
         });
       }
 
@@ -257,30 +368,38 @@ const ShirtDeptReport = () => {
           name: item.SECT_NAME || `ภาควิชา ${item.SECT_CODE}`,
           sizes: {},
           total: 0,
+          receivedTotal: 0, // Initialize received total
         });
       }
 
       const section = dept.sections.get(item.SECT_CODE);
       const count = Number(item.CNT) || 0;
+      const receivedCount = Number(item.REV_CNT) || 0; // Get received count (REV_CNT)
 
       section.sizes[item.SIZE_CODE] =
         (section.sizes[item.SIZE_CODE] || 0) + count;
       section.total += count;
+      section.receivedTotal += receivedCount; // Add to section total
 
       dept.totalBySize[item.SIZE_CODE] =
         (dept.totalBySize[item.SIZE_CODE] || 0) + count;
+      // Note: dept.receivedTotal will be calculated from sections reduction to ensure accuracy
     });
 
-    return Array.from(deptMap.values()).map((dept) => ({
-      ...dept,
-      sections: Array.from(dept.sections.values()),
-      grandTotal: dept.sections
-        ? Array.from(dept.sections.values()).reduce(
-            (sum, s) => sum + s.total,
-            0
-          )
-        : 0,
-    }));
+    return Array.from(deptMap.values()).map((dept) => {
+      const sectionsArray = Array.from(dept.sections.values());
+      
+      // Calculate Grand Totals from Sections
+      const grandTotal = sectionsArray.reduce((sum, s) => sum + s.total, 0);
+      const grandReceivedTotal = sectionsArray.reduce((sum, s) => sum + s.receivedTotal, 0);
+
+      return {
+        ...dept,
+        sections: sectionsArray,
+        grandTotal: grandTotal,
+        grandReceivedTotal: grandReceivedTotal,
+      };
+    });
   }, [rawData]);
 
   const filteredData = useMemo(() => {
@@ -769,6 +888,53 @@ const ShirtDeptReport = () => {
                             <FilePdfOutlined />
                             PDF
                           </button>
+                           
+                          {/* Check Logic: If fully received -> Show Tag, else Show Button */}
+                          {dept.grandTotal > 0 &&
+                          dept.grandReceivedTotal >= dept.grandTotal ? (
+                            <Tag
+                              icon={<CheckCircleOutlined />}
+                              color="success"
+                              style={{
+                                fontSize: "14px",
+                                padding: "6px 12px",
+                                borderRadius: "4px",
+                              }}
+                            >
+                              รับแล้ว
+                            </Tag>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                handleReceiveAll(dept.code, null, dept.name)
+                              }
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 12px",
+                                backgroundColor: "#e6f7ff",
+                                color: "#1890ff",
+                                border: "1px solid #91d5ff",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                fontWeight: "400",
+                                marginLeft: "8px",
+                                transition: "all 0.15s ease-in-out",
+                              }}
+                              title={`บันทึกรับเสื้อทั้งหมดสำหรับ ${dept.name}`}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = "#bae7ff";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = "#e6f7ff";
+                              }}
+                            >
+                              <SkinOutlined />
+                              รับเสื้อ
+                            </button>
+                          )}
                         </td>
                       </tr>
 
@@ -848,37 +1014,92 @@ const ShirtDeptReport = () => {
                                 textAlign: "center",
                               }}
                             >
-                              <button
-                                onClick={() =>
-                                  handleExportPDF(dept.code, section.code)
-                                }
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "6px",
-                                  padding: "6px 12px",
-                                  backgroundColor: "#f8f9fa",
-                                  color: "#495057",
-                                  border: "1px solid #dee2e6",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                  fontSize: "13px",
-                                  fontWeight: "400",
-                                  transition: "all 0.15s ease-in-out",
-                                }}
-                                title={`Export PDF สำหรับ ${section.name}`}
-                                onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = "#e9ecef";
-                                  e.target.style.borderColor = "#adb5bd";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = "#f8f9fa";
-                                  e.target.style.borderColor = "#dee2e6";
-                                }}
-                              >
-                                <FilePdfOutlined />
-                                PDF
-                              </button>
+                              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                                <button
+                                  onClick={() =>
+                                    handleExportPDF(dept.code, section.code)
+                                  }
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "6px",
+                                    padding: "6px 12px",
+                                    backgroundColor: "white",
+                                    color: "#666",
+                                    border: "1px solid #d9d9d9",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                    fontSize: "12px",
+                                    transition: "all 0.2s",
+                                  }}
+                                  title={`Export PDF สำหรับ ${section.name}`}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.color = "#1890ff";
+                                    e.target.style.borderColor = "#1890ff";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.color = "#666";
+                                    e.target.style.borderColor = "#d9d9d9";
+                                  }}
+                                >
+                                  <FilePdfOutlined />
+                                </button>
+
+                                {/* ปุ่มรับทั้งหมดสำหรับภาควิชา */}
+                                {section.total > 0 &&
+                                section.receivedTotal >= section.total ? (
+                                  <Tag
+                                    icon={<CheckCircleOutlined />}
+                                    color="success"
+                                    style={{
+                                      fontSize: "12px",
+                                      padding: "4px 10px",
+                                      margin: 0,
+                                      height: "32px",
+                                      lineHeight: "30px",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    รับแล้ว
+                                  </Tag>
+                                ) : (
+                                  <button
+                                    onClick={() =>
+                                      handleReceiveAll(
+                                        dept.code,
+                                        section.code,
+                                        section.name
+                                      )
+                                    }
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: "6px",
+                                      padding: "6px 12px",
+                                      backgroundColor: "#e6f7ff",
+                                      color: "#1890ff",
+                                      border: "1px solid #91d5ff",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      fontSize: "12px",
+                                      transition: "all 0.2s",
+                                    }}
+                                    title={`บันทึกรับเสื้อทั้งหมดสำหรับ ${section.name}`}
+                                    onMouseEnter={(e) => {
+                                      e.target.style.backgroundColor = "#bae7ff";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = "#e6f7ff";
+                                    }}
+                                  >
+                                    <SkinOutlined />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
