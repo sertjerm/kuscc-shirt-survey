@@ -859,82 +859,88 @@ const ShirtDeptReport = () => {
                         <td
                           style={{ padding: "14px 12px", textAlign: "center" }}
                         >
-                          <button
-                            onClick={() => handleExportPDF(dept.code)}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              padding: "6px 12px",
-                              backgroundColor: "#f8f9fa",
-                              color: "#495057",
-                              border: "1px solid #dee2e6",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "13px",
-                              fontWeight: "400",
-                              transition: "all 0.15s ease-in-out",
-                            }}
-                            title={`Export PDF สำหรับ ${dept.name}`}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = "#e9ecef";
-                              e.target.style.borderColor = "#adb5bd";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = "#f8f9fa";
-                              e.target.style.borderColor = "#dee2e6";
-                            }}
-                          >
-                            <FilePdfOutlined />
-                            PDF
-                          </button>
-                           
-                          {/* Check Logic: If fully received -> Show Tag, else Show Button */}
-                          {dept.grandTotal > 0 &&
-                          dept.grandReceivedTotal >= dept.grandTotal ? (
-                            <Tag
-                              icon={<CheckCircleOutlined />}
-                              color="success"
-                              style={{
-                                fontSize: "14px",
-                                padding: "6px 12px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              รับแล้ว
-                            </Tag>
-                          ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <button
-                              onClick={() =>
-                                handleReceiveAll(dept.code, null, dept.name)
-                              }
+                              onClick={() => handleExportPDF(dept.code)}
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "6px",
                                 padding: "6px 12px",
-                                backgroundColor: "#e6f7ff",
-                                color: "#1890ff",
-                                border: "1px solid #91d5ff",
+                                backgroundColor: "#f8f9fa",
+                                color: "#495057",
+                                border: "1px solid #dee2e6",
                                 borderRadius: "4px",
                                 cursor: "pointer",
                                 fontSize: "13px",
                                 fontWeight: "400",
-                                marginLeft: "8px",
                                 transition: "all 0.15s ease-in-out",
                               }}
-                              title={`บันทึกรับเสื้อทั้งหมดสำหรับ ${dept.name}`}
+                              title={`Export PDF สำหรับ ${dept.name}`}
                               onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = "#bae7ff";
+                                e.target.style.backgroundColor = "#e9ecef";
+                                e.target.style.borderColor = "#adb5bd";
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = "#e6f7ff";
+                                e.target.style.backgroundColor = "#f8f9fa";
+                                e.target.style.borderColor = "#dee2e6";
                               }}
                             >
-                              <SkinOutlined />
-                              รับเสื้อ
+                              <FilePdfOutlined />
+                              PDF
                             </button>
-                          )}
+                             
+                            {/* Check Logic: If fully received -> Show Tag, else Show Button */}
+                            {dept.grandTotal > 0 &&
+                            dept.grandReceivedTotal >= dept.grandTotal ? (
+                              <Tag
+                                icon={<CheckCircleOutlined />}
+                                color="success"
+                                style={{
+                                  fontSize: "13px",
+                                  padding: "3px 8px",
+                                  borderRadius: "4px",
+                                  marginLeft: "8px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                              >
+                                รับแล้ว
+                              </Tag>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  handleReceiveAll(dept.code, null, dept.name)
+                                }
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "5px 12px",
+                                  backgroundColor: "#e6f7ff",
+                                  color: "#1890ff",
+                                  border: "1px solid #91d5ff",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: "400",
+                                  marginLeft: "8px",
+                                  transition: "all 0.15s ease-in-out",
+                                }}
+                                title={`บันทึกรับเสื้อทั้งหมดสำหรับ ${dept.name}`}
+                                onMouseEnter={(e) => {
+                                  e.target.style.backgroundColor = "#bae7ff";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.backgroundColor = "#e6f7ff";
+                                }}
+                              >
+                                <SkinOutlined />
+                                รับเสื้อ
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
 
