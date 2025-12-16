@@ -307,6 +307,100 @@ const DeliveryReport = () => {
     }));
   };
 
+  const [stats, setStats] = useState({
+    total: 0,
+    coop: { total: 0, r1: 0, r2: 0 },
+    delivery: {
+      total: 0,
+      newAddress: { total: 0, r1: 0, r2: 0 },
+      systemAddress: { total: 0, r1: 0, r2: 0 },
+    },
+  });
+
+  // ✅ Load Summary Stats (Fetch ALL pages)
+  const loadSummaryStats = async () => {
+    try {
+      const BATCH_SIZE = 200; // Server seems to cap at 200
+      
+      // 1. Fetch first page to get total count
+      const firstPageDesc = await getDeliveryReportList({
+        page: 1,
+        pageSize: BATCH_SIZE,
+        search: "",
+        delivery_option: "",
+      });
+
+      let allData = firstPageDesc.data || [];
+      const totalCount = firstPageDesc.totalCount || 0;
+
+      // 2. Determine if more pages needed
+      if (totalCount > allData.length) {
+        const totalPages = Math.ceil(totalCount / BATCH_SIZE);
+        const promises = [];
+
+        for (let i = 2; i <= totalPages; i++) {
+          promises.push(
+            getDeliveryReportList({
+              page: i,
+              pageSize: BATCH_SIZE,
+              search: "",
+              delivery_option: "",
+            }).then(res => res.data || [])
+          );
+        }
+
+        const remainingData = await Promise.all(promises);
+        remainingData.forEach(chunk => {
+          allData = allData.concat(chunk);
+        });
+      }
+
+      console.log(`📊 Stats Final: Processed ${allData.length} records`);
+
+      const newStats = {
+        total: allData.length,
+        coop: { total: 0, r1: 0, r2: 0 },
+        delivery: {
+          total: 0,
+          newAddress: { total: 0, r1: 0, r2: 0 },
+          systemAddress: { total: 0, r1: 0, r2: 0 },
+        },
+      };
+
+      allData.forEach((item) => {
+        // ✅ Fix: Use ALLOW_ROUND2 to determine round
+        // Y = Round 2, N = Round 1
+        const isRound1 = (item.ALLOW_ROUND2 || "").trim() === "N";
+        const option = (item.DELIVERY_OPTION || "").toLowerCase().trim();
+        
+        // Count by Delivery Option
+        if (option === "coop") {
+          newStats.coop.total++;
+          if (isRound1) newStats.coop.r1++;
+          else newStats.coop.r2++;
+        } else if (option === "custom") {
+          newStats.delivery.total++;
+          newStats.delivery.newAddress.total++;
+          if (isRound1) newStats.delivery.newAddress.r1++;
+          else newStats.delivery.newAddress.r2++;
+        } else if (option === "system") {
+          newStats.delivery.total++;
+          newStats.delivery.systemAddress.total++;
+          if (isRound1) newStats.delivery.systemAddress.r1++;
+          else newStats.delivery.systemAddress.r2++;
+        }
+      });
+
+      setStats(newStats);
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadSummaryStats();
+  }, []);
+
   return (
     <div style={{ padding: "24px", backgroundColor: "#fff" }}>
       <div
@@ -324,7 +418,10 @@ const DeliveryReport = () => {
           <Button
             type="default"
             icon={<ReloadOutlined />}
-            onClick={loadData}
+            onClick={() => {
+              loadData();
+              loadSummaryStats();
+            }}
             loading={loading}
           >
             รีเฟรช
@@ -338,6 +435,56 @@ const DeliveryReport = () => {
             ดาวน์โหลด Excel
           </Button>
         </Space>
+      </div>
+
+      {/* ✅ Summary Cards */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {/* Card 1: Total */}
+          <Card bordered={false} style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#595959' }}>ทั้งหมด</div>
+              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1890ff' }}>
+                {stats.total.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#8c8c8c' }}>คน</div>
+            </div>
+          </Card>
+
+          {/* Card 2: Pickup at Coop */}
+          <Card bordered={false} style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+             <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: '14px', color: '#595959' }}>รับที่สหกรณ์</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#52c41a' }}>
+                 {stats.coop.total.toLocaleString()}
+              </div>
+            </div>
+             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d9d9d9', paddingTop: 8 }}>
+                <div><span style={{color: '#8c8c8c'}}>รอบ 1:</span> <strong>{stats.coop.r1}</strong></div>
+                <div><span style={{color: '#8c8c8c'}}>รอบ 2:</span> <strong>{stats.coop.r2}</strong></div>
+             </div>
+          </Card>
+
+          {/* Card 3: Delivery */}
+          <Card bordered={false} style={{ background: '#fff7e6', border: '1px solid #ffd591' }}>
+             <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: '14px', color: '#595959' }}>รวมจัดส่ง</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fa8c16' }}>
+                 {(stats.delivery.newAddress.total + stats.delivery.systemAddress.total).toLocaleString()}
+              </div>
+            </div>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '1px solid #d9d9d9', paddingTop: 8, fontSize: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                   <span>ที่อยู่ใหม่: <strong>{stats.delivery.newAddress.total}</strong></span>
+                   <span style={{color: '#8c8c8c'}}>(รอบ 1:{stats.delivery.newAddress.r1}, รอบ 2:{stats.delivery.newAddress.r2})</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                   <span>ในระบบ: <strong>{stats.delivery.systemAddress.total}</strong></span>
+                   <span style={{color: '#8c8c8c'}}>(รอบ 1:{stats.delivery.systemAddress.r1}, รอบ 2:{stats.delivery.systemAddress.r2})</span>
+                </div>
+             </div>
+          </Card>
+        </div>
       </div>
 
       <Card style={{ marginBottom: "24px" }}>
