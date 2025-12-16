@@ -19,7 +19,12 @@ import {
 import { STORAGE_KEYS } from "../../utils/constants";
 import * as XLSX from "xlsx";
 
-const ShirtDeptReport = () => {
+const ShirtDeptReport = ({
+  cachedData,
+  setCachedData,
+  cachedSizes,
+  setCachedSizes,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedDepts, setExpandedDepts] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -27,6 +32,17 @@ const ShirtDeptReport = () => {
   const [rawData, setRawData] = useState([]);
   const [error, setError] = useState(null);
   const [sizes, setSizes] = useState([]);
+
+  // ✅ Use Cache on Mount
+  useEffect(() => {
+    if (cachedData && cachedData.length > 0 && cachedSizes && cachedSizes.length > 0) {
+      console.log("⚡ Using cached report data");
+      setRawData(cachedData);
+      setSizes(cachedSizes);
+    } else {
+      loadReportData();
+    }
+  }, []);
 
   const formatNumber = (num) => {
     if (!num || num === 0) return "-";
@@ -63,6 +79,8 @@ const ShirtDeptReport = () => {
 
       if (reportData && Array.isArray(reportData) && reportData.length > 0) {
         setRawData(reportData);
+        // ✅ Update Cache
+        if (setCachedData) setCachedData(reportData);
 
         // ✅ ดึงเฉพาะ SIZE_CODE ที่มีในข้อมูลจริง
         const sizesInData = [
@@ -83,12 +101,15 @@ const ShirtDeptReport = () => {
         });
 
         setSizes(sizesInData);
+        // ✅ Update Cache
+        if (setCachedSizes) setCachedSizes(sizesInData);
 
         console.log(
           "📊 Department report loaded:",
           reportData.length,
           "records"
         );
+
         console.log("📏 Sizes found in data:", sizesInData);
 
         const isSampleData =
@@ -335,9 +356,7 @@ const ShirtDeptReport = () => {
     }
   };
 
-  useEffect(() => {
-    loadReportData();
-  }, []);
+
 
   const groupedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];

@@ -61,13 +61,17 @@ const AdminDashboard = () => {
   const [dashboardError, setDashboardError] = useState(null);
   const [dashboardStats, setDashboardStats] = useState(null);
 
+  // ✅ Lifted State for Report (Caching)
+  const [shirtReportData, setShirtReportData] = useState([]);
+  const [shirtReportSizes, setShirtReportSizes] = useState([]);
+
   useEffect(() => {
     setCollapsed(true);
   }, []);
 
   useEffect(() => {
     if (activeMenuKey === "dashboard") {
-      loadDashboardStats();
+      loadDashboardStats(false); // Default: Don't force refresh if cached
     }
   }, [activeMenuKey]);
 
@@ -78,7 +82,12 @@ const AdminDashboard = () => {
     }
   }, [user, navigate]);
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = async (forceRefresh = false) => {
+    // ✅ Cache Check
+    if (!forceRefresh && dashboardStats) {
+      return;
+    }
+
     setLoadingDashboard(true);
     setDashboardError(null);
     try {
@@ -146,13 +155,22 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeMenuKey) {
       case "members":
-        return <MembersList onDataChange={loadDashboardStats} />;
+        // ✅ Pass callback to refresh dashboard when data changes
+        return <MembersList onDataChange={() => loadDashboardStats(true)} />;
 
       case "inventory":
         return <InventoryManagement />;
 
       case "reports":
-        return <ShirtDeptReport />;
+        return (
+          <ShirtDeptReport
+            // ✅ Pass lifted state for caching
+            cachedData={shirtReportData}
+            setCachedData={setShirtReportData}
+            cachedSizes={shirtReportSizes}
+            setCachedSizes={setShirtReportSizes}
+          />
+        );
 
       case "delivery":
         return <DeliveryReport />; // ✅ เพิ่มการแสดง component ใหม่
@@ -192,7 +210,7 @@ const AdminDashboard = () => {
               </Title>
               <Button
                 icon={<ReloadOutlined />}
-                onClick={loadDashboardStats}
+                onClick={() => loadDashboardStats(true)}
                 loading={loadingDashboard}
               >
                 รีเฟรช

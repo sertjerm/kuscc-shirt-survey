@@ -57,11 +57,23 @@ const DashboardStats = () => {
     setError(null);
 
     try {
-      // 1. Load main stats
+      // 1. Load main stats (Fast)
       const data = await getDashboardStats();
       console.log("📊 Dashboard Stats from API:", data);
       setStats(data);
+      setLoading(false); // ✅ Show main content immediately
 
+      // 2. Load Details in Background
+      loadDetailedStats(data);
+    } catch (err) {
+      console.error("Error loading dashboard stats:", err);
+      setError(err.message || "ไม่สามารถโหลดข้อมูลสถิติได้");
+      setLoading(false);
+    }
+  };
+
+  const loadDetailedStats = async (mainStats) => {
+    try {
       // 2. Load Round Breakdown
       const [
         r1Received, r1Confirmed, r1Pending,
@@ -91,8 +103,8 @@ const DashboardStats = () => {
       });
 
       // 3. Load Breakdown for Top 5 Sizes
-      if (data.popularSizes && data.popularSizes.length > 0) {
-        const topSizes = data.popularSizes.slice(0, 5);
+      if (mainStats.popularSizes && mainStats.popularSizes.length > 0) {
+        const topSizes = mainStats.popularSizes.slice(0, 5);
         const breakdown = {};
 
         await Promise.all(
@@ -109,12 +121,9 @@ const DashboardStats = () => {
         );
         setSizeBreakdown(breakdown);
       }
-
     } catch (err) {
-      console.error("Error loading dashboard stats:", err);
-      setError(err.message || "ไม่สามารถโหลดข้อมูลสถิติได้");
-    } finally {
-      setLoading(false);
+      console.error("Error loading detailed stats:", err);
+      // Non-critical error, don't block UI
     }
   };
 
