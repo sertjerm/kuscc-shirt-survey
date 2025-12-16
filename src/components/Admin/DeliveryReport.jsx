@@ -14,6 +14,7 @@ import {
   Tooltip,
   Card,
   App,
+  Skeleton,
 } from "antd";
 import {
   SearchOutlined,
@@ -38,6 +39,7 @@ const DeliveryReport = () => {
   const { message } = App.useApp();
 
   const [loading, setLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [dataSource, setDataSource] = useState([]);
 
   // ✅ แยก searchInput และ searchTerm เหมือน MemberList
@@ -324,6 +326,7 @@ const DeliveryReport = () => {
 
   // ✅ Load Summary Stats (Fetch ALL pages)
   const loadSummaryStats = async () => {
+    setSummaryLoading(true);
     try {
       const BATCH_SIZE = 200; // Server seems to cap at 200
       
@@ -399,6 +402,8 @@ const DeliveryReport = () => {
       setStats(newStats);
     } catch (error) {
       console.error("Error loading stats:", error);
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -446,92 +451,110 @@ const DeliveryReport = () => {
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
         
         {/* Card 1: Total */}
-        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div style={{ 
-              width: 48, height: 48, borderRadius: '50%', background: '#e6f7ff', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
-              border: '1px solid #91d5ff'
-          }}>
-            <UsergroupAddOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
-              {stats.total.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>สมาชิกทั้งหมด</div>
-          <div style={{ fontSize: '12px', color: '#bfbfbf', marginTop: '8px' }}>
-              บันทึกข้อมูลแล้ว
-          </div>
+        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: summaryLoading ? 'center' : 'flex-start' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          {summaryLoading ? (
+            <Skeleton active paragraph={{ rows: 2 }} />
+          ) : (
+            <>
+              <div style={{ 
+                  width: 48, height: 48, borderRadius: '50%', background: '#e6f7ff', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+                  border: '1px solid #91d5ff'
+              }}>
+                <UsergroupAddOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+              </div>
+              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
+                  {stats.total.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>สมาชิกทั้งหมด</div>
+              <div style={{ fontSize: '12px', color: '#bfbfbf', marginTop: '8px' }}>
+                  บันทึกข้อมูลแล้ว
+              </div>
+            </>
+          )}
         </Card>
 
         {/* Card 2: Pickup at Coop */}
-        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <div style={{ 
-              width: 48, height: 48, borderRadius: '50%', background: '#f6ffed', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
-              border: '1px solid #b7eb8f'
-           }}>
-              <ShopOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
-           </div>
-           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
-                 {stats.coop.total.toLocaleString()}
-           </div>
-           <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>รับที่สหกรณ์</div>
-           
-           <div style={{ width: '100%', marginTop: 'auto', paddingTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <Tag color="geekblue" style={{ margin: 0, borderRadius: '12px', padding: '0 10px' }}>รอบแรก: {stats.coop.r1.toLocaleString()}</Tag>
-              <Tag color="purple" style={{ margin: 0, borderRadius: '12px', padding: '0 10px' }}>รอบ 2: {stats.coop.r2.toLocaleString()}</Tag>
-           </div>
+        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: summaryLoading ? 'center' : 'flex-start' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          {summaryLoading ? (
+             <Skeleton active paragraph={{ rows: 2 }} />
+          ) : (
+             <>
+                <div style={{ 
+                    width: 48, height: 48, borderRadius: '50%', background: '#f6ffed', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+                    border: '1px solid #b7eb8f'
+                 }}>
+                    <ShopOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                 </div>
+                 <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
+                       {stats.coop.total.toLocaleString()}
+                 </div>
+                 <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>รับที่สหกรณ์</div>
+                 
+                 <div style={{ width: '100%', marginTop: 'auto', paddingTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                    <Tag color="geekblue" style={{ margin: 0, borderRadius: '12px', padding: '0 10px' }}>รอบแรก: {stats.coop.r1.toLocaleString()}</Tag>
+                    <Tag color="purple" style={{ margin: 0, borderRadius: '12px', padding: '0 10px' }}>รอบ 2: {stats.coop.r2.toLocaleString()}</Tag>
+                 </div>
+             </>
+          )}
         </Card>
 
         {/* Card 3: Delivery */}
-        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-           <div style={{ 
-              width: 48, height: 48, borderRadius: '50%', background: '#fff7e6', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
-              border: '1px solid #ffd591'
-           }}>
-              <CarOutlined style={{ fontSize: '24px', color: '#fa8c16' }} />
-           </div>
-           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
-                 {(stats.delivery.newAddress.total + stats.delivery.systemAddress.total).toLocaleString()}
-           </div>
-           <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>จัดส่งพัสดุ</div>
+        <Card bordered={false} bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: summaryLoading ? 'center' : 'flex-start' }} style={{ width: '30%', minWidth: '300px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+           {summaryLoading ? (
+              <Skeleton active paragraph={{ rows: 3 }} />
+           ) : (
+              <>
+                 <div style={{ 
+                    width: 48, height: 48, borderRadius: '50%', background: '#fff7e6', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+                    border: '1px solid #ffd591'
+                 }}>
+                    <CarOutlined style={{ fontSize: '24px', color: '#fa8c16' }} />
+                 </div>
+                 <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f1f1f', lineHeight: 1 }}>
+                       {(stats.delivery.newAddress.total + stats.delivery.systemAddress.total).toLocaleString()}
+                 </div>
+                 <div style={{ fontSize: '14px', color: '#8c8c8c', marginTop: '4px' }}>จัดส่งพัสดุ</div>
 
-           <div style={{ width: '100%', marginTop: 'auto', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* New Address Row (Single Line) */}
-              <div style={{ background: '#fafafa', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <HomeOutlined style={{ color: '#fa8c16' }} />
-                    <span style={{ fontSize: '12px', color: '#595959' }}>ที่อยู่ใหม่</span>
-                 </div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '14px', marginRight: '4px' }}>{stats.delivery.newAddress.total.toLocaleString()}</strong>
-                    <Tag color="geekblue" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
-                       รอบแรก: {stats.delivery.newAddress.r1.toLocaleString()}
-                    </Tag>
-                    <Tag color="purple" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
-                       รอบ 2: {stats.delivery.newAddress.r2.toLocaleString()}
-                    </Tag>
-                 </div>
-              </div>
+                 <div style={{ width: '100%', marginTop: 'auto', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* New Address Row (Single Line) */}
+                    <div style={{ background: '#fafafa', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <HomeOutlined style={{ color: '#fa8c16' }} />
+                          <span style={{ fontSize: '12px', color: '#595959' }}>ที่อยู่ใหม่</span>
+                       </div>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ fontSize: '14px', marginRight: '4px' }}>{stats.delivery.newAddress.total.toLocaleString()}</strong>
+                          <Tag color="geekblue" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
+                             รอบแรก: {stats.delivery.newAddress.r1.toLocaleString()}
+                          </Tag>
+                          <Tag color="purple" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
+                             รอบ 2: {stats.delivery.newAddress.r2.toLocaleString()}
+                          </Tag>
+                       </div>
+                    </div>
 
-              {/* System Address Row (Single Line) */}
-              <div style={{ background: '#fafafa', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <CloudServerOutlined style={{ color: '#13c2c2' }} />
-                    <span style={{ fontSize: '12px', color: '#595959' }}>ในระบบ</span>
+                    {/* System Address Row (Single Line) */}
+                    <div style={{ background: '#fafafa', padding: '6px 10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <CloudServerOutlined style={{ color: '#13c2c2' }} />
+                          <span style={{ fontSize: '12px', color: '#595959' }}>ในระบบ</span>
+                       </div>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong style={{ fontSize: '14px', marginRight: '4px' }}>{stats.delivery.systemAddress.total.toLocaleString()}</strong>
+                          <Tag color="geekblue" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
+                             รอบแรก: {stats.delivery.systemAddress.r1.toLocaleString()}
+                          </Tag>
+                          <Tag color="purple" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
+                             รอบ 2: {stats.delivery.systemAddress.r2.toLocaleString()}
+                          </Tag>
+                       </div>
+                    </div>
                  </div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '14px', marginRight: '4px' }}>{stats.delivery.systemAddress.total.toLocaleString()}</strong>
-                    <Tag color="geekblue" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
-                       รอบแรก: {stats.delivery.systemAddress.r1.toLocaleString()}
-                    </Tag>
-                    <Tag color="purple" style={{ margin: 0, padding: '0 6px', fontSize: '10px', lineHeight: '18px' }}>
-                       รอบ 2: {stats.delivery.systemAddress.r2.toLocaleString()}
-                    </Tag>
-                 </div>
-              </div>
-           </div>
+              </>
+           )}
         </Card>
 
       </div>
