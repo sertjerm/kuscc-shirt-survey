@@ -269,11 +269,11 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
-    // ✅ ห้ามรับถ้า stock หมด
-    if (!canReceiveSize(selectedSize)) {
-      message.error(`ขนาด ${selectedSize} หมดสต็อก ไม่สามารถบันทึกการรับได้`);
-      return;
-    }
+    // ✅ ห้ามรับถ้า stock หมด (ปิดการตรวจสอบชั่วคราวเพื่อให้ Admin รับได้)
+    // if (!canReceiveSize(selectedSize)) {
+    //   message.error(`ขนาด ${selectedSize} หมดสต็อก ไม่สามารถบันทึกการรับได้`);
+    //   return;
+    // }
 
     if (receiverType === "OTHER") {
       if (!receiverMemberCode || receiverMemberCode.length !== 6) {
@@ -306,7 +306,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         receiverMemberCode:
           receiverType === "OTHER" ? receiverMemberCode : null,
         receiverName: receiverType === "OTHER" ? receiverFullName : null,
-        remarks: `ดำเนินการโดย ${adminCode}`,
+        remarks: "", // ไม่ต้องใส่ ดำเนินการโดย เพราะมี PROCESSED_BY แล้ว
       });
 
       message.success("บันทึกการรับเสื้อสำเร็จ");
@@ -430,7 +430,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               <Radio
                 value="SELF"
                 disabled={
-                  !ENABLE_PICKUP || !selectedSize || !canReceiveSize(selectedSize)
+                  !ENABLE_PICKUP || !selectedSize // || !canReceiveSize(selectedSize)
                 }
               >
                 รับด้วยตนเอง
@@ -438,7 +438,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               <Radio
                 value="OTHER"
                 disabled={
-                  !ENABLE_PICKUP || !selectedSize || !canReceiveSize(selectedSize)
+                  !ENABLE_PICKUP || !selectedSize // || !canReceiveSize(selectedSize)
                 }
               >
                 รับแทน
@@ -506,7 +506,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               disabled={
                 !ENABLE_PICKUP ||
                 !selectedSize ||
-                !canReceiveSize(selectedSize) ||
+                // !canReceiveSize(selectedSize) || // ปลดล็อคให้กดได้
                 loading ||
                 selectedSize !== originalSize // Disable pickup if size changed (must save first)
               }

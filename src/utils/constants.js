@@ -12,7 +12,7 @@ export const REAL_API_BASE_URL = "https://apps4.coop.ku.ac.th/KusccToolService/s
 export const ROUND_2_START_DATE = "2025-12-01"; // วันที่เริ่มรอบ 2 (แก้ไขตามแจ้ง)
 
 // Feature Flags
-export const ENABLE_PICKUP = false; // ปิดการรับเสื้อชั่วคราว
+export const ENABLE_PICKUP = true; // เปิดการรับเสื้อแล้ว
 
 // ===================================================================
 // สถานะสมาชิก (Member Status)

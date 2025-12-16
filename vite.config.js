@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // สมมุติ frontend เรียก /api จะถูก proxy ไปที่ WCF
         "/api": {
-          target: { REAL_API_BASE_URL },
+          target: REAL_API_BASE_URL,
           changeOrigin: true,
           secure: false,
           // ถ้าต้องการส่ง cookie

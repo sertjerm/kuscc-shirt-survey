@@ -254,27 +254,38 @@ export const submitPickup = async ({
   sizeCode,
   processedBy,
   receiverType = "SELF",
+  receiverMemberCode = null, // Add receiverMemberCode
   receiverName = null,
   remarks = "",
 }) => {
   const paddedMemberCode = (memberCode ?? "").toString().padStart(6, "0");
   const paddedProcessedBy = (processedBy ?? "").toString().padStart(6, "0");
 
+  // Format remark for Proxy
+  let finalRemarks = remarks;
+  if ((receiverType === "PROXY" || receiverType === "OTHER") && receiverName) {
+     const proxyCode = receiverMemberCode ? `${receiverMemberCode}:` : "";
+     const proxyInfo = `${proxyCode}${receiverName} (รับแทน)`;
+     finalRemarks = remarks ? `${remarks} ${proxyInfo}` : proxyInfo;
+  }
+
   const payload = {
     MEMB_CODE: paddedMemberCode,
     SIZE_CODE: sizeCode,
+    SURVEY_METHOD: "MANUAL",
+    RECEIVE_STATUS: "RECEIVED",
     RECEIVER_TYPE: receiverType,
     PROCESSED_BY: paddedProcessedBy,
-    REMARKS: remarks,
+    REMARKS: finalRemarks, // Use updated remarks
   };
 
-  if (receiverType === "PROXY" && receiverName) {
+  if ((receiverType === "PROXY" || receiverType === "OTHER") && receiverName) {
     payload.RECEIVER_NAME = receiverName;
   }
 
-  console.log("Submit pickup payload:", payload);
+  console.log("Submit pickup payload (via AddShirtSurvey):", payload);
 
-  const res = await api.post("/SubmitShirtPickup", payload);
+  const res = await api.post("/AddShirtSurvey", payload);
   if (res.data?.responseCode !== 200) {
     throw new Error(res.data?.responseMessage || "บันทึกการรับเสื้อไม่สำเร็จ");
   }
