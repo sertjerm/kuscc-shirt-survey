@@ -141,6 +141,7 @@ const DeliveryReport = () => {
       const exportData = dataSource.map((item) => ({
         เลขสมาชิก: item.MEMB_CODE || "-",
         ชื่อ: item.FULLNAME || "-",
+        ไซส์: item.SIZE_CODE || "-",
         ความประสงค์: getDeliveryLabel(item.DELIVERY_OPTION),
         ที่อยู่จัดส่ง: item.DELIVERY_ADDRESS || "-",
         เบอร์โทร: item.DELIVERY_PHONE || "-",
@@ -157,13 +158,14 @@ const DeliveryReport = () => {
       XLSX.utils.book_append_sheet(wb, ws, "ช่องทางจัดส่งกลุ่มเกษียณ");
 
       ws["!cols"] = [
-        { wch: 12 },
-        { wch: 30 },
-        { wch: 25 },
-        { wch: 50 },
-        { wch: 12 },
-        { wch: 20 },
-        { wch: 20 },
+        { wch: 12 }, // memb_code
+        { wch: 30 }, // name
+        { wch: 10 }, // size
+        { wch: 25 }, // delivery option
+        { wch: 50 }, // address
+        { wch: 12 }, // phone
+        { wch: 20 }, // create date
+        { wch: 20 }, // update date
       ];
 
       XLSX.writeFile(wb, `รายละเอียดการจัดส่ง_${Date.now()}.xlsx`);
@@ -222,6 +224,15 @@ const DeliveryReport = () => {
       ellipsis: true,
       sorter: true,
       responsive: ["sm", "md", "lg", "xl"],
+    },
+    {
+      title: "ไซส์",
+      dataIndex: "SIZE_CODE",
+      key: "SIZE_CODE",
+      width: 80,
+      align: "center",
+      render: (size) => (size ? <Tag>{size}</Tag> : "-"),
+      responsive: ["xs", "sm", "md", "lg", "xl"],
     },
     {
       title: "ความประสงค์",
