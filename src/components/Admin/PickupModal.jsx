@@ -11,6 +11,7 @@ import {
   Spin,
   Alert,
   Tag,
+  Tooltip,
 } from "antd";
 import { CloseOutlined, WarningOutlined } from "@ant-design/icons";
 import {
@@ -18,7 +19,7 @@ import {
   saveMemberSize,
   getInventorySummary,
 } from "../../services/shirtApi";
-import { ENABLE_PICKUP } from "../../utils/constants";
+import { ENABLE_PICKUP, DELIVERY_OPTIONS } from "../../utils/constants";
 import { useAppContext } from "../../App";
 import "../../styles/PickupModal.css";
 import StockStatus from "../Common/StockStatus";
@@ -47,6 +48,8 @@ const SIZE_INFO = {
   "4XL": { chest: '54"', length: '31"' },
   "5XL": { chest: '56"', length: '32"' },
   "6XL": { chest: '58"', length: '33"' },
+  "5XL": { chest: '56"', length: '32"' },
+  "6XL": { chest: '58"', length: '33"' },
 };
 
 const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
@@ -73,6 +76,8 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
         fullName: selectedMember.fullName || selectedMember.FULLNAME || "",
         sizeCode: selectedMember.sizeCode || selectedMember.SIZE_CODE || null,
         round: selectedMember.round || selectedMember.ROUND || "1", // Add round
+        deliveryOption: selectedMember.deliveryOption || selectedMember.DELIVERY_OPTION, // ✅ Capture delivery option
+        receiveChannel: selectedMember.receiveChannel || selectedMember.RECEIVE_CHANNEL, // ✅ Capture receive channel (Thai text or Code)
         rawData: selectedMember,
       });
 
@@ -204,7 +209,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
-    // ✅ ตรวจสอบเงื่อนไขการจองใหม่
+    // ✅ ตรวจสอบเงื่อนไขการจองใหม่ (กลับไปใช้ canReserveSize ตาม user request)
     if (!canReserveSize(selectedSize)) {
       message.error(
         `ขนาด ${selectedSize} ไม่สามารถจองได้ เนื่องจากยอดจองเต็มแล้ว`
@@ -269,11 +274,11 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       return;
     }
 
-    // ✅ ห้ามรับถ้า stock หมด (ปิดการตรวจสอบชั่วคราวเพื่อให้ Admin รับได้)
-    // if (!canReceiveSize(selectedSize)) {
-    //   message.error(`ขนาด ${selectedSize} หมดสต็อก ไม่สามารถบันทึกการรับได้`);
-    //   return;
-    // }
+    // ✅ ห้ามรับถ้า stock หมด (เช็ค stock จริง produced - distributed)
+    if (!canReceiveSize(selectedSize)) {
+      message.error(`ขนาด ${selectedSize} หมดสต็อก ไม่สามารถบันทึกการรับได้`);
+      return;
+    }
 
     if (receiverType === "OTHER") {
       if (!receiverMemberCode || receiverMemberCode.length !== 6) {
@@ -297,7 +302,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
       console.log("Receiver Type:", receiverType);
       console.log("Receiver Member Code:", receiverMemberCode);
       console.log("Receiver Full Name:", receiverFullName);
-
+      
       await submitPickup({
         memberCode: memberData.memberCode,
         sizeCode: selectedSize,
@@ -324,6 +329,31 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper validation for delivery blocking
+  const isDeliveryBlocked = () => {
+    if (!memberData) return false;
+    
+    // Check deliveryOption (if exists)
+    if (memberData.deliveryOption && memberData.deliveryOption !== "coop") {
+      return true;
+    }
+
+    // Check receiveChannel (Thai or English strings)
+    if (memberData.receiveChannel) {
+       let channel = memberData.receiveChannel;
+       if (typeof channel === 'string') {
+         channel = channel.trim();
+       }
+       
+       const blockedChannels = ["จัดส่ง", "ส่งไปรษณีย์", "system", "custom", "post", "delivery"];
+       if (blockedChannels.includes(channel.toLowerCase ? channel.toLowerCase() : channel)) {
+         return true;
+       }
+    }
+    
+    return false;
   };
 
   if (!memberData) {
@@ -386,24 +416,34 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               <div className="selected-size-display">
                 <span
                   style={{
-                    color: !canReceiveSize(selectedSize) ? "#ff4d4f" : "#000",
+                    color: !canReceiveSize(selectedSize) ? "#ff4d4f" : "black",
                     fontWeight: "bold",
                   }}
                 >
                   {selectedSize}
                 </span>
-                {/* ✅ แสดงสถานะการจองและรับ */}
+                {/* ✅ แสดงสถานะต่างๆ */}
                 {stockData[selectedSize] && (
                   <div style={{ fontSize: 12, marginTop: 4 }}>
-                    {!canReserveSize(selectedSize) && (
+                    {/* 1. ถ้าของหมด แจ้งเสื้อหมดทันที */}
+                    {!canReceiveSize(selectedSize) && (
+                      <div style={{ color: "#ff4d4f", fontWeight: "bold" }}>
+                        ❌ เสื้อหมด (Out of Stock)
+                      </div>
+                    )}
+
+                    {/* 2. ถ้าจองไม่ได้ (และไม่ใช่ size เดิมที่จองไว้แล้ว) */}
+                    {!canReserveSize(selectedSize) && selectedSize !== originalSize && (
                       <div style={{ color: "#ff4d4f", fontWeight: "bold" }}>
                         ❌ จองไม่ได้ (ยอดจองเต็ม)
                       </div>
                     )}
+
+                    {/* 3. กรณีพิเศษ: มีโควต้าจอง แต่ของหมด (จองได้แต่รับไม่ได้) */}
                     {canReserveSize(selectedSize) &&
                       !canReceiveSize(selectedSize) && (
-                        <div style={{ color: "#ff7a00", fontWeight: "bold" }}>
-                          ⚠️ จองได้ แต่รับไม่ได้ (หมดสต็อก)
+                        <div style={{ color: "#ff7a00", fontWeight: "normal" }}>
+                           (จองได้แต่ยังรับไม่ได้)
                         </div>
                       )}
                   </div>
@@ -480,7 +520,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               ยกเลิก
             </Button>
 
-            {/* ✅ บันทึกขนาด - ตรวจสอบการจองได้ */}
+            {/* ✅ บันทึกขนาด - ตรวจสอบการจองได้ (canReserveSize) */}
             <Button
               ref={saveButtonRef}
               type="primary"
@@ -489,7 +529,7 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               loading={loading}
               disabled={
                 !selectedSize ||
-                !canReserveSize(selectedSize) ||
+                !canReserveSize(selectedSize) || // กลับไปใช้ canReserveSize
                 loading ||
                 selectedSize === originalSize
               }
@@ -497,22 +537,33 @@ const PickupModal = ({ visible, onCancel, selectedMember, onSuccess }) => {
               บันทึกขนาด
             </Button>
 
-            {/* ✅ บันทึกการรับเสื้อ - ทำได้ต่อเมื่อมี stock */}
-            <Button
-              type="primary"
-              size="large"
-              onClick={handleSubmitPickup}
-              loading={loading}
-              disabled={
-                !ENABLE_PICKUP ||
-                !selectedSize ||
-                // !canReceiveSize(selectedSize) || // ปลดล็อคให้กดได้
-                loading ||
-                selectedSize !== originalSize // Disable pickup if size changed (must save first)
+            {/* ✅ บันทึกการรับเสื้อ - ทำได้ต่อเมื่อมี stock (canReceiveSize) และเลือกรับเอง */}
+            <Tooltip
+              title={
+                isDeliveryBlocked()
+                  ? "ไม่สามารถกดรับได้เนื่องจากสมาชิกเลือกจัดส่งทางไปรษณีย์"
+                  : ""
               }
             >
-              บันทึกการรับเสื้อ
-            </Button>
+              <span style={{ display: "inline-block", marginLeft: 8 }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={handleSubmitPickup}
+                  loading={loading}
+                  disabled={
+                    !ENABLE_PICKUP ||
+                    !selectedSize ||
+                    !canReceiveSize(selectedSize) || // เช็ค stock จริง
+                    loading ||
+                    selectedSize !== originalSize || // Disable pickup if size changed (must save first)
+                    isDeliveryBlocked() // ✅ ห้ามกดถ้าเลือกจัดส่ง
+                  }
+                >
+                  บันทึกการรับเสื้อ
+                </Button>
+              </span>
+            </Tooltip>
           </div>
         </div>
       </Modal>

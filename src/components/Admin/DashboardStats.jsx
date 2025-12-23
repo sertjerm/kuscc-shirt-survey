@@ -26,6 +26,7 @@ import {
   UserOutlined,
   ExpandOutlined,
   InfoCircleOutlined,
+  BankOutlined,
 } from "@ant-design/icons";
 import { getDashboardStats, getMembers } from "../../services/shirtApi";
 
@@ -532,6 +533,38 @@ const DashboardStats = () => {
                       : 0
                   }
                   strokeColor="#fa8c16"
+                  size="small"
+                />
+              </div>
+
+              {/* ✅ New: Receive by Department */}
+              <div>
+                <Space
+                  style={{
+                    width: "100%",
+                    justifyContent: "space-between",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Space>
+                    <BankOutlined />
+                    <Text>รับโดยหน่วยงาน</Text>
+                  </Space>
+                  <Text strong style={{ color: "#1890ff", fontSize: "18px" }}>
+                    {formatNumber(stats.receivedMembers - stats.selfReceived - stats.proxyReceived)} คน
+                  </Text>
+                </Space>
+                <Progress
+                  percent={
+                    stats.receivedMembers > 0
+                      ? Math.round(
+                          ((stats.receivedMembers - stats.selfReceived - stats.proxyReceived) /
+                            stats.receivedMembers) *
+                            100
+                        )
+                      : 0
+                  }
+                  strokeColor="#1890ff"
                   size="small"
                 />
               </div>

@@ -15,6 +15,7 @@ import {
   getDepartmentReport,
   getShirtSizes,
   submitPickupByDept,
+  getInventorySummary,
 } from "../../services/shirtApi";
 import { STORAGE_KEYS } from "../../utils/constants";
 import * as XLSX from "xlsx";
@@ -157,8 +158,66 @@ const ShirtDeptReport = ({
 
 
 
+  /* ✅ Helper to check stock before bulk receive */
+  const checkStockAvailability = async (deptCode, sectCode) => {
+    try {
+      const inventory = await getInventorySummary();
+      const stockMap = {};
+      inventory.forEach((item) => {
+        stockMap[item.sizeCode] = (item.produced || 0) - (item.distributed || 0);
+      });
+
+      // Find required sizes from local data
+      let requiredSizes = {};
+      const dept = groupedData.find((d) => d.code === deptCode);
+      if (!dept) return { valid: false, message: "ไม่พบข้อมูลหน่วยงาน" };
+
+      if (sectCode) {
+        const sect = dept.sections.find((s) => s.code === sectCode);
+        if (!sect) return { valid: false, message: "ไม่พบข้อมูลภาควิชา" };
+        requiredSizes = sect.sizes;
+      } else {
+        requiredSizes = dept.totalBySize;
+      }
+
+      const insufficientSizes = [];
+      Object.entries(requiredSizes).forEach(([size, count]) => {
+        if (count > 0) {
+          const available = stockMap[size] || 0;
+          if (available < count) {
+            insufficientSizes.push(`${size} (ขาด ${count - available} ตัว)`);
+          }
+        }
+      });
+
+      if (insufficientSizes.length > 0) {
+        return {
+          valid: false,
+          message: `สินค้าหมดสต็อกสำหรับขนาด: ${insufficientSizes.join(", ")}`,
+        };
+      }
+
+      return { valid: true };
+    } catch (error) {
+      console.error("Stock check error:", error);
+      return { valid: false, message: "ไม่สามารถตรวจสอบสต็อกได้" };
+    }
+  };
+
   const handleReceiveAll = async (deptCode, sectCode = null, name) => {
     try {
+      // ✅ 1. Check Stock First
+      const stockCheck = await checkStockAvailability(deptCode, sectCode);
+      if (!stockCheck.valid) {
+        Swal.fire({
+          icon: "error",
+          title: "ยอดคงเหลือไม่เพียงพอ",
+          text: stockCheck.message,
+          confirmButtonText: "ตกลง",
+        });
+        return;
+      }
+
       const result = await Swal.fire({
         title: "ยืนยันการรับเสื้อทั้งหมด",
         html: `
